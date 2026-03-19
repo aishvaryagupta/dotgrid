@@ -39,6 +39,17 @@
     }
     .preview canvas { display: block; }
 
+    /* ── ASCII Preview ── */
+    .ascii-preview {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      line-height: 1.15;
+      white-space: pre;
+      user-select: none;
+      position: relative;
+      z-index: 1;
+    }
+
     /* ── Panel ── */
     .panel {
       width: 330px;
@@ -222,6 +233,17 @@
       color: #ff5d22;
     }
 
+    /* Render mode toggle row (wraps to 2 rows of 3) */
+    .ctrl__render-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .ctrl__render-row .ctrl__toggle-btn {
+      flex: 1 1 30%;
+      min-width: 0;
+    }
+
     /* Button row */
     .ctrl__btn-row { display: flex; gap: 6px; }
     .ctrl__btn {
@@ -274,7 +296,7 @@
     }
 
     /* Hidden */
-    .hidden { display: none; }
+    .hidden { display: none !important; }
 
     /* Toast */
     .toast {
@@ -301,9 +323,10 @@
   <!-- Preview -->
   <div class="preview">
     <div class="preview__bg" id="previewBg"></div>
-    <div class="preview__canvas-wrap">
+    <div class="preview__canvas-wrap" id="canvasWrap">
       <canvas id="previewCanvas"></canvas>
     </div>
+    <pre class="ascii-preview hidden" id="asciiPre"></pre>
   </div>
 
   <!-- Panel -->
@@ -311,6 +334,21 @@
     <div class="panel__header">
       <div class="panel__title">Dot Matrix</div>
       <div class="panel__subtitle">Playground</div>
+    </div>
+
+    <!-- Render Mode -->
+    <div class="section">
+      <div class="section__label">Render Mode</div>
+      <div class="ctrl">
+        <div class="ctrl__render-row">
+          <button class="ctrl__toggle-btn active" data-render="dot">Dot Grid</button>
+          <button class="ctrl__toggle-btn" data-render="block">Block</button>
+          <button class="ctrl__toggle-btn" data-render="slim">Slim</button>
+          <button class="ctrl__toggle-btn" data-render="braille">Braille</button>
+          <button class="ctrl__toggle-btn" data-render="shadow">Shadow</button>
+          <button class="ctrl__toggle-btn" data-render="line">Line Art</button>
+        </div>
+      </div>
     </div>
 
     <!-- Presets -->
@@ -341,7 +379,7 @@
         </div>
       </div>
 
-      <!-- Load-In Style (shown when mode=animate) -->
+      <!-- Load-In Style (shown when mode=animate, dot grid only) -->
       <div class="ctrl hidden" id="loadInCtrl">
         <div class="ctrl__top"><span class="ctrl__name">Load-In Style</span></div>
         <select class="ctrl__select" id="loadInStyle">
@@ -358,7 +396,7 @@
         </select>
       </div>
 
-      <!-- Transition Style (shown when mode=cycle) -->
+      <!-- Transition Style (shown when mode=cycle, dot grid only) -->
       <div class="ctrl hidden" id="transitionCtrl">
         <div class="ctrl__top"><span class="ctrl__name">Transition Style</span></div>
         <select class="ctrl__select" id="transitionStyle">
@@ -385,8 +423,8 @@
         <input class="ctrl__slider" id="holdSlider" type="range" min="500" max="5000" step="100" value="2500" />
       </div>
 
-      <!-- Idle Animation (always visible when not hidden) -->
-      <div class="ctrl">
+      <!-- Idle Animation (dot grid only) -->
+      <div class="ctrl" id="idleCtrl">
         <div class="ctrl__top"><span class="ctrl__name">Idle Effect</span></div>
         <select class="ctrl__select" id="idleAnimation">
           <option value="none">None</option>
@@ -396,7 +434,7 @@
         </select>
       </div>
 
-      <!-- Speed slider (shown when mode=animate or cycle) -->
+      <!-- Speed slider (shown when mode=animate or cycle, dot grid only) -->
       <div class="ctrl hidden" id="speedCtrl">
         <div class="ctrl__top">
           <span class="ctrl__name">Animation Speed</span>
@@ -444,8 +482,8 @@
       </div>
     </div>
 
-    <!-- Grid -->
-    <div class="section">
+    <!-- Grid (dot grid only) -->
+    <div class="section" id="gridSection">
       <div class="section__label">Grid</div>
       <div class="ctrl">
         <div class="ctrl__top">
@@ -488,7 +526,7 @@
           <input class="ctrl__hex" id="activeHex" type="text" value="#ff5d22" />
         </div>
       </div>
-      <div class="ctrl">
+      <div class="ctrl" id="inactiveColorCtrl">
         <div class="ctrl__top"><span class="ctrl__name">Grid Dots</span></div>
         <div class="ctrl__color-row">
           <input class="ctrl__color" id="inactiveColor" type="color" value="#ff5d22" />
@@ -539,6 +577,8 @@
     var ctx = canvas.getContext('2d');
     var bgEl = document.getElementById('previewBg');
     var toastEl = document.getElementById('toast');
+    var canvasWrap = document.getElementById('canvasWrap');
+    var asciiPre = document.getElementById('asciiPre');
 
     // ════════════════════════════════════════════════
     // State
@@ -546,6 +586,7 @@
     var S = {
       text: 'ship',
       mode: 'static',             // static | animate | cycle
+      renderMode: 'dot',          // dot | block | slim | braille | shadow | line
       loadInStyle: 'scatter',     // scatter|rain|typewriter|rowscan|colscan|centerburst|fadein|randomfill|wave|spiral
       transitionStyle: 'crossfade', // crossfade|scramble|slide|dissolve|pixelflip
       idleAnimation: 'none',      // none|pulse|shimmer|flicker
@@ -630,7 +671,391 @@
     }
 
     // ════════════════════════════════════════════════
-    // Grid rasterization
+    // ASCII ART ENGINE — Canvas-based rasterizer
+    // ════════════════════════════════════════════════
+
+    // Character mappings for each ASCII style
+    var ASCII_CHAR_MAP = {
+      block:  { filled: '\u2588', half: '\u2591', empty: ' ' },  // █ ░
+      slim:   { filled: '#', half: '.', empty: ' ' },
+      braille: { filled: null, half: null, empty: null },         // computed via braille algorithm
+      shadow: { filled: '\u2588', half: '\u2591', empty: ' ' },  // █ ░ (shadow row added)
+      line:   { filled: '\u2588', half: '\u2592', empty: ' ' },  // █ ▒
+    };
+
+    // Glitch character sets per style
+    var ASCII_GLITCH_CHARS = {
+      block:   '\u2588\u2593\u2592\u2591\u2554\u2557\u255A\u255D\u2551\u2550\u2563\u2560\u2566\u2569\u253C\u2500\u2502',
+      slim:    '_|/\\[]{}()-=+~#.',
+      braille: '\u28FF\u28FE\u28FD\u28FB\u28F7\u28EF\u28DF\u287F\u28BF\u2880\u2884\u2886\u2887\u2847\u284F\u285F\u287F',
+      shadow:  '\u2591\u2592\u2593\u2588\u250C\u2510\u2514\u2518\u251C\u2524\u252C\u2534\u253C\u2500\u2502',
+      line:    '\u2554\u2557\u255A\u255D\u2551\u2550\u2563\u2560\u2566\u2569\u253C\u2500\u2502\u256C\u2591\u2592',
+    };
+
+    // Rasterize text to a pixel grid using an offscreen canvas
+    // Returns { grid: Uint8Array (0 or 255), width, height }
+    function rasterizeTextToPixelGrid(text, cellW, cellH) {
+      var fontSize = S.fontSize;
+      var offCanvas = document.createElement('canvas');
+      var offCtx = offCanvas.getContext('2d');
+      offCtx.font = fontStr();
+
+      var metrics = offCtx.measureText(text || ' ');
+      var textW = metrics.width;
+      var pixelW = Math.ceil(textW) + 4;
+      var pixelH = Math.ceil(fontSize * 1.3);
+
+      offCanvas.width = pixelW;
+      offCanvas.height = pixelH;
+      offCtx.font = fontStr();
+      offCtx.fillStyle = '#fff';
+      offCtx.textBaseline = 'top';
+      offCtx.fillText(text || ' ', 0, Math.round((pixelH - fontSize) / 2));
+
+      var imgData = offCtx.getImageData(0, 0, pixelW, pixelH);
+      var cols = Math.ceil(pixelW / cellW);
+      var rows = Math.ceil(pixelH / cellH);
+
+      var grid = new Uint8Array(cols * rows);
+      for (var r = 0; r < rows; r++) {
+        for (var c = 0; c < cols; c++) {
+          // Sample the center of each cell
+          var sx = Math.floor(c * cellW + cellW / 2);
+          var sy = Math.floor(r * cellH + cellH / 2);
+          if (sx < pixelW && sy < pixelH) {
+            var idx = (sy * pixelW + sx) * 4;
+            grid[r * cols + c] = imgData.data[idx + 3];
+          }
+        }
+      }
+
+      return { grid: grid, cols: cols, rows: rows };
+    }
+
+    // Convert rasterized grid to Block art string
+    function gridToBlock(raster) {
+      var map = ASCII_CHAR_MAP.block;
+      var lines = [];
+      for (var r = 0; r < raster.rows; r++) {
+        var line = '';
+        for (var c = 0; c < raster.cols; c++) {
+          var v = raster.grid[r * raster.cols + c];
+          if (v > 128) line += map.filled;
+          else if (v > 40) line += map.half;
+          else line += map.empty;
+        }
+        lines.push(line);
+      }
+      return trimAsciiLines(lines);
+    }
+
+    // Convert rasterized grid to Slim art string
+    function gridToSlim(raster) {
+      var map = ASCII_CHAR_MAP.slim;
+      var lines = [];
+      for (var r = 0; r < raster.rows; r++) {
+        var line = '';
+        for (var c = 0; c < raster.cols; c++) {
+          var v = raster.grid[r * raster.cols + c];
+          if (v > 128) line += map.filled;
+          else if (v > 40) line += map.half;
+          else line += map.empty;
+        }
+        lines.push(line);
+      }
+      return trimAsciiLines(lines);
+    }
+
+    // Convert rasterized grid to Braille art using 2x4 pixel blocks
+    function gridToBraille(text) {
+      var fontSize = S.fontSize;
+      var offCanvas = document.createElement('canvas');
+      var offCtx = offCanvas.getContext('2d');
+      offCtx.font = fontStr();
+
+      var metrics = offCtx.measureText(text || ' ');
+      var textW = metrics.width;
+      var pixelW = Math.ceil(textW) + 4;
+      var pixelH = Math.ceil(fontSize * 1.3);
+
+      offCanvas.width = pixelW;
+      offCanvas.height = pixelH;
+      offCtx.font = fontStr();
+      offCtx.fillStyle = '#fff';
+      offCtx.textBaseline = 'top';
+      offCtx.fillText(text || ' ', 0, Math.round((pixelH - fontSize) / 2));
+
+      var imgData = offCtx.getImageData(0, 0, pixelW, pixelH);
+
+      function getPixel(px, py) {
+        if (px < 0 || px >= pixelW || py < 0 || py >= pixelH) return false;
+        return imgData.data[(py * pixelW + px) * 4 + 3] > 80;
+      }
+
+      // Braille: 2 dots wide, 4 dots tall per character
+      // Bit positions:
+      // (0,0)=1  (1,0)=8
+      // (0,1)=2  (1,1)=16
+      // (0,2)=4  (1,2)=32
+      // (0,3)=64 (1,3)=128
+      var brailleCols = Math.ceil(pixelW / 2);
+      var brailleRows = Math.ceil(pixelH / 4);
+
+      var lines = [];
+      for (var br = 0; br < brailleRows; br++) {
+        var line = '';
+        for (var bc = 0; bc < brailleCols; bc++) {
+          var px = bc * 2;
+          var py = br * 4;
+          var bits = 0;
+          if (getPixel(px, py))     bits |= 1;
+          if (getPixel(px, py + 1)) bits |= 2;
+          if (getPixel(px, py + 2)) bits |= 4;
+          if (getPixel(px + 1, py))     bits |= 8;
+          if (getPixel(px + 1, py + 1)) bits |= 16;
+          if (getPixel(px + 1, py + 2)) bits |= 32;
+          if (getPixel(px, py + 3))     bits |= 64;
+          if (getPixel(px + 1, py + 3)) bits |= 128;
+          line += String.fromCharCode(0x2800 + bits);
+        }
+        lines.push(line);
+      }
+      return trimAsciiLines(lines);
+    }
+
+    // Convert rasterized grid to Shadow art (filled + shadow row beneath)
+    function gridToShadow(raster) {
+      var map = ASCII_CHAR_MAP.shadow;
+      var lines = [];
+      for (var r = 0; r < raster.rows; r++) {
+        var line = '';
+        for (var c = 0; c < raster.cols; c++) {
+          var v = raster.grid[r * raster.cols + c];
+          if (v > 128) line += map.filled;
+          else if (v > 40) line += map.half;
+          else line += map.empty;
+        }
+        lines.push(line);
+      }
+      // Add shadow row: for each filled char in the last row that had content,
+      // add a row of ░ shifted right by 1
+      var shadowLine = '';
+      var lastContentRow = '';
+      for (var r = lines.length - 1; r >= 0; r--) {
+        if (lines[r].trim().length > 0) { lastContentRow = lines[r]; break; }
+      }
+      for (var c = 0; c < lastContentRow.length; c++) {
+        if (lastContentRow[c] !== ' ') shadowLine += '\u2591';
+        else shadowLine += ' ';
+      }
+      lines.push(' ' + shadowLine);
+      return trimAsciiLines(lines);
+    }
+
+    // Convert rasterized grid to Line Art (filled + edge detection)
+    function gridToLine(raster) {
+      var lines = [];
+      for (var r = 0; r < raster.rows; r++) {
+        var line = '';
+        for (var c = 0; c < raster.cols; c++) {
+          var v = raster.grid[r * raster.cols + c];
+          if (v > 128) {
+            // Check if this is an edge pixel
+            var isEdge = false;
+            if (r === 0 || r === raster.rows - 1 || c === 0 || c === raster.cols - 1) {
+              isEdge = true;
+            } else {
+              // Check neighbors
+              var above = raster.grid[(r - 1) * raster.cols + c];
+              var below = raster.grid[(r + 1) * raster.cols + c];
+              var left  = raster.grid[r * raster.cols + (c - 1)];
+              var right = raster.grid[r * raster.cols + (c + 1)];
+              if (above <= 40 || below <= 40 || left <= 40 || right <= 40) isEdge = true;
+            }
+            line += isEdge ? '\u2592' : '\u2588';
+          } else if (v > 40) {
+            line += '\u2592';
+          } else {
+            line += ' ';
+          }
+        }
+        lines.push(line);
+      }
+      return trimAsciiLines(lines);
+    }
+
+    // Trim empty rows from top/bottom, trim trailing spaces per line
+    function trimAsciiLines(lines) {
+      // Trim trailing spaces per line
+      lines = lines.map(function(l) { return l.replace(/\s+$/, ''); });
+      // Remove leading empty lines
+      while (lines.length > 0 && lines[0].trim() === '') lines.shift();
+      // Remove trailing empty lines
+      while (lines.length > 0 && lines[lines.length - 1].trim() === '') lines.pop();
+      return lines;
+    }
+
+    // Main ASCII rasterizer: returns array of strings for a given text and style
+    function rasterizeAscii(text, style) {
+      var t = (text || ' ').split('\n')[0]; // use first line only for ASCII
+      if (!t.trim()) t = ' ';
+
+      // Choose cell size based on style
+      var cellW, cellH;
+      if (style === 'braille') {
+        return gridToBraille(t);
+      } else if (style === 'slim') {
+        cellW = Math.max(2, Math.round(S.fontSize / 10));
+        cellH = Math.max(3, Math.round(S.fontSize / 6));
+      } else {
+        // block, shadow, line: denser sampling
+        cellW = Math.max(2, Math.round(S.fontSize / 12));
+        cellH = Math.max(3, Math.round(S.fontSize / 7));
+      }
+
+      var raster = rasterizeTextToPixelGrid(t, cellW, cellH);
+
+      switch (style) {
+        case 'block':  return gridToBlock(raster);
+        case 'slim':   return gridToSlim(raster);
+        case 'shadow': return gridToShadow(raster);
+        case 'line':   return gridToLine(raster);
+        default:       return gridToBlock(raster);
+      }
+    }
+
+    // ════════════════════════════════════════════════
+    // ASCII RENDERING (preview)
+    // ════════════════════════════════════════════════
+
+    function showAsciiMode() {
+      canvasWrap.classList.add('hidden');
+      asciiPre.classList.remove('hidden');
+    }
+
+    function showDotMode() {
+      canvasWrap.classList.remove('hidden');
+      asciiPre.classList.add('hidden');
+    }
+
+    function applyAsciiColors() {
+      asciiPre.style.color = S.activeColor;
+      var rgb = hexToRgb(S.activeColor);
+      asciiPre.style.textShadow = '0 0 8px rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ', 0.35)';
+      bgEl.style.background = S.bgColor;
+    }
+
+    function renderAsciiStatic(text) {
+      showAsciiMode();
+      applyAsciiColors();
+      var lines = rasterizeAscii(text, S.renderMode);
+      asciiPre.textContent = lines.join('\n');
+    }
+
+    // Glitch-in reveal: all chars start as random glitch, progressively replaced
+    function renderAsciiGlitchIn(text, onDone) {
+      showAsciiMode();
+      applyAsciiColors();
+      var targetLines = rasterizeAscii(text, S.renderMode);
+      var glitchChars = ASCII_GLITCH_CHARS[S.renderMode] || ASCII_GLITCH_CHARS.block;
+      var totalFrames = 30;
+      var frame = 0;
+
+      // Pre-compute flat target
+      var targetFlat = targetLines.join('\n');
+
+      function step() {
+        frame++;
+        var progress = frame / totalFrames;
+        var output = '';
+        for (var i = 0; i < targetFlat.length; i++) {
+          var ch = targetFlat[i];
+          if (ch === '\n') {
+            output += '\n';
+          } else if (ch === ' ') {
+            output += ' ';
+          } else {
+            // Each character has a random threshold; once progress passes it, show the real char
+            // Use a deterministic-ish approach: char index determines reveal time
+            var revealT = ((i * 7 + 3) % totalFrames) / totalFrames;
+            if (progress > revealT) {
+              output += ch;
+            } else {
+              output += glitchChars[Math.floor(Math.random() * glitchChars.length)];
+            }
+          }
+        }
+        asciiPre.textContent = output;
+
+        if (frame < totalFrames) {
+          asciiAnimRaf = requestAnimationFrame(step);
+        } else {
+          asciiPre.textContent = targetFlat;
+          if (onDone) onDone();
+        }
+      }
+      asciiAnimRaf = requestAnimationFrame(step);
+    }
+
+    // Glitch transition between two words
+    function renderAsciiGlitchTransition(fromText, toText, onDone) {
+      showAsciiMode();
+      applyAsciiColors();
+      var fromLines = rasterizeAscii(fromText, S.renderMode);
+      var toLines = rasterizeAscii(toText, S.renderMode);
+      var glitchChars = ASCII_GLITCH_CHARS[S.renderMode] || ASCII_GLITCH_CHARS.block;
+
+      // Pad to same dimensions
+      var maxRows = Math.max(fromLines.length, toLines.length);
+      var maxCols = 0;
+      for (var i = 0; i < fromLines.length; i++) if (fromLines[i].length > maxCols) maxCols = fromLines[i].length;
+      for (var i = 0; i < toLines.length; i++) if (toLines[i].length > maxCols) maxCols = toLines[i].length;
+
+      while (fromLines.length < maxRows) fromLines.push('');
+      while (toLines.length < maxRows) toLines.push('');
+
+      var totalFrames = 24;
+      var frame = 0;
+
+      function step() {
+        frame++;
+        var progress = frame / totalFrames;
+        // Corruption peaks at midpoint
+        var corruption = 1 - Math.abs(progress - 0.5) * 2;
+        var useTarget = progress > 0.5;
+        var source = useTarget ? toLines : fromLines;
+
+        var output = '';
+        for (var r = 0; r < maxRows; r++) {
+          var line = source[r] || '';
+          var row = '';
+          for (var c = 0; c < Math.max(line.length, 1); c++) {
+            var ch = c < line.length ? line[c] : ' ';
+            if (ch === ' ') {
+              row += ' ';
+            } else if (Math.random() < corruption * 0.7) {
+              row += glitchChars[Math.floor(Math.random() * glitchChars.length)];
+            } else {
+              row += ch;
+            }
+          }
+          output += row;
+          if (r < maxRows - 1) output += '\n';
+        }
+        asciiPre.textContent = output;
+
+        if (frame < totalFrames) {
+          asciiAnimRaf = requestAnimationFrame(step);
+        } else {
+          asciiPre.textContent = toLines.join('\n');
+          if (onDone) onDone();
+        }
+      }
+      asciiAnimRaf = requestAnimationFrame(step);
+    }
+
+    // ════════════════════════════════════════════════
+    // Grid rasterization (for dot grid mode)
     // ════════════════════════════════════════════════
     function rasterizeLine(text, w, h, fontSize, xOffset) {
       var off = document.createElement('canvas');
@@ -657,7 +1082,7 @@
     }
 
     // ════════════════════════════════════════════════
-    // Compute layout (shared by all renderers)
+    // Compute layout (shared by dot grid renderers)
     // ════════════════════════════════════════════════
     function computeLayout(text) {
       var lines = (text || ' ').split('\n');
@@ -709,7 +1134,6 @@
 
     // ════════════════════════════════════════════════
     // Get target dots from layout
-    // Returns array of { cx, cy, col, row, lineIndex, globalRow }
     // ════════════════════════════════════════════════
     function getTargets(layout) {
       var targets = [];
@@ -771,7 +1195,6 @@
 
     // ════════════════════════════════════════════════
     // Draw active dots with position/opacity overrides
-    // dots: array of { x, y, opacity }
     // ════════════════════════════════════════════════
     function drawActiveDots(dots, DR) {
       for (var i = 0; i < dots.length; i++) {
@@ -824,30 +1247,26 @@
     var animRaf = null;
     var animTimeout = null;
     var idleRaf = null;
+    var asciiAnimRaf = null;
     var currentCycleIndex = 0;
 
     function stopAnimation() {
       if (animRaf) { cancelAnimationFrame(animRaf); animRaf = null; }
       if (animTimeout) { clearTimeout(animTimeout); animTimeout = null; }
       if (idleRaf) { cancelAnimationFrame(idleRaf); idleRaf = null; }
+      if (asciiAnimRaf) { cancelAnimationFrame(asciiAnimRaf); asciiAnimRaf = null; }
     }
 
     // ════════════════════════════════════════════════
     // IDLE ANIMATIONS
-    // These run continuously after load-in or during cycle hold.
-    // Each returns a function to stop the idle loop.
     // ════════════════════════════════════════════════
-
-    // Start idle animation on current targets.
-    // Redraws the full frame each tick with the idle effect applied.
     function startIdleLoop(layout, targets) {
       if (S.idleAnimation === 'none') return;
 
       var startTime = performance.now();
-      var flickerState = {}; // for flicker: tracks dimmed dots
 
       function tick() {
-        var elapsed = (performance.now() - startTime) / 1000; // seconds
+        var elapsed = (performance.now() - startTime) / 1000;
         ctx.clearRect(0, 0, layout.w, layout.h);
         drawBgGrid(layout);
 
@@ -857,28 +1276,22 @@
           var opacity = 1;
 
           if (S.idleAnimation === 'pulse') {
-            // Oscillate between 0.7 and 1.0, ~2s period
-            opacity = 0.85 + 0.15 * Math.sin(elapsed * Math.PI); // period ~2s
+            opacity = 0.85 + 0.15 * Math.sin(elapsed * Math.PI);
           } else if (S.idleAnimation === 'shimmer') {
-            // Diagonal bright band sweeps across every ~3s
-            // Band position along diagonal axis
-            var diag = (t.cx + t.cy) / (layout.w + layout.h); // 0..1
-            var bandPos = (elapsed / 3) % 1; // sweeps 0..1 every 3s
+            var diag = (t.cx + t.cy) / (layout.w + layout.h);
+            var bandPos = (elapsed / 3) % 1;
             var dist = Math.abs(diag - bandPos);
             if (dist > 0.5) dist = 1 - dist;
             var bandWidth = 0.08;
             if (dist < bandWidth) {
-              opacity = 1.0 + 0.3 * (1 - dist / bandWidth); // up to 1.3
+              opacity = 1.0 + 0.3 * (1 - dist / bandWidth);
               opacity = clamp(opacity, 0, 1.3);
             }
           } else if (S.idleAnimation === 'flicker') {
-            // Random dots briefly dim to 0.3 and re-light, 2-3 dots at a time, every ~200ms
             var flickCycle = Math.floor(elapsed / 0.2);
-            // Use a simple hash to pick which dots flicker each cycle
             var seed = flickCycle * 7 + i * 13;
             var pick = ((seed * 2654435761) >>> 0) % targets.length;
             if (pick < 3) {
-              // This dot is flickering in this cycle
               var subT = (elapsed % 0.2) / 0.2;
               opacity = subT < 0.5 ? (1 - 0.7 * (subT / 0.5)) : (0.3 + 0.7 * ((subT - 0.5) / 0.5));
             }
@@ -896,14 +1309,11 @@
 
     // ════════════════════════════════════════════════
     // LOAD-IN ANIMATIONS (10 styles)
-    // Each takes (layout, targets, totalFrames, onDone)
-    // and drives an animation loop.
     // ════════════════════════════════════════════════
 
-    // 1. Scatter: dots from random positions converge to form word
+    // 1. Scatter
     function animScatter(layout, targets, totalFrames, onDone) {
       var w = layout.w, h = layout.h;
-      // Assign random start positions
       for (var i = 0; i < targets.length; i++) {
         targets[i].startX = (Math.random() - 0.5) * w * 1.5 + w / 2;
         targets[i].startY = (Math.random() - 0.5) * h * 1.5 + h / 2;
@@ -931,13 +1341,12 @@
       animRaf = requestAnimationFrame(step);
     }
 
-    // 2. Rain Down: dots fall from above canvas with gravity + bounce
+    // 2. Rain Down
     function animRain(layout, targets, totalFrames, onDone) {
       var w = layout.w, h = layout.h;
-      // Each dot starts above the canvas, random delay
       for (var i = 0; i < targets.length; i++) {
         targets[i].startY = -20 - Math.random() * h * 0.5;
-        targets[i].delay = Math.random() * 0.4; // 0..0.4 of total time
+        targets[i].delay = Math.random() * 0.4;
       }
       var frame = 0;
       function step() {
@@ -961,16 +1370,14 @@
       animRaf = requestAnimationFrame(step);
     }
 
-    // 3. Typewriter: dots appear letter by letter left to right
+    // 3. Typewriter
     function animTypewriter(layout, targets, totalFrames, onDone) {
       var w = layout.w, h = layout.h;
       var DS = layout.DS;
-      // Measure per-character column boundaries for each line
       var mc = document.createElement('canvas').getContext('2d');
       mc.font = fontStr();
 
-      // Build character column boundaries per line
-      var charBounds = []; // [lineIndex] = [ { startCol, endCol }, ... ]
+      var charBounds = [];
       for (var li = 0; li < layout.lines.length; li++) {
         var lineText = layout.lines[li] || ' ';
         var lw = layout.lineWidths[li];
@@ -990,7 +1397,6 @@
         charBounds.push(bounds);
       }
 
-      // Assign each target dot a character index for ordering
       var totalChars = 0;
       for (var li = 0; li < charBounds.length; li++) totalChars += charBounds[li].length;
 
@@ -1003,10 +1409,8 @@
             charIdx = ci;
             break;
           }
-          // If after last bound, use last char
           if (ci === lineBounds.length - 1) charIdx = ci;
         }
-        // Global character order: line offset + char index
         var lineCharOffset = 0;
         for (var pl = 0; pl < t.lineIndex; pl++) lineCharOffset += charBounds[pl].length;
         t.charOrder = lineCharOffset + charIdx;
@@ -1021,7 +1425,6 @@
         var dots = [];
         for (var i = 0; i < targets.length; i++) {
           var d = targets[i];
-          // Each character appears with stagger: charOrder / totalChars
           var charT = d.charOrder / Math.max(1, totalChars);
           var localT = clamp((t - charT * 0.7) / 0.3, 0, 1);
           dots.push({ x: d.cx, y: d.cy, opacity: localT });
@@ -1033,7 +1436,7 @@
       animRaf = requestAnimationFrame(step);
     }
 
-    // 4. Row Scan: dots light up row by row, top to bottom
+    // 4. Row Scan
     function animRowScan(layout, targets, totalFrames, onDone) {
       var w = layout.w, h = layout.h;
       var frame = 0;
@@ -1056,7 +1459,7 @@
       animRaf = requestAnimationFrame(step);
     }
 
-    // 5. Column Scan: dots light up column by column, left to right
+    // 5. Column Scan
     function animColScan(layout, targets, totalFrames, onDone) {
       var w = layout.w, h = layout.h;
       var frame = 0;
@@ -1079,11 +1482,10 @@
       animRaf = requestAnimationFrame(step);
     }
 
-    // 6. Center Burst: all dots start at center, radiate outward
+    // 6. Center Burst
     function animCenterBurst(layout, targets, totalFrames, onDone) {
       var w = layout.w, h = layout.h;
       var centerX = w / 2, centerY = h / 2;
-      // Calculate max distance for normalization
       var maxDist = 0;
       for (var i = 0; i < targets.length; i++) {
         var dx = targets[i].cx - centerX;
@@ -1104,7 +1506,6 @@
         var dots = [];
         for (var i = 0; i < targets.length; i++) {
           var d = targets[i];
-          // Dots further from center arrive later
           var distFrac = d.distFromCenter / maxDist;
           var localT = clamp((eased - distFrac * 0.3) / 0.7, 0, 1);
           var x = centerX + (d.cx - centerX) * localT;
@@ -1119,7 +1520,7 @@
       animRaf = requestAnimationFrame(step);
     }
 
-    // 7. Fade In: all dots fade from 0 to 1 simultaneously
+    // 7. Fade In
     function animFadeIn(layout, targets, totalFrames, onDone) {
       var w = layout.w, h = layout.h;
       var frame = 0;
@@ -1139,17 +1540,14 @@
       animRaf = requestAnimationFrame(step);
     }
 
-    // 8. Random Fill: dots appear in random order, small clusters of 3-5
+    // 8. Random Fill
     function animRandomFill(layout, targets, totalFrames, onDone) {
       var w = layout.w, h = layout.h;
-      // Build random order with small clusters
       var indices = [];
       for (var i = 0; i < targets.length; i++) indices.push(i);
       shuffle(indices);
 
-      // Assign each dot a reveal time based on shuffled order
       for (var i = 0; i < indices.length; i++) {
-        // Cluster: groups of ~4 dots appear together
         var clusterIndex = Math.floor(i / 4);
         var totalClusters = Math.ceil(targets.length / 4);
         targets[indices[i]].revealT = clusterIndex / Math.max(1, totalClusters);
@@ -1165,7 +1563,6 @@
         for (var i = 0; i < targets.length; i++) {
           var d = targets[i];
           var on = t >= d.revealT;
-          // Quick fade-in when revealed
           var localT = on ? clamp((t - d.revealT) / 0.05, 0, 1) : 0;
           dots.push({ x: d.cx, y: d.cy, opacity: localT });
         }
@@ -1176,7 +1573,7 @@
       animRaf = requestAnimationFrame(step);
     }
 
-    // 9. Wave: dots appear in a wave sweeping left to right
+    // 9. Wave
     function animWave(layout, targets, totalFrames, onDone) {
       var w = layout.w, h = layout.h;
       var frame = 0;
@@ -1191,7 +1588,6 @@
           var colFrac = d.col / Math.max(1, layout.cols - 1);
           var delay = colFrac * 0.7;
           var localT = clamp((t - delay) / 0.3, 0, 1);
-          // Smooth sine ease
           var eased = localT < 1 ? 0.5 * (1 - Math.cos(localT * Math.PI)) : 1;
           dots.push({ x: d.cx, y: d.cy, opacity: eased });
         }
@@ -1202,28 +1598,22 @@
       animRaf = requestAnimationFrame(step);
     }
 
-    // 10. Spiral In: dots appear from outside edges, spiraling inward
+    // 10. Spiral In
     function animSpiral(layout, targets, totalFrames, onDone) {
       var w = layout.w, h = layout.h;
       var centerX = w / 2, centerY = h / 2;
 
-      // Calculate angle and distance from center for each dot
       for (var i = 0; i < targets.length; i++) {
         var dx = targets[i].cx - centerX;
         var dy = targets[i].cy - centerY;
-        var angle = Math.atan2(dy, dx); // -PI..PI
+        var angle = Math.atan2(dy, dx);
         var dist = Math.sqrt(dx * dx + dy * dy);
-        // Spiral order: combine angle and distance
-        // Normalize angle to 0..1
         var normAngle = (angle + Math.PI) / (2 * Math.PI);
-        // Higher distance = appears first (spiraling inward)
         var maxDist = Math.sqrt(w * w / 4 + h * h / 4);
         var normDist = dist / (maxDist || 1);
-        // Spiral parameter: distance descending + angle rotation
         targets[i].spiralOrder = (1 - normDist) + normAngle * 0.3;
       }
 
-      // Normalize spiral order to 0..1
       var minOrder = Infinity, maxOrder = -Infinity;
       for (var i = 0; i < targets.length; i++) {
         if (targets[i].spiralOrder < minOrder) minOrder = targets[i].spiralOrder;
@@ -1272,12 +1662,10 @@
     }
 
     // ════════════════════════════════════════════════
-    // CYCLE TRANSITION ANIMATIONS (5 styles)
-    // Each takes (layout, fromGrid, toGrid, cols, rows, transFrames, onDone)
-    // For cycle mode, we use single-line layout (first line only).
+    // CYCLE TRANSITION ANIMATIONS (5 styles for dot grid)
     // ════════════════════════════════════════════════
 
-    // 1. Crossfade: per-dot staggered opacity fade
+    // 1. Crossfade
     function transCrossfade(layout, fromGrid, toGrid, cols, rows, transFrames, onDone) {
       var DS = layout.DS, DR = layout.DR;
       var w = cols * DS, h = rows * DS;
@@ -1327,13 +1715,12 @@
       animRaf = requestAnimationFrame(step);
     }
 
-    // 2. Scramble: dissolve to random spots, pause, reform to new word
+    // 2. Scramble
     function transScramble(layout, fromGrid, toGrid, cols, rows, transFrames, onDone) {
       var DS = layout.DS, DR = layout.DR;
       var w = cols * DS, h = rows * DS;
       var inColor = inactiveRgba();
 
-      // Collect from-dots and to-dots
       var fromDots = [], toDots = [];
       for (var r = 0; r < rows; r++) {
         for (var c = 0; c < cols; c++) {
@@ -1345,7 +1732,6 @@
         }
       }
 
-      // Random intermediate positions (random grid spots)
       var maxDots = Math.max(fromDots.length, toDots.length);
       var midPositions = [];
       for (var i = 0; i < maxDots; i++) {
@@ -1355,18 +1741,15 @@
         });
       }
 
-      // Pad arrays to same length
       while (fromDots.length < maxDots) fromDots.push(fromDots[fromDots.length - 1] || { cx: w / 2, cy: h / 2 });
       while (toDots.length < maxDots) toDots.push(toDots[toDots.length - 1] || { cx: w / 2, cy: h / 2 });
 
-      // 3 phases: dissolve (0..0.35), pause (0.35..0.55), reform (0.55..1.0)
       var frame = 0;
       function step() {
         frame++;
         var t = frame / transFrames;
         ctx.clearRect(0, 0, w, h);
 
-        // Draw bg
         for (var r = 0; r < rows; r++) {
           for (var c = 0; c < cols; c++) {
             ctx.fillStyle = inColor;
@@ -1381,17 +1764,14 @@
         for (var i = 0; i < maxDots; i++) {
           var x, y, opacity = 1;
           if (t < 0.35) {
-            // Dissolve: from -> mid
             var p = easeOutCubic(t / 0.35);
             x = fromDots[i].cx + (midPositions[i].cx - fromDots[i].cx) * p;
             y = fromDots[i].cy + (midPositions[i].cy - fromDots[i].cy) * p;
           } else if (t < 0.55) {
-            // Pause at mid positions
             x = midPositions[i].cx;
             y = midPositions[i].cy;
             opacity = 0.6 + 0.4 * Math.sin((t - 0.35) / 0.2 * Math.PI);
           } else {
-            // Reform: mid -> to
             var p = easeOutCubic((t - 0.55) / 0.45);
             x = midPositions[i].cx + (toDots[i].cx - midPositions[i].cx) * p;
             y = midPositions[i].cy + (toDots[i].cy - midPositions[i].cy) * p;
@@ -1406,7 +1786,7 @@
       animRaf = requestAnimationFrame(step);
     }
 
-    // 3. Slide Left: current word slides left out, new slides in from right
+    // 3. Slide Left
     function transSlide(layout, fromGrid, toGrid, cols, rows, transFrames, onDone) {
       var DS = layout.DS, DR = layout.DR;
       var w = cols * DS, h = rows * DS;
@@ -1419,7 +1799,6 @@
         var eased = easeOutCubic(t);
         ctx.clearRect(0, 0, w, h);
 
-        // Draw bg grid
         for (var r = 0; r < rows; r++) {
           for (var c = 0; c < cols; c++) {
             ctx.fillStyle = inColor;
@@ -1430,10 +1809,8 @@
           }
         }
 
-        // From word: slides left, fades out
         var fromOffset = -w * eased;
         var fromOpacity = 1 - eased;
-        // To word: slides in from right, fades in
         var toOffset = w * (1 - eased);
         var toOpacity = eased;
 
@@ -1473,14 +1850,13 @@
       animRaf = requestAnimationFrame(step);
     }
 
-    // 4. Dissolve Reform: current dots scatter outward, new dots converge inward
+    // 4. Dissolve Reform
     function transDissolve(layout, fromGrid, toGrid, cols, rows, transFrames, onDone) {
       var DS = layout.DS, DR = layout.DR;
       var w = cols * DS, h = rows * DS;
       var inColor = inactiveRgba();
       var centerX = w / 2, centerY = h / 2;
 
-      // Collect from and to dots with scatter targets
       var fromDots = [], toDots = [];
       for (var r = 0; r < rows; r++) {
         for (var c = 0; c < cols; c++) {
@@ -1492,7 +1868,6 @@
             var dist = Math.sqrt(dx * dx + dy * dy) || 1;
             fromDots.push({
               cx: cx, cy: cy,
-              // Scatter outward
               scatterX: cx + (dx / dist) * w * 0.6,
               scatterY: cy + (dy / dist) * h * 0.6,
             });
@@ -1502,7 +1877,6 @@
             var dist = Math.sqrt(dx * dx + dy * dy) || 1;
             toDots.push({
               cx: cx, cy: cy,
-              // Start from scattered position
               startX: cx + (dx / dist) * w * 0.6,
               startY: cy + (dy / dist) * h * 0.6,
             });
@@ -1516,7 +1890,6 @@
         var t = frame / transFrames;
         ctx.clearRect(0, 0, w, h);
 
-        // Draw bg
         for (var r = 0; r < rows; r++) {
           for (var c = 0; c < cols; c++) {
             ctx.fillStyle = inColor;
@@ -1527,7 +1900,6 @@
           }
         }
 
-        // Phase 1: from dots scatter outward (0..0.5)
         if (t < 0.55) {
           var p = easeOutCubic(t / 0.55);
           for (var i = 0; i < fromDots.length; i++) {
@@ -1545,7 +1917,6 @@
           }
         }
 
-        // Phase 2: to dots converge inward (0.45..1.0)
         if (t > 0.45) {
           var p = easeOutCubic((t - 0.45) / 0.55);
           for (var i = 0; i < toDots.length; i++) {
@@ -1570,13 +1941,12 @@
       animRaf = requestAnimationFrame(step);
     }
 
-    // 5. Pixel Flip: shared dots stay, differing dots flip randomly
+    // 5. Pixel Flip
     function transPixelFlip(layout, fromGrid, toGrid, cols, rows, transFrames, onDone) {
       var DS = layout.DS, DR = layout.DR;
       var w = cols * DS, h = rows * DS;
       var inColor = inactiveRgba();
 
-      // Identify shared, going-off, and coming-on dots
       var shared = [], goingOff = [], comingOn = [];
       for (var r = 0; r < rows; r++) {
         for (var c = 0; c < cols; c++) {
@@ -1597,7 +1967,6 @@
         var t = frame / transFrames;
         ctx.clearRect(0, 0, w, h);
 
-        // Draw bg
         for (var r = 0; r < rows; r++) {
           for (var c = 0; c < cols; c++) {
             ctx.fillStyle = inColor;
@@ -1608,7 +1977,6 @@
           }
         }
 
-        // Shared: always on
         for (var i = 0; i < shared.length; i++) {
           ctx.fillStyle = S.activeColor;
           ctx.globalAlpha = 1;
@@ -1617,7 +1985,6 @@
           ctx.fill();
         }
 
-        // Going off: flip off at their flipT
         for (var i = 0; i < goingOff.length; i++) {
           var d = goingOff[i];
           if (t < d.flipT) {
@@ -1629,7 +1996,6 @@
           }
         }
 
-        // Coming on: flip on at their flipT
         for (var i = 0; i < comingOn.length; i++) {
           var d = comingOn[i];
           if (t >= d.flipT) {
@@ -1661,15 +2027,15 @@
     }
 
     // ════════════════════════════════════════════════
-    // RENDER: STATIC
+    // RENDER: DOT GRID — STATIC
     // ════════════════════════════════════════════════
-    function renderStatic() {
+    function renderDotStatic() {
       stopAnimation();
+      showDotMode();
       var layout = computeLayout(S.text);
       setupCanvas(layout);
       drawStaticFrame(layout);
 
-      // Start idle animation if set
       if (S.idleAnimation !== 'none') {
         var targets = getTargets(layout);
         startIdleLoop(layout, targets);
@@ -1677,20 +2043,19 @@
     }
 
     // ════════════════════════════════════════════════
-    // RENDER: ANIMATE (load-in)
+    // RENDER: DOT GRID — ANIMATE (load-in)
     // ════════════════════════════════════════════════
-    function renderAnimate() {
+    function renderDotAnimate() {
       stopAnimation();
+      showDotMode();
       var layout = computeLayout(S.text);
       setupCanvas(layout);
       var targets = getTargets(layout);
 
-      // Draw initial background
       ctx.clearRect(0, 0, layout.w, layout.h);
       drawBgGrid(layout);
 
       dispatchLoadIn(S.loadInStyle, layout, targets, S.animFrames, function() {
-        // Animation done: snap to clean final state, then start idle
         drawStaticFrame(layout);
         if (S.idleAnimation !== 'none') {
           startIdleLoop(layout, targets);
@@ -1699,14 +2064,14 @@
     }
 
     // ════════════════════════════════════════════════
-    // RENDER: CYCLE
+    // RENDER: DOT GRID — CYCLE
     // ════════════════════════════════════════════════
-    function renderCycle() {
+    function renderDotCycle() {
       stopAnimation();
+      showDotMode();
       currentCycleIndex = 0;
 
       var words = [S.text || ' ', S.cycleWord || ' '];
-      // For multi-line, only first line cycles
       var word1 = words[0].split('\n')[0];
       var word2 = words[1].split('\n')[0];
       var cycleWords = [word1, word2];
@@ -1731,7 +2096,6 @@
       canvas.style.height = h + 'px';
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      // Build a layout-like object for the cycle (single line)
       var cycleLayout = {
         lines: [''],
         fontSize: fontSize,
@@ -1780,7 +2144,6 @@
         ctx.globalAlpha = 1;
       }
 
-      // Get targets for a grid (for idle animation)
       function getTargetsForGrid(grid) {
         var targets = [];
         for (var r = 0; r < rows; r++) {
@@ -1803,7 +2166,6 @@
       function startCycleIdle(grid) {
         if (S.idleAnimation === 'none') return;
         var targets = getTargetsForGrid(grid);
-        // Temporarily set layout for idle loop
         cycleLayout.allGrids = [grid];
         startIdleLoop(cycleLayout, targets);
       }
@@ -1821,7 +2183,6 @@
         dispatchTransition(S.transitionStyle, cycleLayout, grids[from], grids[to], cols, rows, TRANS_FRAMES, function() {
           currentCycleIndex = nextIdx;
           drawWord(grids[cycleWords[currentCycleIndex]]);
-          // Start idle during hold
           startCycleIdle(grids[cycleWords[currentCycleIndex]]);
           animTimeout = setTimeout(cycle, S.holdMs);
         });
@@ -1829,8 +2190,54 @@
 
       bgEl.style.background = S.bgColor;
       drawWord(grids[cycleWords[0]]);
-      // Start idle during initial hold
       startCycleIdle(grids[cycleWords[0]]);
+      animTimeout = setTimeout(cycle, S.holdMs);
+    }
+
+    // ════════════════════════════════════════════════
+    // RENDER: ASCII — STATIC
+    // ════════════════════════════════════════════════
+    function renderAsciiStaticMode() {
+      stopAnimation();
+      renderAsciiStatic(S.text);
+    }
+
+    // ════════════════════════════════════════════════
+    // RENDER: ASCII — ANIMATE (glitch-in)
+    // ════════════════════════════════════════════════
+    function renderAsciiAnimate() {
+      stopAnimation();
+      renderAsciiGlitchIn(S.text, null);
+    }
+
+    // ════════════════════════════════════════════════
+    // RENDER: ASCII — CYCLE (glitch transition)
+    // ════════════════════════════════════════════════
+    function renderAsciiCycle() {
+      stopAnimation();
+      showAsciiMode();
+      applyAsciiColors();
+      currentCycleIndex = 0;
+
+      var word1 = (S.text || ' ').split('\n')[0];
+      var word2 = (S.cycleWord || ' ').split('\n')[0];
+      var cycleWords = [word1, word2];
+
+      // Show first word
+      var lines = rasterizeAscii(cycleWords[0], S.renderMode);
+      asciiPre.textContent = lines.join('\n');
+
+      function cycle() {
+        var from = cycleWords[currentCycleIndex];
+        var nextIdx = (currentCycleIndex + 1) % cycleWords.length;
+        var to = cycleWords[nextIdx];
+
+        renderAsciiGlitchTransition(from, to, function() {
+          currentCycleIndex = nextIdx;
+          animTimeout = setTimeout(cycle, S.holdMs);
+        });
+      }
+
       animTimeout = setTimeout(cycle, S.holdMs);
     }
 
@@ -1838,14 +2245,70 @@
     // Main render dispatcher
     // ════════════════════════════════════════════════
     function render() {
-      if (S.mode === 'static') renderStatic();
-      else if (S.mode === 'animate') renderAnimate();
-      else if (S.mode === 'cycle') renderCycle();
+      if (S.renderMode === 'dot') {
+        if (S.mode === 'static') renderDotStatic();
+        else if (S.mode === 'animate') renderDotAnimate();
+        else if (S.mode === 'cycle') renderDotCycle();
+      } else {
+        // ASCII modes: block, slim, braille, shadow, line
+        if (S.mode === 'static') renderAsciiStaticMode();
+        else if (S.mode === 'animate') renderAsciiAnimate();
+        else if (S.mode === 'cycle') renderAsciiCycle();
+      }
+    }
+
+    // ════════════════════════════════════════════════
+    // UI VISIBILITY: hide/show controls based on render mode
+    // ════════════════════════════════════════════════
+    function updatePanelVisibility() {
+      var isDot = S.renderMode === 'dot';
+
+      // Grid section: only for dot grid
+      document.getElementById('gridSection').classList.toggle('hidden', !isDot);
+
+      // Grid Dots color: only for dot grid
+      document.getElementById('inactiveColorCtrl').classList.toggle('hidden', !isDot);
+
+      // Idle Effect: only for dot grid
+      document.getElementById('idleCtrl').classList.toggle('hidden', !isDot);
+
+      // Animation sub-controls depend on both renderMode and mode
+      updateAnimUI();
+    }
+
+    function updateAnimUI() {
+      var isDot = S.renderMode === 'dot';
+
+      // Load-In Style: only when mode=animate AND dot grid
+      document.getElementById('loadInCtrl').classList.toggle('hidden', !(S.mode === 'animate' && isDot));
+
+      // Transition Style: only when mode=cycle AND dot grid
+      document.getElementById('transitionCtrl').classList.toggle('hidden', !(S.mode === 'cycle' && isDot));
+
+      // Cycle Word: when mode=cycle (any render mode)
+      document.getElementById('cycleWordCtrl').classList.toggle('hidden', S.mode !== 'cycle');
+
+      // Hold Time: when mode=cycle (any render mode)
+      document.getElementById('holdCtrl').classList.toggle('hidden', S.mode !== 'cycle');
+
+      // Speed: when mode!=static AND dot grid only
+      document.getElementById('speedCtrl').classList.toggle('hidden', !(S.mode !== 'static' && isDot));
     }
 
     // ════════════════════════════════════════════════
     // UI BINDINGS
     // ════════════════════════════════════════════════
+
+    // ── Render Mode ──
+    document.querySelectorAll('[data-render]').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('[data-render]').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        S.renderMode = btn.dataset.render;
+        updatePanelVisibility();
+        render();
+      });
+    });
 
     // ── Presets ──
     var presetsEl = document.getElementById('presets');
@@ -1896,14 +2359,6 @@
     });
 
     // ── Animation mode ──
-    function updateAnimUI() {
-      document.getElementById('loadInCtrl').classList.toggle('hidden', S.mode !== 'animate');
-      document.getElementById('transitionCtrl').classList.toggle('hidden', S.mode !== 'cycle');
-      document.getElementById('cycleWordCtrl').classList.toggle('hidden', S.mode !== 'cycle');
-      document.getElementById('holdCtrl').classList.toggle('hidden', S.mode !== 'cycle');
-      document.getElementById('speedCtrl').classList.toggle('hidden', S.mode === 'static');
-    }
-
     document.querySelectorAll('[data-mode]').forEach(function(btn) {
       btn.addEventListener('click', function() {
         document.querySelectorAll('[data-mode]').forEach(function(b) { b.classList.remove('active'); });
@@ -1954,7 +2409,11 @@
     document.getElementById('playBtn').addEventListener('click', function() { render(); });
     document.getElementById('resetBtn').addEventListener('click', function() {
       stopAnimation();
-      renderStatic();
+      if (S.renderMode === 'dot') {
+        renderDotStatic();
+      } else {
+        renderAsciiStatic(S.text);
+      }
     });
 
     // ── Font ──
@@ -2018,6 +2477,7 @@
     document.getElementById('exportConfig').addEventListener('click', function() {
       var config = {
         text: S.text,
+        renderMode: S.renderMode,
         mode: S.mode,
         loadInStyle: S.loadInStyle,
         transitionStyle: S.transitionStyle,
@@ -2041,24 +2501,57 @@
 
     document.getElementById('exportAttrs').addEventListener('click', function() {
       var attrs = 'data-dot-matrix="' + S.mode + '"';
+      attrs += '\ndata-render-mode="' + S.renderMode + '"';
       if (S.mode === 'cycle') {
         attrs += '\ndata-words="' + S.text.split('\n')[0] + ',' + S.cycleWord + '"';
-        attrs += '\ndata-transition="' + S.transitionStyle + '"';
+        if (S.renderMode === 'dot') attrs += '\ndata-transition="' + S.transitionStyle + '"';
       } else {
         attrs += '\ndata-word="' + S.text.split('\n')[0] + '"';
       }
-      if (S.mode === 'animate') {
+      if (S.mode === 'animate' && S.renderMode === 'dot') {
         attrs += '\ndata-load-in="' + S.loadInStyle + '"';
         attrs += '\ndata-animation-frames="' + S.animFrames + '"';
       }
       attrs += '\ndata-active-color="' + S.activeColor + '"';
-      attrs += '\ndata-inactive-color="' + inactiveRgba() + '"';
-      if (S.idleAnimation !== 'none') attrs += '\ndata-idle="' + S.idleAnimation + '"';
+      if (S.renderMode === 'dot') {
+        attrs += '\ndata-inactive-color="' + inactiveRgba() + '"';
+        if (S.idleAnimation !== 'none') attrs += '\ndata-idle="' + S.idleAnimation + '"';
+      }
       if (S.mode === 'cycle') attrs += '\ndata-hold="' + S.holdMs + '"';
       navigator.clipboard.writeText(attrs).then(function() { showToast('Attributes copied'); });
     });
 
     document.getElementById('exportPng').addEventListener('click', function() {
+      if (S.renderMode !== 'dot') {
+        // For ASCII modes, create a temporary canvas from the pre content
+        var preText = asciiPre.textContent;
+        var tmpCanvas = document.createElement('canvas');
+        var tmpCtx = tmpCanvas.getContext('2d');
+        var lines = preText.split('\n');
+        tmpCtx.font = '10px "JetBrains Mono", monospace';
+        var maxW = 0;
+        for (var i = 0; i < lines.length; i++) {
+          var lw = tmpCtx.measureText(lines[i]).width;
+          if (lw > maxW) maxW = lw;
+        }
+        var lineH = 12;
+        tmpCanvas.width = Math.ceil(maxW) + 20;
+        tmpCanvas.height = lines.length * lineH + 20;
+        tmpCtx.fillStyle = S.bgColor;
+        tmpCtx.fillRect(0, 0, tmpCanvas.width, tmpCanvas.height);
+        tmpCtx.font = '10px "JetBrains Mono", monospace';
+        tmpCtx.fillStyle = S.activeColor;
+        tmpCtx.textBaseline = 'top';
+        for (var i = 0; i < lines.length; i++) {
+          tmpCtx.fillText(lines[i], 10, 10 + i * lineH);
+        }
+        var link = document.createElement('a');
+        link.download = 'ascii-art.png';
+        link.href = tmpCanvas.toDataURL('image/png');
+        link.click();
+        showToast('PNG downloaded');
+        return;
+      }
       stopAnimation();
       var layout = computeLayout(S.text);
       setupCanvas(layout);
@@ -2071,17 +2564,35 @@
     });
 
     document.getElementById('exportCSS').addEventListener('click', function() {
-      var css = '.dot-matrix-container {\n';
-      css += '  background: ' + S.bgColor + ';\n';
-      css += '  font-family: ' + S.fontFamily + ', system-ui, sans-serif;\n';
-      css += '  font-size: ' + S.fontSize + 'px;\n';
-      css += '  font-weight: ' + S.fontWeight + ';\n';
-      css += '}';
+      var css;
+      if (S.renderMode !== 'dot') {
+        css = '.ascii-art {\n';
+        css += '  font-family: "JetBrains Mono", monospace;\n';
+        css += '  font-size: 10px;\n';
+        css += '  line-height: 1.15;\n';
+        css += '  white-space: pre;\n';
+        css += '  color: ' + S.activeColor + ';\n';
+        var rgb = hexToRgb(S.activeColor);
+        css += '  text-shadow: 0 0 8px rgba(' + rgb.r + ', ' + rgb.g + ', ' + rgb.b + ', 0.35);\n';
+        css += '  background: ' + S.bgColor + ';\n';
+        css += '  /* render-mode: ' + S.renderMode + ' */\n';
+        css += '}';
+      } else {
+        css = '.dot-matrix-container {\n';
+        css += '  background: ' + S.bgColor + ';\n';
+        css += '  font-family: ' + S.fontFamily + ', system-ui, sans-serif;\n';
+        css += '  font-size: ' + S.fontSize + 'px;\n';
+        css += '  font-weight: ' + S.fontWeight + ';\n';
+        css += '}';
+      }
       navigator.clipboard.writeText(css).then(function() { showToast('CSS copied'); });
     });
 
     // ── Init ──
-    document.fonts.ready.then(render);
+    document.fonts.ready.then(function() {
+      updatePanelVisibility();
+      render();
+    });
     window.addEventListener('resize', render);
 
   })();
