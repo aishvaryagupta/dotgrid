@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dot Matrix Text — Cycle Mode</title>
+
+  <!-- Google Font: Space Grotesk -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <!-- Dot Matrix CSS (optional — JS auto-injects if missing) -->
+  <link rel="stylesheet" href="../dot-matrix-text.css">
+
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0a0a0a;
+      color: #f5f5f7;
+      font-family: "Space Grotesk", system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .hero {
+      text-align: center;
+      padding: 2rem;
+      max-width: 900px;
+    }
+
+    .hero-headline {
+      font-size: clamp(2.5rem, 6vw, 4.5rem);
+      font-weight: 700;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+    }
+
+    .hero-sub {
+      margin-top: 1.5rem;
+      font-size: 1.125rem;
+      color: rgba(245, 245, 247, 0.5);
+      max-width: 480px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="hero">
+    <h1 class="hero-headline">
+      Learn to
+      <!-- Cycle mode: inline canvas that swaps between "ship" and "build" -->
+      <span data-dot-matrix="cycle"
+            data-words="ship,build"
+            data-active-color="#ff5d22"
+            data-inactive-color="rgba(255,93,34,0.15)"></span>
+      what you design.
+    </h1>
+    <p class="hero-sub">
+      A hands-on program for designers who want to bring their own ideas to life
+      — no hand-off required.
+    </p>
+  </div>
+
+  <!-- Dot Matrix JS -->
+  <script src="../dot-matrix-text.js"></script>
+
+</body>
+</html>

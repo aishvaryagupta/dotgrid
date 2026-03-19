@@ -1,0 +1,30 @@
+/**
+ * DotMatrix Text — Base Styles
+ *
+ * Minimal CSS for proper alignment of dot-matrix canvas elements.
+ * The JS library will auto-inject these rules if this stylesheet
+ * is not already linked, so including it is optional but recommended
+ * for avoiding a brief flash of unstyled content.
+ */
+
+[data-dot-matrix] {
+  display: inline-block;
+  vertical-align: baseline;
+  position: relative;
+  margin: 0;
+}
+
+[data-dot-matrix] canvas {
+  display: inline-block;
+  pointer-events: none;
+  vertical-align: -0.25em;
+}
+
+[data-dot-matrix="headline"] {
+  display: block;
+}
+
+[data-dot-matrix="headline"] canvas {
+  display: block;
+  vertical-align: baseline;
+}

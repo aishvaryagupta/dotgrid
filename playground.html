@@ -1,0 +1,2090 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dot Matrix Playground</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Chakra+Petch:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: "Inter", system-ui, sans-serif;
+      background: #0a0a0b;
+      color: #f5f5f7;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+    }
+
+    /* ── Preview ── */
+    .preview {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .preview__bg {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      transition: background 150ms;
+    }
+    .preview__canvas-wrap {
+      position: relative;
+      z-index: 1;
+    }
+    .preview canvas { display: block; }
+
+    /* ── Panel ── */
+    .panel {
+      width: 330px;
+      height: 100vh;
+      overflow-y: auto;
+      border-left: 1px solid #1a1a1a;
+      background: #111112;
+      flex-shrink: 0;
+    }
+    .panel::-webkit-scrollbar { width: 4px; }
+    .panel::-webkit-scrollbar-track { background: transparent; }
+    .panel::-webkit-scrollbar-thumb { background: #262626; border-radius: 2px; }
+
+    .panel__header {
+      padding: 20px 20px 16px;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    .panel__title {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: #ff5d22;
+      margin-bottom: 4px;
+    }
+    .panel__subtitle {
+      font-size: 12px;
+      color: #525252;
+    }
+
+    .section {
+      padding: 16px 20px;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    .section__label {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: #525252;
+      margin-bottom: 14px;
+    }
+
+    /* ── Controls ── */
+    .ctrl { margin-bottom: 14px; }
+    .ctrl:last-child { margin-bottom: 0; }
+    .ctrl__top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+    .ctrl__name { font-size: 12px; color: #a3a3a3; }
+    .ctrl__val {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11px;
+      color: #525252;
+      min-width: 40px;
+      text-align: right;
+    }
+
+    /* Text */
+    .ctrl__text, .ctrl__textarea {
+      width: 100%;
+      background: #0a0a0b;
+      border: 1px solid #262626;
+      color: #f5f5f7;
+      font-family: "Inter", system-ui, sans-serif;
+      font-size: 14px;
+      padding: 10px 12px;
+      outline: none;
+      transition: border-color 120ms;
+    }
+    .ctrl__textarea {
+      resize: vertical;
+      min-height: 60px;
+      line-height: 1.5;
+    }
+    .ctrl__text:focus, .ctrl__textarea:focus { border-color: #ff5d22; }
+
+    /* Select */
+    .ctrl__select {
+      width: 100%;
+      background: #0a0a0b;
+      border: 1px solid #262626;
+      color: #f5f5f7;
+      font-family: "Inter", system-ui, sans-serif;
+      font-size: 13px;
+      padding: 8px 10px;
+      outline: none;
+      cursor: pointer;
+      -webkit-appearance: none;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23525252' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+    }
+    .ctrl__select:focus { border-color: #ff5d22; }
+
+    /* Slider */
+    .ctrl__slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 4px;
+      background: #262626;
+      border-radius: 2px;
+      outline: none;
+      cursor: pointer;
+    }
+    .ctrl__slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: #f5f5f7;
+      border: 2px solid #0a0a0b;
+      cursor: pointer;
+    }
+    .ctrl__slider::-webkit-slider-thumb:hover { background: #ff5d22; }
+    .ctrl__slider::-moz-range-thumb {
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: #f5f5f7;
+      border: 2px solid #0a0a0b;
+    }
+
+    /* Color */
+    .ctrl__color-row { display: flex; align-items: center; gap: 10px; }
+    .ctrl__color {
+      -webkit-appearance: none;
+      width: 32px; height: 32px;
+      border: 1px solid #262626;
+      border-radius: 4px;
+      cursor: pointer;
+      background: none;
+      padding: 0;
+    }
+    .ctrl__color::-webkit-color-swatch-wrapper { padding: 2px; }
+    .ctrl__color::-webkit-color-swatch { border: none; border-radius: 2px; }
+    .ctrl__hex {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 12px;
+      color: #a3a3a3;
+      background: #0a0a0b;
+      border: 1px solid #262626;
+      padding: 6px 8px;
+      width: 90px;
+      outline: none;
+    }
+    .ctrl__hex:focus { border-color: #ff5d22; }
+    .ctrl__opacity-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 8px;
+    }
+    .ctrl__opacity-row .ctrl__slider { flex: 1; }
+
+    /* Toggle row */
+    .ctrl__toggle-row {
+      display: flex;
+      gap: 4px;
+    }
+    .ctrl__toggle-btn {
+      flex: 1;
+      padding: 7px 0;
+      background: #0a0a0b;
+      border: 1px solid #262626;
+      color: #525252;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+      text-align: center;
+      transition: all 120ms;
+    }
+    .ctrl__toggle-btn.active {
+      background: rgba(255, 93, 34, 0.1);
+      border-color: #ff5d22;
+      color: #ff5d22;
+    }
+
+    /* Button row */
+    .ctrl__btn-row { display: flex; gap: 6px; }
+    .ctrl__btn {
+      flex: 1;
+      padding: 8px 0;
+      background: #0a0a0b;
+      border: 1px solid #262626;
+      color: #a3a3a3;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+      text-align: center;
+      transition: all 120ms;
+    }
+    .ctrl__btn:hover { border-color: #ff5d22; color: #ff5d22; }
+    .ctrl__btn--primary {
+      background: #ff5d22;
+      border-color: #ff5d22;
+      color: #fff;
+    }
+    .ctrl__btn--primary:hover { background: #e5521e; }
+
+    /* Presets */
+    .presets { display: flex; flex-wrap: wrap; gap: 6px; }
+    .preset {
+      width: 40px; height: 40px;
+      border: 1px solid #262626;
+      border-radius: 4px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 120ms;
+    }
+    .preset:hover { border-color: #ff5d22; }
+    .preset.active { border-color: #ff5d22; border-width: 2px; }
+    .preset__dots {
+      position: absolute;
+      inset: 4px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      grid-template-rows: repeat(4, 1fr);
+      gap: 2px;
+    }
+    .preset__dot {
+      border-radius: 50%;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Hidden */
+    .hidden { display: none; }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #262626;
+      color: #f5f5f7;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11px;
+      padding: 10px 20px;
+      border: 1px solid #333;
+      opacity: 0;
+      transition: opacity 200ms;
+      pointer-events: none;
+      z-index: 100;
+    }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+  <!-- Preview -->
+  <div class="preview">
+    <div class="preview__bg" id="previewBg"></div>
+    <div class="preview__canvas-wrap">
+      <canvas id="previewCanvas"></canvas>
+    </div>
+  </div>
+
+  <!-- Panel -->
+  <div class="panel">
+    <div class="panel__header">
+      <div class="panel__title">Dot Matrix</div>
+      <div class="panel__subtitle">Playground</div>
+    </div>
+
+    <!-- Presets -->
+    <div class="section">
+      <div class="section__label">Presets</div>
+      <div class="presets" id="presets"></div>
+    </div>
+
+    <!-- Text -->
+    <div class="section">
+      <div class="section__label">Text</div>
+      <div class="ctrl">
+        <textarea class="ctrl__textarea" id="textInput" rows="2" placeholder="Type anything... (new line for multi-line)">ship</textarea>
+      </div>
+    </div>
+
+    <!-- Animation -->
+    <div class="section">
+      <div class="section__label">Animation</div>
+
+      <!-- Mode toggle -->
+      <div class="ctrl">
+        <div class="ctrl__top"><span class="ctrl__name">Mode</span></div>
+        <div class="ctrl__toggle-row">
+          <button class="ctrl__toggle-btn active" data-mode="static">Static</button>
+          <button class="ctrl__toggle-btn" data-mode="animate">Animate</button>
+          <button class="ctrl__toggle-btn" data-mode="cycle">Cycle</button>
+        </div>
+      </div>
+
+      <!-- Load-In Style (shown when mode=animate) -->
+      <div class="ctrl hidden" id="loadInCtrl">
+        <div class="ctrl__top"><span class="ctrl__name">Load-In Style</span></div>
+        <select class="ctrl__select" id="loadInStyle">
+          <option value="scatter">Scatter &rarr; Form</option>
+          <option value="rain">Rain Down</option>
+          <option value="typewriter">Typewriter</option>
+          <option value="rowscan">Row Scan</option>
+          <option value="colscan">Column Scan</option>
+          <option value="centerburst">Center Burst</option>
+          <option value="fadein">Fade In</option>
+          <option value="randomfill">Random Fill</option>
+          <option value="wave">Wave</option>
+          <option value="spiral">Spiral In</option>
+        </select>
+      </div>
+
+      <!-- Transition Style (shown when mode=cycle) -->
+      <div class="ctrl hidden" id="transitionCtrl">
+        <div class="ctrl__top"><span class="ctrl__name">Transition Style</span></div>
+        <select class="ctrl__select" id="transitionStyle">
+          <option value="crossfade">Crossfade</option>
+          <option value="scramble">Scramble</option>
+          <option value="slide">Slide Left</option>
+          <option value="dissolve">Dissolve &rarr; Reform</option>
+          <option value="pixelflip">Pixel Flip</option>
+        </select>
+      </div>
+
+      <!-- Cycle Word (shown when mode=cycle) -->
+      <div class="ctrl hidden" id="cycleWordCtrl">
+        <div class="ctrl__top"><span class="ctrl__name">Cycle Word</span></div>
+        <input class="ctrl__text" id="cycleWord" type="text" value="build" placeholder="Second word..." />
+      </div>
+
+      <!-- Hold Time (shown when mode=cycle) -->
+      <div class="ctrl hidden" id="holdCtrl">
+        <div class="ctrl__top">
+          <span class="ctrl__name">Hold Time</span>
+          <span class="ctrl__val" id="holdVal">2500ms</span>
+        </div>
+        <input class="ctrl__slider" id="holdSlider" type="range" min="500" max="5000" step="100" value="2500" />
+      </div>
+
+      <!-- Idle Animation (always visible when not hidden) -->
+      <div class="ctrl">
+        <div class="ctrl__top"><span class="ctrl__name">Idle Effect</span></div>
+        <select class="ctrl__select" id="idleAnimation">
+          <option value="none">None</option>
+          <option value="pulse">Pulse</option>
+          <option value="shimmer">Shimmer</option>
+          <option value="flicker">Flicker</option>
+        </select>
+      </div>
+
+      <!-- Speed slider (shown when mode=animate or cycle) -->
+      <div class="ctrl hidden" id="speedCtrl">
+        <div class="ctrl__top">
+          <span class="ctrl__name">Animation Speed</span>
+          <span class="ctrl__val" id="speedVal">60</span>
+        </div>
+        <input class="ctrl__slider" id="speedSlider" type="range" min="10" max="120" step="5" value="60" />
+      </div>
+
+      <!-- Play / Reset buttons -->
+      <div class="ctrl" id="animBtns" style="margin-top: 8px;">
+        <div class="ctrl__btn-row">
+          <button class="ctrl__btn" id="playBtn">Play</button>
+          <button class="ctrl__btn" id="resetBtn">Reset</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Font -->
+    <div class="section">
+      <div class="section__label">Font</div>
+      <div class="ctrl">
+        <div class="ctrl__top"><span class="ctrl__name">Family</span></div>
+        <select class="ctrl__select" id="fontFamily">
+          <option value='"Space Grotesk"' selected>Space Grotesk</option>
+          <option value='"Inter"'>Inter</option>
+          <option value='"JetBrains Mono"'>JetBrains Mono</option>
+          <option value='"Chakra Petch"'>Chakra Petch</option>
+          <option value='"Outfit"'>Outfit</option>
+          <option value='"Syne"'>Syne</option>
+        </select>
+      </div>
+      <div class="ctrl">
+        <div class="ctrl__top">
+          <span class="ctrl__name">Weight</span>
+          <span class="ctrl__val" id="weightVal">700</span>
+        </div>
+        <input class="ctrl__slider" id="weightSlider" type="range" min="400" max="900" step="100" value="700" />
+      </div>
+      <div class="ctrl">
+        <div class="ctrl__top">
+          <span class="ctrl__name">Size</span>
+          <span class="ctrl__val" id="fontSizeVal">64</span>
+        </div>
+        <input class="ctrl__slider" id="fontSizeSlider" type="range" min="24" max="160" step="1" value="64" />
+      </div>
+    </div>
+
+    <!-- Grid -->
+    <div class="section">
+      <div class="section__label">Grid</div>
+      <div class="ctrl">
+        <div class="ctrl__top">
+          <span class="ctrl__name">Dot Spacing</span>
+          <span class="ctrl__val" id="spacingVal">5</span>
+        </div>
+        <input class="ctrl__slider" id="spacingSlider" type="range" min="3" max="14" step="1" value="5" />
+      </div>
+      <div class="ctrl">
+        <div class="ctrl__top">
+          <span class="ctrl__name">Dot Radius</span>
+          <span class="ctrl__val" id="radiusVal">0.36</span>
+        </div>
+        <input class="ctrl__slider" id="radiusSlider" type="range" min="0.10" max="0.50" step="0.01" value="0.36" />
+      </div>
+      <div class="ctrl">
+        <div class="ctrl__top"><span class="ctrl__name">Alignment</span></div>
+        <div class="ctrl__toggle-row">
+          <button class="ctrl__toggle-btn active" data-align="left">Left</button>
+          <button class="ctrl__toggle-btn" data-align="center">Center</button>
+          <button class="ctrl__toggle-btn" data-align="right">Right</button>
+        </div>
+      </div>
+      <div class="ctrl">
+        <div class="ctrl__top">
+          <span class="ctrl__name">Line Gap</span>
+          <span class="ctrl__val" id="lineGapVal">0.20</span>
+        </div>
+        <input class="ctrl__slider" id="lineGapSlider" type="range" min="0" max="0.6" step="0.02" value="0.20" />
+      </div>
+    </div>
+
+    <!-- Colors -->
+    <div class="section">
+      <div class="section__label">Colors</div>
+      <div class="ctrl">
+        <div class="ctrl__top"><span class="ctrl__name">Active Dots</span></div>
+        <div class="ctrl__color-row">
+          <input class="ctrl__color" id="activeColor" type="color" value="#ff5d22" />
+          <input class="ctrl__hex" id="activeHex" type="text" value="#ff5d22" />
+        </div>
+      </div>
+      <div class="ctrl">
+        <div class="ctrl__top"><span class="ctrl__name">Grid Dots</span></div>
+        <div class="ctrl__color-row">
+          <input class="ctrl__color" id="inactiveColor" type="color" value="#ff5d22" />
+          <input class="ctrl__hex" id="inactiveHex" type="text" value="#ff5d22" />
+        </div>
+        <div class="ctrl__opacity-row">
+          <span class="ctrl__name" style="font-size: 11px; white-space: nowrap;">Opacity</span>
+          <input class="ctrl__slider" id="inactiveOpacity" type="range" min="0" max="0.5" step="0.01" value="0.15" />
+          <span class="ctrl__val" id="opacityVal">0.15</span>
+        </div>
+      </div>
+      <div class="ctrl">
+        <div class="ctrl__top"><span class="ctrl__name">Background</span></div>
+        <div class="ctrl__color-row">
+          <input class="ctrl__color" id="bgColor" type="color" value="#0a0a0b" />
+          <input class="ctrl__hex" id="bgHex" type="text" value="#0a0a0b" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Export -->
+    <div class="section">
+      <div class="section__label">Export</div>
+      <div class="ctrl">
+        <div class="ctrl__btn-row">
+          <button class="ctrl__btn ctrl__btn--primary" id="exportConfig">Copy Config</button>
+          <button class="ctrl__btn" id="exportAttrs">Copy Attrs</button>
+        </div>
+      </div>
+      <div class="ctrl">
+        <div class="ctrl__btn-row">
+          <button class="ctrl__btn" id="exportPng">Download PNG</button>
+          <button class="ctrl__btn" id="exportCSS">Copy CSS</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">Copied</div>
+
+  <script>
+  (function() {
+
+    // ════════════════════════════════════════════════
+    // Elements
+    // ════════════════════════════════════════════════
+    var canvas = document.getElementById('previewCanvas');
+    var ctx = canvas.getContext('2d');
+    var bgEl = document.getElementById('previewBg');
+    var toastEl = document.getElementById('toast');
+
+    // ════════════════════════════════════════════════
+    // State
+    // ════════════════════════════════════════════════
+    var S = {
+      text: 'ship',
+      mode: 'static',             // static | animate | cycle
+      loadInStyle: 'scatter',     // scatter|rain|typewriter|rowscan|colscan|centerburst|fadein|randomfill|wave|spiral
+      transitionStyle: 'crossfade', // crossfade|scramble|slide|dissolve|pixelflip
+      idleAnimation: 'none',      // none|pulse|shimmer|flicker
+      cycleWord: 'build',
+      holdMs: 2500,
+      animFrames: 60,
+      fontFamily: '"Space Grotesk"',
+      fontWeight: '700',
+      fontSize: 64,
+      dotSpacing: 5,
+      dotRadiusRatio: 0.36,
+      align: 'left',
+      lineGap: 0.20,
+      activeColor: '#ff5d22',
+      inactiveColor: '#ff5d22',
+      inactiveOpacity: 0.15,
+      bgColor: '#0a0a0b',
+    };
+
+    // ════════════════════════════════════════════════
+    // Presets
+    // ════════════════════════════════════════════════
+    var PRESETS = [
+      { name: 'Default',     activeColor: '#ff5d22', inactiveColor: '#ff5d22', inactiveOpacity: 0.15, bgColor: '#0a0a0b' },
+      { name: 'White',       activeColor: '#f5f5f7', inactiveColor: '#f5f5f7', inactiveOpacity: 0.08, bgColor: '#0a0a0b' },
+      { name: 'Neon Green',  activeColor: '#22c55e', inactiveColor: '#22c55e', inactiveOpacity: 0.12, bgColor: '#0a0a0b' },
+      { name: 'Blue LED',    activeColor: '#3b82f6', inactiveColor: '#3b82f6', inactiveOpacity: 0.15, bgColor: '#0a0a0b' },
+      { name: 'Cyan',        activeColor: '#06b6d4', inactiveColor: '#06b6d4', inactiveOpacity: 0.12, bgColor: '#0a0a0b' },
+      { name: 'Purple',      activeColor: '#a855f7', inactiveColor: '#a855f7', inactiveOpacity: 0.12, bgColor: '#0a0a0b' },
+      { name: 'Gold',        activeColor: '#eab308', inactiveColor: '#eab308', inactiveOpacity: 0.12, bgColor: '#0a0a0b' },
+      { name: 'Red',         activeColor: '#ef4444', inactiveColor: '#ef4444', inactiveOpacity: 0.12, bgColor: '#0a0a0b' },
+      { name: 'Light',       activeColor: '#18181b', inactiveColor: '#18181b', inactiveOpacity: 0.08, bgColor: '#f5f5f7' },
+      { name: 'Light Orange',activeColor: '#ff5d22', inactiveColor: '#ff5d22', inactiveOpacity: 0.10, bgColor: '#fafafa' },
+    ];
+
+    // ════════════════════════════════════════════════
+    // Helpers
+    // ════════════════════════════════════════════════
+    function hexToRgb(hex) {
+      return { r: parseInt(hex.slice(1,3),16), g: parseInt(hex.slice(3,5),16), b: parseInt(hex.slice(5,7),16) };
+    }
+
+    function showToast(msg) {
+      toastEl.textContent = msg;
+      toastEl.classList.add('show');
+      setTimeout(function() { toastEl.classList.remove('show'); }, 1500);
+    }
+
+    function fontStr() {
+      return S.fontWeight + ' ' + S.fontSize + 'px ' + S.fontFamily + ', system-ui, sans-serif';
+    }
+
+    function inactiveRgba() {
+      var c = hexToRgb(S.inactiveColor);
+      return 'rgba(' + c.r + ',' + c.g + ',' + c.b + ',' + S.inactiveOpacity + ')';
+    }
+
+    // Clamp utility
+    function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
+
+    // Ease-out cubic
+    function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+
+    // Ease-in quadratic (for gravity)
+    function easeInQuad(t) { return t * t; }
+
+    // Bounce at end
+    function easeOutBounce(t) {
+      if (t < 1 / 2.75) return 7.5625 * t * t;
+      if (t < 2 / 2.75) { t -= 1.5 / 2.75; return 7.5625 * t * t + 0.75; }
+      if (t < 2.5 / 2.75) { t -= 2.25 / 2.75; return 7.5625 * t * t + 0.9375; }
+      t -= 2.625 / 2.75; return 7.5625 * t * t + 0.984375;
+    }
+
+    // Shuffle array in place (Fisher-Yates)
+    function shuffle(arr) {
+      for (var i = arr.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+      }
+      return arr;
+    }
+
+    // ════════════════════════════════════════════════
+    // Grid rasterization
+    // ════════════════════════════════════════════════
+    function rasterizeLine(text, w, h, fontSize, xOffset) {
+      var off = document.createElement('canvas');
+      off.width = w; off.height = h;
+      var c = off.getContext('2d');
+      c.font = fontStr();
+      c.fillStyle = '#fff';
+      c.textBaseline = 'top';
+      c.fillText(text, xOffset || 0, (h - fontSize) / 2);
+      return c.getImageData(0, 0, w, h);
+    }
+
+    function imageDataToGrid(imageData, cols, rows, w, DOT_SPACING) {
+      var grid = [];
+      for (var r = 0; r < rows; r++) {
+        for (var c = 0; c < cols; c++) {
+          var sx = Math.floor(c * DOT_SPACING + DOT_SPACING / 2);
+          var sy = Math.floor(r * DOT_SPACING + DOT_SPACING / 2);
+          var i = (sy * w + sx) * 4;
+          grid.push(imageData.data[i + 3] > 80);
+        }
+      }
+      return grid;
+    }
+
+    // ════════════════════════════════════════════════
+    // Compute layout (shared by all renderers)
+    // ════════════════════════════════════════════════
+    function computeLayout(text) {
+      var lines = (text || ' ').split('\n');
+      var fontSize = S.fontSize;
+      var DS = S.dotSpacing;
+      var DR = DS * S.dotRadiusRatio;
+      var lineGapPx = Math.round(fontSize * S.lineGap);
+
+      var mc = document.createElement('canvas').getContext('2d');
+      mc.font = fontStr();
+      var lineWidths = lines.map(function(l) { return mc.measureText(l || ' ').width; });
+      var maxWidth = Math.max.apply(null, lineWidths);
+
+      var cols = Math.ceil(maxWidth / DS) + 1;
+      var rowsPerLine = Math.ceil(fontSize / DS);
+      var gapRows = Math.ceil(lineGapPx / DS);
+      var totalRows = rowsPerLine * lines.length + gapRows * (lines.length - 1);
+      var w = cols * DS;
+      var h = totalRows * DS;
+
+      // Build grids per line
+      var allGrids = [];
+      for (var li = 0; li < lines.length; li++) {
+        var lineText = lines[li] || ' ';
+        var lw = lineWidths[li];
+        var xOff = 0;
+        if (S.align === 'center') xOff = (maxWidth - lw) / 2;
+        else if (S.align === 'right') xOff = maxWidth - lw;
+        var img = rasterizeLine(lineText, w, rowsPerLine * DS, fontSize, xOff);
+        allGrids.push(imageDataToGrid(img, cols, rowsPerLine, w, DS));
+      }
+
+      return {
+        lines: lines,
+        fontSize: fontSize,
+        DS: DS,
+        DR: DR,
+        cols: cols,
+        rowsPerLine: rowsPerLine,
+        gapRows: gapRows,
+        totalRows: totalRows,
+        w: w,
+        h: h,
+        allGrids: allGrids,
+        lineWidths: lineWidths,
+        maxWidth: maxWidth,
+      };
+    }
+
+    // ════════════════════════════════════════════════
+    // Get target dots from layout
+    // Returns array of { cx, cy, col, row, lineIndex, globalRow }
+    // ════════════════════════════════════════════════
+    function getTargets(layout) {
+      var targets = [];
+      var DS = layout.DS;
+      for (var li = 0; li < layout.lines.length; li++) {
+        var yBase = li * (layout.rowsPerLine + layout.gapRows);
+        var grid = layout.allGrids[li];
+        for (var r = 0; r < layout.rowsPerLine; r++) {
+          for (var c = 0; c < layout.cols; c++) {
+            if (grid[r * layout.cols + c]) {
+              targets.push({
+                cx: c * DS + DS / 2,
+                cy: (yBase + r) * DS + DS / 2,
+                col: c,
+                row: r,
+                lineIndex: li,
+                globalRow: yBase + r,
+              });
+            }
+          }
+        }
+      }
+      return targets;
+    }
+
+    // ════════════════════════════════════════════════
+    // Setup canvas for a layout
+    // ════════════════════════════════════════════════
+    function setupCanvas(layout) {
+      var dpr = window.devicePixelRatio || 1;
+      canvas.width = layout.w * dpr;
+      canvas.height = layout.h * dpr;
+      canvas.style.width = layout.w + 'px';
+      canvas.style.height = layout.h + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      bgEl.style.background = S.bgColor;
+    }
+
+    // ════════════════════════════════════════════════
+    // Draw background grid (inactive dots)
+    // ════════════════════════════════════════════════
+    function drawBgGrid(layout) {
+      var DS = layout.DS;
+      var DR = layout.DR;
+      var inColor = inactiveRgba();
+      for (var li = 0; li < layout.lines.length; li++) {
+        var yBase = li * (layout.rowsPerLine + layout.gapRows);
+        for (var r = 0; r < layout.rowsPerLine; r++) {
+          for (var c = 0; c < layout.cols; c++) {
+            ctx.fillStyle = inColor;
+            ctx.globalAlpha = 1;
+            ctx.beginPath();
+            ctx.arc(c * DS + DS / 2, (yBase + r) * DS + DS / 2, DR, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+      }
+    }
+
+    // ════════════════════════════════════════════════
+    // Draw active dots with position/opacity overrides
+    // dots: array of { x, y, opacity }
+    // ════════════════════════════════════════════════
+    function drawActiveDots(dots, DR) {
+      for (var i = 0; i < dots.length; i++) {
+        var d = dots[i];
+        if (d.opacity < 0.005) continue;
+        ctx.fillStyle = S.activeColor;
+        ctx.globalAlpha = clamp(d.opacity, 0, 1);
+        ctx.beginPath();
+        ctx.arc(d.x, d.y, DR, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // Draw static final state for a layout
+    function drawStaticFrame(layout) {
+      var DS = layout.DS;
+      var DR = layout.DR;
+      var inColor = inactiveRgba();
+      ctx.clearRect(0, 0, layout.w, layout.h);
+      for (var li = 0; li < layout.lines.length; li++) {
+        var yBase = li * (layout.rowsPerLine + layout.gapRows);
+        var grid = layout.allGrids[li];
+        for (var r = 0; r < layout.rowsPerLine; r++) {
+          for (var c = 0; c < layout.cols; c++) {
+            var idx = r * layout.cols + c;
+            var cx = c * DS + DS / 2;
+            var cy = (yBase + r) * DS + DS / 2;
+            ctx.fillStyle = inColor;
+            ctx.globalAlpha = 1;
+            ctx.beginPath();
+            ctx.arc(cx, cy, DR, 0, Math.PI * 2);
+            ctx.fill();
+            if (grid[idx]) {
+              ctx.fillStyle = S.activeColor;
+              ctx.globalAlpha = 1;
+              ctx.beginPath();
+              ctx.arc(cx, cy, DR, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+        }
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // ════════════════════════════════════════════════
+    // Animation state management
+    // ════════════════════════════════════════════════
+    var animRaf = null;
+    var animTimeout = null;
+    var idleRaf = null;
+    var currentCycleIndex = 0;
+
+    function stopAnimation() {
+      if (animRaf) { cancelAnimationFrame(animRaf); animRaf = null; }
+      if (animTimeout) { clearTimeout(animTimeout); animTimeout = null; }
+      if (idleRaf) { cancelAnimationFrame(idleRaf); idleRaf = null; }
+    }
+
+    // ════════════════════════════════════════════════
+    // IDLE ANIMATIONS
+    // These run continuously after load-in or during cycle hold.
+    // Each returns a function to stop the idle loop.
+    // ════════════════════════════════════════════════
+
+    // Start idle animation on current targets.
+    // Redraws the full frame each tick with the idle effect applied.
+    function startIdleLoop(layout, targets) {
+      if (S.idleAnimation === 'none') return;
+
+      var startTime = performance.now();
+      var flickerState = {}; // for flicker: tracks dimmed dots
+
+      function tick() {
+        var elapsed = (performance.now() - startTime) / 1000; // seconds
+        ctx.clearRect(0, 0, layout.w, layout.h);
+        drawBgGrid(layout);
+
+        var dots = [];
+        for (var i = 0; i < targets.length; i++) {
+          var t = targets[i];
+          var opacity = 1;
+
+          if (S.idleAnimation === 'pulse') {
+            // Oscillate between 0.7 and 1.0, ~2s period
+            opacity = 0.85 + 0.15 * Math.sin(elapsed * Math.PI); // period ~2s
+          } else if (S.idleAnimation === 'shimmer') {
+            // Diagonal bright band sweeps across every ~3s
+            // Band position along diagonal axis
+            var diag = (t.cx + t.cy) / (layout.w + layout.h); // 0..1
+            var bandPos = (elapsed / 3) % 1; // sweeps 0..1 every 3s
+            var dist = Math.abs(diag - bandPos);
+            if (dist > 0.5) dist = 1 - dist;
+            var bandWidth = 0.08;
+            if (dist < bandWidth) {
+              opacity = 1.0 + 0.3 * (1 - dist / bandWidth); // up to 1.3
+              opacity = clamp(opacity, 0, 1.3);
+            }
+          } else if (S.idleAnimation === 'flicker') {
+            // Random dots briefly dim to 0.3 and re-light, 2-3 dots at a time, every ~200ms
+            var flickCycle = Math.floor(elapsed / 0.2);
+            // Use a simple hash to pick which dots flicker each cycle
+            var seed = flickCycle * 7 + i * 13;
+            var pick = ((seed * 2654435761) >>> 0) % targets.length;
+            if (pick < 3) {
+              // This dot is flickering in this cycle
+              var subT = (elapsed % 0.2) / 0.2;
+              opacity = subT < 0.5 ? (1 - 0.7 * (subT / 0.5)) : (0.3 + 0.7 * ((subT - 0.5) / 0.5));
+            }
+          }
+
+          dots.push({ x: t.cx, y: t.cy, opacity: opacity });
+        }
+
+        drawActiveDots(dots, layout.DR);
+        idleRaf = requestAnimationFrame(tick);
+      }
+
+      idleRaf = requestAnimationFrame(tick);
+    }
+
+    // ════════════════════════════════════════════════
+    // LOAD-IN ANIMATIONS (10 styles)
+    // Each takes (layout, targets, totalFrames, onDone)
+    // and drives an animation loop.
+    // ════════════════════════════════════════════════
+
+    // 1. Scatter: dots from random positions converge to form word
+    function animScatter(layout, targets, totalFrames, onDone) {
+      var w = layout.w, h = layout.h;
+      // Assign random start positions
+      for (var i = 0; i < targets.length; i++) {
+        targets[i].startX = (Math.random() - 0.5) * w * 1.5 + w / 2;
+        targets[i].startY = (Math.random() - 0.5) * h * 1.5 + h / 2;
+      }
+      var frame = 0;
+      function step() {
+        frame++;
+        var t = frame / totalFrames;
+        var eased = easeOutCubic(t);
+        ctx.clearRect(0, 0, w, h);
+        drawBgGrid(layout);
+        var dots = [];
+        for (var i = 0; i < targets.length; i++) {
+          var d = targets[i];
+          dots.push({
+            x: d.startX + (d.cx - d.startX) * eased,
+            y: d.startY + (d.cy - d.startY) * eased,
+            opacity: Math.min(1, eased * 1.5),
+          });
+        }
+        drawActiveDots(dots, layout.DR);
+        if (frame < totalFrames) animRaf = requestAnimationFrame(step);
+        else onDone();
+      }
+      animRaf = requestAnimationFrame(step);
+    }
+
+    // 2. Rain Down: dots fall from above canvas with gravity + bounce
+    function animRain(layout, targets, totalFrames, onDone) {
+      var w = layout.w, h = layout.h;
+      // Each dot starts above the canvas, random delay
+      for (var i = 0; i < targets.length; i++) {
+        targets[i].startY = -20 - Math.random() * h * 0.5;
+        targets[i].delay = Math.random() * 0.4; // 0..0.4 of total time
+      }
+      var frame = 0;
+      function step() {
+        frame++;
+        var t = frame / totalFrames;
+        ctx.clearRect(0, 0, w, h);
+        drawBgGrid(layout);
+        var dots = [];
+        for (var i = 0; i < targets.length; i++) {
+          var d = targets[i];
+          var localT = clamp((t - d.delay) / (1 - d.delay), 0, 1);
+          var eased = easeOutBounce(localT);
+          var y = d.startY + (d.cy - d.startY) * eased;
+          var opacity = clamp(localT * 2, 0, 1);
+          dots.push({ x: d.cx, y: y, opacity: opacity });
+        }
+        drawActiveDots(dots, layout.DR);
+        if (frame < totalFrames) animRaf = requestAnimationFrame(step);
+        else onDone();
+      }
+      animRaf = requestAnimationFrame(step);
+    }
+
+    // 3. Typewriter: dots appear letter by letter left to right
+    function animTypewriter(layout, targets, totalFrames, onDone) {
+      var w = layout.w, h = layout.h;
+      var DS = layout.DS;
+      // Measure per-character column boundaries for each line
+      var mc = document.createElement('canvas').getContext('2d');
+      mc.font = fontStr();
+
+      // Build character column boundaries per line
+      var charBounds = []; // [lineIndex] = [ { startCol, endCol }, ... ]
+      for (var li = 0; li < layout.lines.length; li++) {
+        var lineText = layout.lines[li] || ' ';
+        var lw = layout.lineWidths[li];
+        var xOff = 0;
+        if (S.align === 'center') xOff = (layout.maxWidth - lw) / 2;
+        else if (S.align === 'right') xOff = layout.maxWidth - lw;
+
+        var bounds = [];
+        var cumX = xOff;
+        for (var ci = 0; ci < lineText.length; ci++) {
+          var charW = mc.measureText(lineText[ci]).width;
+          var startCol = Math.floor(cumX / DS);
+          var endCol = Math.ceil((cumX + charW) / DS);
+          bounds.push({ startCol: startCol, endCol: endCol, charIndex: ci });
+          cumX += charW;
+        }
+        charBounds.push(bounds);
+      }
+
+      // Assign each target dot a character index for ordering
+      var totalChars = 0;
+      for (var li = 0; li < charBounds.length; li++) totalChars += charBounds[li].length;
+
+      for (var i = 0; i < targets.length; i++) {
+        var t = targets[i];
+        var lineBounds = charBounds[t.lineIndex] || [];
+        var charIdx = 0;
+        for (var ci = 0; ci < lineBounds.length; ci++) {
+          if (t.col >= lineBounds[ci].startCol && t.col < lineBounds[ci].endCol) {
+            charIdx = ci;
+            break;
+          }
+          // If after last bound, use last char
+          if (ci === lineBounds.length - 1) charIdx = ci;
+        }
+        // Global character order: line offset + char index
+        var lineCharOffset = 0;
+        for (var pl = 0; pl < t.lineIndex; pl++) lineCharOffset += charBounds[pl].length;
+        t.charOrder = lineCharOffset + charIdx;
+      }
+
+      var frame = 0;
+      function step() {
+        frame++;
+        var t = frame / totalFrames;
+        ctx.clearRect(0, 0, w, h);
+        drawBgGrid(layout);
+        var dots = [];
+        for (var i = 0; i < targets.length; i++) {
+          var d = targets[i];
+          // Each character appears with stagger: charOrder / totalChars
+          var charT = d.charOrder / Math.max(1, totalChars);
+          var localT = clamp((t - charT * 0.7) / 0.3, 0, 1);
+          dots.push({ x: d.cx, y: d.cy, opacity: localT });
+        }
+        drawActiveDots(dots, layout.DR);
+        if (frame < totalFrames) animRaf = requestAnimationFrame(step);
+        else onDone();
+      }
+      animRaf = requestAnimationFrame(step);
+    }
+
+    // 4. Row Scan: dots light up row by row, top to bottom
+    function animRowScan(layout, targets, totalFrames, onDone) {
+      var w = layout.w, h = layout.h;
+      var frame = 0;
+      function step() {
+        frame++;
+        var t = frame / totalFrames;
+        ctx.clearRect(0, 0, w, h);
+        drawBgGrid(layout);
+        var dots = [];
+        for (var i = 0; i < targets.length; i++) {
+          var d = targets[i];
+          var rowFrac = d.globalRow / Math.max(1, layout.totalRows - 1);
+          var localT = clamp((t - rowFrac * 0.7) / 0.3, 0, 1);
+          dots.push({ x: d.cx, y: d.cy, opacity: localT });
+        }
+        drawActiveDots(dots, layout.DR);
+        if (frame < totalFrames) animRaf = requestAnimationFrame(step);
+        else onDone();
+      }
+      animRaf = requestAnimationFrame(step);
+    }
+
+    // 5. Column Scan: dots light up column by column, left to right
+    function animColScan(layout, targets, totalFrames, onDone) {
+      var w = layout.w, h = layout.h;
+      var frame = 0;
+      function step() {
+        frame++;
+        var t = frame / totalFrames;
+        ctx.clearRect(0, 0, w, h);
+        drawBgGrid(layout);
+        var dots = [];
+        for (var i = 0; i < targets.length; i++) {
+          var d = targets[i];
+          var colFrac = d.col / Math.max(1, layout.cols - 1);
+          var localT = clamp((t - colFrac * 0.7) / 0.3, 0, 1);
+          dots.push({ x: d.cx, y: d.cy, opacity: localT });
+        }
+        drawActiveDots(dots, layout.DR);
+        if (frame < totalFrames) animRaf = requestAnimationFrame(step);
+        else onDone();
+      }
+      animRaf = requestAnimationFrame(step);
+    }
+
+    // 6. Center Burst: all dots start at center, radiate outward
+    function animCenterBurst(layout, targets, totalFrames, onDone) {
+      var w = layout.w, h = layout.h;
+      var centerX = w / 2, centerY = h / 2;
+      // Calculate max distance for normalization
+      var maxDist = 0;
+      for (var i = 0; i < targets.length; i++) {
+        var dx = targets[i].cx - centerX;
+        var dy = targets[i].cy - centerY;
+        var dist = Math.sqrt(dx * dx + dy * dy);
+        targets[i].distFromCenter = dist;
+        if (dist > maxDist) maxDist = dist;
+      }
+      if (maxDist === 0) maxDist = 1;
+
+      var frame = 0;
+      function step() {
+        frame++;
+        var t = frame / totalFrames;
+        var eased = easeOutCubic(t);
+        ctx.clearRect(0, 0, w, h);
+        drawBgGrid(layout);
+        var dots = [];
+        for (var i = 0; i < targets.length; i++) {
+          var d = targets[i];
+          // Dots further from center arrive later
+          var distFrac = d.distFromCenter / maxDist;
+          var localT = clamp((eased - distFrac * 0.3) / 0.7, 0, 1);
+          var x = centerX + (d.cx - centerX) * localT;
+          var y = centerY + (d.cy - centerY) * localT;
+          var opacity = clamp(localT * 1.5, 0, 1);
+          dots.push({ x: x, y: y, opacity: opacity });
+        }
+        drawActiveDots(dots, layout.DR);
+        if (frame < totalFrames) animRaf = requestAnimationFrame(step);
+        else onDone();
+      }
+      animRaf = requestAnimationFrame(step);
+    }
+
+    // 7. Fade In: all dots fade from 0 to 1 simultaneously
+    function animFadeIn(layout, targets, totalFrames, onDone) {
+      var w = layout.w, h = layout.h;
+      var frame = 0;
+      function step() {
+        frame++;
+        var t = frame / totalFrames;
+        ctx.clearRect(0, 0, w, h);
+        drawBgGrid(layout);
+        var dots = [];
+        for (var i = 0; i < targets.length; i++) {
+          dots.push({ x: targets[i].cx, y: targets[i].cy, opacity: t });
+        }
+        drawActiveDots(dots, layout.DR);
+        if (frame < totalFrames) animRaf = requestAnimationFrame(step);
+        else onDone();
+      }
+      animRaf = requestAnimationFrame(step);
+    }
+
+    // 8. Random Fill: dots appear in random order, small clusters of 3-5
+    function animRandomFill(layout, targets, totalFrames, onDone) {
+      var w = layout.w, h = layout.h;
+      // Build random order with small clusters
+      var indices = [];
+      for (var i = 0; i < targets.length; i++) indices.push(i);
+      shuffle(indices);
+
+      // Assign each dot a reveal time based on shuffled order
+      for (var i = 0; i < indices.length; i++) {
+        // Cluster: groups of ~4 dots appear together
+        var clusterIndex = Math.floor(i / 4);
+        var totalClusters = Math.ceil(targets.length / 4);
+        targets[indices[i]].revealT = clusterIndex / Math.max(1, totalClusters);
+      }
+
+      var frame = 0;
+      function step() {
+        frame++;
+        var t = frame / totalFrames;
+        ctx.clearRect(0, 0, w, h);
+        drawBgGrid(layout);
+        var dots = [];
+        for (var i = 0; i < targets.length; i++) {
+          var d = targets[i];
+          var on = t >= d.revealT;
+          // Quick fade-in when revealed
+          var localT = on ? clamp((t - d.revealT) / 0.05, 0, 1) : 0;
+          dots.push({ x: d.cx, y: d.cy, opacity: localT });
+        }
+        drawActiveDots(dots, layout.DR);
+        if (frame < totalFrames) animRaf = requestAnimationFrame(step);
+        else onDone();
+      }
+      animRaf = requestAnimationFrame(step);
+    }
+
+    // 9. Wave: dots appear in a wave sweeping left to right
+    function animWave(layout, targets, totalFrames, onDone) {
+      var w = layout.w, h = layout.h;
+      var frame = 0;
+      function step() {
+        frame++;
+        var t = frame / totalFrames;
+        ctx.clearRect(0, 0, w, h);
+        drawBgGrid(layout);
+        var dots = [];
+        for (var i = 0; i < targets.length; i++) {
+          var d = targets[i];
+          var colFrac = d.col / Math.max(1, layout.cols - 1);
+          var delay = colFrac * 0.7;
+          var localT = clamp((t - delay) / 0.3, 0, 1);
+          // Smooth sine ease
+          var eased = localT < 1 ? 0.5 * (1 - Math.cos(localT * Math.PI)) : 1;
+          dots.push({ x: d.cx, y: d.cy, opacity: eased });
+        }
+        drawActiveDots(dots, layout.DR);
+        if (frame < totalFrames) animRaf = requestAnimationFrame(step);
+        else onDone();
+      }
+      animRaf = requestAnimationFrame(step);
+    }
+
+    // 10. Spiral In: dots appear from outside edges, spiraling inward
+    function animSpiral(layout, targets, totalFrames, onDone) {
+      var w = layout.w, h = layout.h;
+      var centerX = w / 2, centerY = h / 2;
+
+      // Calculate angle and distance from center for each dot
+      for (var i = 0; i < targets.length; i++) {
+        var dx = targets[i].cx - centerX;
+        var dy = targets[i].cy - centerY;
+        var angle = Math.atan2(dy, dx); // -PI..PI
+        var dist = Math.sqrt(dx * dx + dy * dy);
+        // Spiral order: combine angle and distance
+        // Normalize angle to 0..1
+        var normAngle = (angle + Math.PI) / (2 * Math.PI);
+        // Higher distance = appears first (spiraling inward)
+        var maxDist = Math.sqrt(w * w / 4 + h * h / 4);
+        var normDist = dist / (maxDist || 1);
+        // Spiral parameter: distance descending + angle rotation
+        targets[i].spiralOrder = (1 - normDist) + normAngle * 0.3;
+      }
+
+      // Normalize spiral order to 0..1
+      var minOrder = Infinity, maxOrder = -Infinity;
+      for (var i = 0; i < targets.length; i++) {
+        if (targets[i].spiralOrder < minOrder) minOrder = targets[i].spiralOrder;
+        if (targets[i].spiralOrder > maxOrder) maxOrder = targets[i].spiralOrder;
+      }
+      var range = maxOrder - minOrder || 1;
+      for (var i = 0; i < targets.length; i++) {
+        targets[i].spiralOrder = (targets[i].spiralOrder - minOrder) / range;
+      }
+
+      var frame = 0;
+      function step() {
+        frame++;
+        var t = frame / totalFrames;
+        ctx.clearRect(0, 0, w, h);
+        drawBgGrid(layout);
+        var dots = [];
+        for (var i = 0; i < targets.length; i++) {
+          var d = targets[i];
+          var delay = d.spiralOrder * 0.7;
+          var localT = clamp((t - delay) / 0.3, 0, 1);
+          dots.push({ x: d.cx, y: d.cy, opacity: localT });
+        }
+        drawActiveDots(dots, layout.DR);
+        if (frame < totalFrames) animRaf = requestAnimationFrame(step);
+        else onDone();
+      }
+      animRaf = requestAnimationFrame(step);
+    }
+
+    // Dispatch load-in animation by style name
+    function dispatchLoadIn(style, layout, targets, totalFrames, onDone) {
+      switch (style) {
+        case 'scatter':     return animScatter(layout, targets, totalFrames, onDone);
+        case 'rain':        return animRain(layout, targets, totalFrames, onDone);
+        case 'typewriter':  return animTypewriter(layout, targets, totalFrames, onDone);
+        case 'rowscan':     return animRowScan(layout, targets, totalFrames, onDone);
+        case 'colscan':     return animColScan(layout, targets, totalFrames, onDone);
+        case 'centerburst': return animCenterBurst(layout, targets, totalFrames, onDone);
+        case 'fadein':      return animFadeIn(layout, targets, totalFrames, onDone);
+        case 'randomfill':  return animRandomFill(layout, targets, totalFrames, onDone);
+        case 'wave':        return animWave(layout, targets, totalFrames, onDone);
+        case 'spiral':      return animSpiral(layout, targets, totalFrames, onDone);
+        default:            return animScatter(layout, targets, totalFrames, onDone);
+      }
+    }
+
+    // ════════════════════════════════════════════════
+    // CYCLE TRANSITION ANIMATIONS (5 styles)
+    // Each takes (layout, fromGrid, toGrid, cols, rows, transFrames, onDone)
+    // For cycle mode, we use single-line layout (first line only).
+    // ════════════════════════════════════════════════
+
+    // 1. Crossfade: per-dot staggered opacity fade
+    function transCrossfade(layout, fromGrid, toGrid, cols, rows, transFrames, onDone) {
+      var DS = layout.DS, DR = layout.DR;
+      var w = cols * DS, h = rows * DS;
+      var inColor = inactiveRgba();
+      var delays = [];
+      for (var i = 0; i < cols * rows; i++) delays.push(Math.random() * 0.5);
+      var frame = 0;
+
+      function step() {
+        frame++;
+        var progress = frame / transFrames;
+        ctx.clearRect(0, 0, w, h);
+
+        for (var r = 0; r < rows; r++) {
+          for (var c = 0; c < cols; c++) {
+            var idx = r * cols + c;
+            var cx = c * DS + DS / 2;
+            var cy = r * DS + DS / 2;
+            var localT = clamp((progress - delays[idx]) / 0.5, 0, 1);
+
+            ctx.fillStyle = inColor;
+            ctx.globalAlpha = 1;
+            ctx.beginPath();
+            ctx.arc(cx, cy, DR, 0, Math.PI * 2);
+            ctx.fill();
+
+            var wasOn = fromGrid[idx];
+            var willOn = toGrid[idx];
+            var opacity = 0;
+            if (wasOn && willOn) opacity = 1;
+            else if (wasOn && !willOn) opacity = 1 - localT;
+            else if (!wasOn && willOn) opacity = localT;
+
+            if (opacity > 0.01) {
+              ctx.fillStyle = S.activeColor;
+              ctx.globalAlpha = opacity;
+              ctx.beginPath();
+              ctx.arc(cx, cy, DR, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+        }
+        ctx.globalAlpha = 1;
+        if (frame < transFrames) animRaf = requestAnimationFrame(step);
+        else onDone();
+      }
+      animRaf = requestAnimationFrame(step);
+    }
+
+    // 2. Scramble: dissolve to random spots, pause, reform to new word
+    function transScramble(layout, fromGrid, toGrid, cols, rows, transFrames, onDone) {
+      var DS = layout.DS, DR = layout.DR;
+      var w = cols * DS, h = rows * DS;
+      var inColor = inactiveRgba();
+
+      // Collect from-dots and to-dots
+      var fromDots = [], toDots = [];
+      for (var r = 0; r < rows; r++) {
+        for (var c = 0; c < cols; c++) {
+          var idx = r * cols + c;
+          var cx = c * DS + DS / 2;
+          var cy = r * DS + DS / 2;
+          if (fromGrid[idx]) fromDots.push({ cx: cx, cy: cy });
+          if (toGrid[idx]) toDots.push({ cx: cx, cy: cy });
+        }
+      }
+
+      // Random intermediate positions (random grid spots)
+      var maxDots = Math.max(fromDots.length, toDots.length);
+      var midPositions = [];
+      for (var i = 0; i < maxDots; i++) {
+        midPositions.push({
+          cx: (Math.floor(Math.random() * cols)) * DS + DS / 2,
+          cy: (Math.floor(Math.random() * rows)) * DS + DS / 2,
+        });
+      }
+
+      // Pad arrays to same length
+      while (fromDots.length < maxDots) fromDots.push(fromDots[fromDots.length - 1] || { cx: w / 2, cy: h / 2 });
+      while (toDots.length < maxDots) toDots.push(toDots[toDots.length - 1] || { cx: w / 2, cy: h / 2 });
+
+      // 3 phases: dissolve (0..0.35), pause (0.35..0.55), reform (0.55..1.0)
+      var frame = 0;
+      function step() {
+        frame++;
+        var t = frame / transFrames;
+        ctx.clearRect(0, 0, w, h);
+
+        // Draw bg
+        for (var r = 0; r < rows; r++) {
+          for (var c = 0; c < cols; c++) {
+            ctx.fillStyle = inColor;
+            ctx.globalAlpha = 1;
+            ctx.beginPath();
+            ctx.arc(c * DS + DS / 2, r * DS + DS / 2, DR, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+
+        var dots = [];
+        for (var i = 0; i < maxDots; i++) {
+          var x, y, opacity = 1;
+          if (t < 0.35) {
+            // Dissolve: from -> mid
+            var p = easeOutCubic(t / 0.35);
+            x = fromDots[i].cx + (midPositions[i].cx - fromDots[i].cx) * p;
+            y = fromDots[i].cy + (midPositions[i].cy - fromDots[i].cy) * p;
+          } else if (t < 0.55) {
+            // Pause at mid positions
+            x = midPositions[i].cx;
+            y = midPositions[i].cy;
+            opacity = 0.6 + 0.4 * Math.sin((t - 0.35) / 0.2 * Math.PI);
+          } else {
+            // Reform: mid -> to
+            var p = easeOutCubic((t - 0.55) / 0.45);
+            x = midPositions[i].cx + (toDots[i].cx - midPositions[i].cx) * p;
+            y = midPositions[i].cy + (toDots[i].cy - midPositions[i].cy) * p;
+          }
+          dots.push({ x: x, y: y, opacity: opacity });
+        }
+        drawActiveDots(dots, DR);
+
+        if (frame < transFrames) animRaf = requestAnimationFrame(step);
+        else onDone();
+      }
+      animRaf = requestAnimationFrame(step);
+    }
+
+    // 3. Slide Left: current word slides left out, new slides in from right
+    function transSlide(layout, fromGrid, toGrid, cols, rows, transFrames, onDone) {
+      var DS = layout.DS, DR = layout.DR;
+      var w = cols * DS, h = rows * DS;
+      var inColor = inactiveRgba();
+      var frame = 0;
+
+      function step() {
+        frame++;
+        var t = frame / transFrames;
+        var eased = easeOutCubic(t);
+        ctx.clearRect(0, 0, w, h);
+
+        // Draw bg grid
+        for (var r = 0; r < rows; r++) {
+          for (var c = 0; c < cols; c++) {
+            ctx.fillStyle = inColor;
+            ctx.globalAlpha = 1;
+            ctx.beginPath();
+            ctx.arc(c * DS + DS / 2, r * DS + DS / 2, DR, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+
+        // From word: slides left, fades out
+        var fromOffset = -w * eased;
+        var fromOpacity = 1 - eased;
+        // To word: slides in from right, fades in
+        var toOffset = w * (1 - eased);
+        var toOpacity = eased;
+
+        for (var r = 0; r < rows; r++) {
+          for (var c = 0; c < cols; c++) {
+            var idx = r * cols + c;
+            var cx = c * DS + DS / 2;
+            var cy = r * DS + DS / 2;
+
+            if (fromGrid[idx] && fromOpacity > 0.01) {
+              var fx = cx + fromOffset;
+              if (fx > -DR && fx < w + DR) {
+                ctx.fillStyle = S.activeColor;
+                ctx.globalAlpha = fromOpacity;
+                ctx.beginPath();
+                ctx.arc(fx, cy, DR, 0, Math.PI * 2);
+                ctx.fill();
+              }
+            }
+
+            if (toGrid[idx] && toOpacity > 0.01) {
+              var tx = cx + toOffset;
+              if (tx > -DR && tx < w + DR) {
+                ctx.fillStyle = S.activeColor;
+                ctx.globalAlpha = toOpacity;
+                ctx.beginPath();
+                ctx.arc(tx, cy, DR, 0, Math.PI * 2);
+                ctx.fill();
+              }
+            }
+          }
+        }
+        ctx.globalAlpha = 1;
+        if (frame < transFrames) animRaf = requestAnimationFrame(step);
+        else onDone();
+      }
+      animRaf = requestAnimationFrame(step);
+    }
+
+    // 4. Dissolve Reform: current dots scatter outward, new dots converge inward
+    function transDissolve(layout, fromGrid, toGrid, cols, rows, transFrames, onDone) {
+      var DS = layout.DS, DR = layout.DR;
+      var w = cols * DS, h = rows * DS;
+      var inColor = inactiveRgba();
+      var centerX = w / 2, centerY = h / 2;
+
+      // Collect from and to dots with scatter targets
+      var fromDots = [], toDots = [];
+      for (var r = 0; r < rows; r++) {
+        for (var c = 0; c < cols; c++) {
+          var idx = r * cols + c;
+          var cx = c * DS + DS / 2;
+          var cy = r * DS + DS / 2;
+          if (fromGrid[idx]) {
+            var dx = cx - centerX, dy = cy - centerY;
+            var dist = Math.sqrt(dx * dx + dy * dy) || 1;
+            fromDots.push({
+              cx: cx, cy: cy,
+              // Scatter outward
+              scatterX: cx + (dx / dist) * w * 0.6,
+              scatterY: cy + (dy / dist) * h * 0.6,
+            });
+          }
+          if (toGrid[idx]) {
+            var dx = cx - centerX, dy = cy - centerY;
+            var dist = Math.sqrt(dx * dx + dy * dy) || 1;
+            toDots.push({
+              cx: cx, cy: cy,
+              // Start from scattered position
+              startX: cx + (dx / dist) * w * 0.6,
+              startY: cy + (dy / dist) * h * 0.6,
+            });
+          }
+        }
+      }
+
+      var frame = 0;
+      function step() {
+        frame++;
+        var t = frame / transFrames;
+        ctx.clearRect(0, 0, w, h);
+
+        // Draw bg
+        for (var r = 0; r < rows; r++) {
+          for (var c = 0; c < cols; c++) {
+            ctx.fillStyle = inColor;
+            ctx.globalAlpha = 1;
+            ctx.beginPath();
+            ctx.arc(c * DS + DS / 2, r * DS + DS / 2, DR, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+
+        // Phase 1: from dots scatter outward (0..0.5)
+        if (t < 0.55) {
+          var p = easeOutCubic(t / 0.55);
+          for (var i = 0; i < fromDots.length; i++) {
+            var d = fromDots[i];
+            var x = d.cx + (d.scatterX - d.cx) * p;
+            var y = d.cy + (d.scatterY - d.cy) * p;
+            var opacity = 1 - p;
+            if (opacity > 0.01) {
+              ctx.fillStyle = S.activeColor;
+              ctx.globalAlpha = opacity;
+              ctx.beginPath();
+              ctx.arc(x, y, DR, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+        }
+
+        // Phase 2: to dots converge inward (0.45..1.0)
+        if (t > 0.45) {
+          var p = easeOutCubic((t - 0.45) / 0.55);
+          for (var i = 0; i < toDots.length; i++) {
+            var d = toDots[i];
+            var x = d.startX + (d.cx - d.startX) * p;
+            var y = d.startY + (d.cy - d.startY) * p;
+            var opacity = p;
+            if (opacity > 0.01) {
+              ctx.fillStyle = S.activeColor;
+              ctx.globalAlpha = opacity;
+              ctx.beginPath();
+              ctx.arc(x, y, DR, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+        }
+
+        ctx.globalAlpha = 1;
+        if (frame < transFrames) animRaf = requestAnimationFrame(step);
+        else onDone();
+      }
+      animRaf = requestAnimationFrame(step);
+    }
+
+    // 5. Pixel Flip: shared dots stay, differing dots flip randomly
+    function transPixelFlip(layout, fromGrid, toGrid, cols, rows, transFrames, onDone) {
+      var DS = layout.DS, DR = layout.DR;
+      var w = cols * DS, h = rows * DS;
+      var inColor = inactiveRgba();
+
+      // Identify shared, going-off, and coming-on dots
+      var shared = [], goingOff = [], comingOn = [];
+      for (var r = 0; r < rows; r++) {
+        for (var c = 0; c < cols; c++) {
+          var idx = r * cols + c;
+          var cx = c * DS + DS / 2;
+          var cy = r * DS + DS / 2;
+          var wasOn = fromGrid[idx];
+          var willOn = toGrid[idx];
+          if (wasOn && willOn) shared.push({ cx: cx, cy: cy });
+          else if (wasOn && !willOn) goingOff.push({ cx: cx, cy: cy, flipT: Math.random() });
+          else if (!wasOn && willOn) comingOn.push({ cx: cx, cy: cy, flipT: Math.random() });
+        }
+      }
+
+      var frame = 0;
+      function step() {
+        frame++;
+        var t = frame / transFrames;
+        ctx.clearRect(0, 0, w, h);
+
+        // Draw bg
+        for (var r = 0; r < rows; r++) {
+          for (var c = 0; c < cols; c++) {
+            ctx.fillStyle = inColor;
+            ctx.globalAlpha = 1;
+            ctx.beginPath();
+            ctx.arc(c * DS + DS / 2, r * DS + DS / 2, DR, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+
+        // Shared: always on
+        for (var i = 0; i < shared.length; i++) {
+          ctx.fillStyle = S.activeColor;
+          ctx.globalAlpha = 1;
+          ctx.beginPath();
+          ctx.arc(shared[i].cx, shared[i].cy, DR, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Going off: flip off at their flipT
+        for (var i = 0; i < goingOff.length; i++) {
+          var d = goingOff[i];
+          if (t < d.flipT) {
+            ctx.fillStyle = S.activeColor;
+            ctx.globalAlpha = 1;
+            ctx.beginPath();
+            ctx.arc(d.cx, d.cy, DR, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+
+        // Coming on: flip on at their flipT
+        for (var i = 0; i < comingOn.length; i++) {
+          var d = comingOn[i];
+          if (t >= d.flipT) {
+            ctx.fillStyle = S.activeColor;
+            ctx.globalAlpha = 1;
+            ctx.beginPath();
+            ctx.arc(d.cx, d.cy, DR, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+
+        ctx.globalAlpha = 1;
+        if (frame < transFrames) animRaf = requestAnimationFrame(step);
+        else onDone();
+      }
+      animRaf = requestAnimationFrame(step);
+    }
+
+    // Dispatch transition by style name
+    function dispatchTransition(style, layout, fromGrid, toGrid, cols, rows, transFrames, onDone) {
+      switch (style) {
+        case 'crossfade': return transCrossfade(layout, fromGrid, toGrid, cols, rows, transFrames, onDone);
+        case 'scramble':  return transScramble(layout, fromGrid, toGrid, cols, rows, transFrames, onDone);
+        case 'slide':     return transSlide(layout, fromGrid, toGrid, cols, rows, transFrames, onDone);
+        case 'dissolve':  return transDissolve(layout, fromGrid, toGrid, cols, rows, transFrames, onDone);
+        case 'pixelflip': return transPixelFlip(layout, fromGrid, toGrid, cols, rows, transFrames, onDone);
+        default:          return transCrossfade(layout, fromGrid, toGrid, cols, rows, transFrames, onDone);
+      }
+    }
+
+    // ════════════════════════════════════════════════
+    // RENDER: STATIC
+    // ════════════════════════════════════════════════
+    function renderStatic() {
+      stopAnimation();
+      var layout = computeLayout(S.text);
+      setupCanvas(layout);
+      drawStaticFrame(layout);
+
+      // Start idle animation if set
+      if (S.idleAnimation !== 'none') {
+        var targets = getTargets(layout);
+        startIdleLoop(layout, targets);
+      }
+    }
+
+    // ════════════════════════════════════════════════
+    // RENDER: ANIMATE (load-in)
+    // ════════════════════════════════════════════════
+    function renderAnimate() {
+      stopAnimation();
+      var layout = computeLayout(S.text);
+      setupCanvas(layout);
+      var targets = getTargets(layout);
+
+      // Draw initial background
+      ctx.clearRect(0, 0, layout.w, layout.h);
+      drawBgGrid(layout);
+
+      dispatchLoadIn(S.loadInStyle, layout, targets, S.animFrames, function() {
+        // Animation done: snap to clean final state, then start idle
+        drawStaticFrame(layout);
+        if (S.idleAnimation !== 'none') {
+          startIdleLoop(layout, targets);
+        }
+      });
+    }
+
+    // ════════════════════════════════════════════════
+    // RENDER: CYCLE
+    // ════════════════════════════════════════════════
+    function renderCycle() {
+      stopAnimation();
+      currentCycleIndex = 0;
+
+      var words = [S.text || ' ', S.cycleWord || ' '];
+      // For multi-line, only first line cycles
+      var word1 = words[0].split('\n')[0];
+      var word2 = words[1].split('\n')[0];
+      var cycleWords = [word1, word2];
+
+      var fontSize = S.fontSize;
+      var DS = S.dotSpacing;
+      var DR = DS * S.dotRadiusRatio;
+      var dpr = window.devicePixelRatio || 1;
+
+      var mc = document.createElement('canvas').getContext('2d');
+      mc.font = fontStr();
+      var maxWidth = Math.max(mc.measureText(word1).width, mc.measureText(word2).width);
+
+      var cols = Math.ceil(maxWidth / DS) + 1;
+      var rows = Math.ceil(fontSize / DS);
+      var w = cols * DS;
+      var h = rows * DS;
+
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      canvas.style.width = w + 'px';
+      canvas.style.height = h + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      // Build a layout-like object for the cycle (single line)
+      var cycleLayout = {
+        lines: [''],
+        fontSize: fontSize,
+        DS: DS,
+        DR: DR,
+        cols: cols,
+        rowsPerLine: rows,
+        gapRows: 0,
+        totalRows: rows,
+        w: w,
+        h: h,
+        allGrids: [[]],
+        lineWidths: [0],
+        maxWidth: maxWidth,
+      };
+
+      var grids = {};
+      cycleWords.forEach(function(word) {
+        var img = rasterizeLine(word, w, h, fontSize, 0);
+        grids[word] = imageDataToGrid(img, cols, rows, w, DS);
+      });
+
+      var inColor = inactiveRgba();
+      var TRANS_FRAMES = Math.max(14, Math.floor(S.animFrames / 3));
+
+      function drawWord(grid) {
+        ctx.clearRect(0, 0, w, h);
+        for (var r = 0; r < rows; r++) {
+          for (var c = 0; c < cols; c++) {
+            var cx = c * DS + DS / 2;
+            var cy = r * DS + DS / 2;
+            ctx.fillStyle = inColor;
+            ctx.globalAlpha = 1;
+            ctx.beginPath();
+            ctx.arc(cx, cy, DR, 0, Math.PI * 2);
+            ctx.fill();
+            if (grid[r * cols + c]) {
+              ctx.fillStyle = S.activeColor;
+              ctx.globalAlpha = 1;
+              ctx.beginPath();
+              ctx.arc(cx, cy, DR, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      // Get targets for a grid (for idle animation)
+      function getTargetsForGrid(grid) {
+        var targets = [];
+        for (var r = 0; r < rows; r++) {
+          for (var c = 0; c < cols; c++) {
+            if (grid[r * cols + c]) {
+              targets.push({
+                cx: c * DS + DS / 2,
+                cy: r * DS + DS / 2,
+                col: c,
+                row: r,
+                lineIndex: 0,
+                globalRow: r,
+              });
+            }
+          }
+        }
+        return targets;
+      }
+
+      function startCycleIdle(grid) {
+        if (S.idleAnimation === 'none') return;
+        var targets = getTargetsForGrid(grid);
+        // Temporarily set layout for idle loop
+        cycleLayout.allGrids = [grid];
+        startIdleLoop(cycleLayout, targets);
+      }
+
+      function stopCycleIdle() {
+        if (idleRaf) { cancelAnimationFrame(idleRaf); idleRaf = null; }
+      }
+
+      function cycle() {
+        stopCycleIdle();
+        var from = cycleWords[currentCycleIndex];
+        var nextIdx = (currentCycleIndex + 1) % cycleWords.length;
+        var to = cycleWords[nextIdx];
+
+        dispatchTransition(S.transitionStyle, cycleLayout, grids[from], grids[to], cols, rows, TRANS_FRAMES, function() {
+          currentCycleIndex = nextIdx;
+          drawWord(grids[cycleWords[currentCycleIndex]]);
+          // Start idle during hold
+          startCycleIdle(grids[cycleWords[currentCycleIndex]]);
+          animTimeout = setTimeout(cycle, S.holdMs);
+        });
+      }
+
+      bgEl.style.background = S.bgColor;
+      drawWord(grids[cycleWords[0]]);
+      // Start idle during initial hold
+      startCycleIdle(grids[cycleWords[0]]);
+      animTimeout = setTimeout(cycle, S.holdMs);
+    }
+
+    // ════════════════════════════════════════════════
+    // Main render dispatcher
+    // ════════════════════════════════════════════════
+    function render() {
+      if (S.mode === 'static') renderStatic();
+      else if (S.mode === 'animate') renderAnimate();
+      else if (S.mode === 'cycle') renderCycle();
+    }
+
+    // ════════════════════════════════════════════════
+    // UI BINDINGS
+    // ════════════════════════════════════════════════
+
+    // ── Presets ──
+    var presetsEl = document.getElementById('presets');
+    PRESETS.forEach(function(p, i) {
+      var el = document.createElement('div');
+      el.className = 'preset' + (i === 0 ? ' active' : '');
+      el.title = p.name;
+      el.style.background = p.bgColor;
+      var dots = document.createElement('div');
+      dots.className = 'preset__dots';
+      for (var d = 0; d < 16; d++) {
+        var dot = document.createElement('div');
+        dot.className = 'preset__dot';
+        var isLit = [1,2,5,6,9,10,13,14].indexOf(d) !== -1;
+        if (isLit) {
+          dot.style.background = p.activeColor;
+        } else {
+          var rgb = hexToRgb(p.inactiveColor);
+          dot.style.background = 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',' + p.inactiveOpacity + ')';
+        }
+        dots.appendChild(dot);
+      }
+      el.appendChild(dots);
+      el.addEventListener('click', function() {
+        presetsEl.querySelectorAll('.preset').forEach(function(pe) { pe.classList.remove('active'); });
+        el.classList.add('active');
+        S.activeColor = p.activeColor;
+        S.inactiveColor = p.inactiveColor;
+        S.inactiveOpacity = p.inactiveOpacity;
+        S.bgColor = p.bgColor;
+        document.getElementById('activeColor').value = p.activeColor;
+        document.getElementById('activeHex').value = p.activeColor;
+        document.getElementById('inactiveColor').value = p.inactiveColor;
+        document.getElementById('inactiveHex').value = p.inactiveColor;
+        document.getElementById('inactiveOpacity').value = p.inactiveOpacity;
+        document.getElementById('opacityVal').textContent = p.inactiveOpacity.toFixed(2);
+        document.getElementById('bgColor').value = p.bgColor;
+        document.getElementById('bgHex').value = p.bgColor;
+        render();
+      });
+      presetsEl.appendChild(el);
+    });
+
+    // ── Text ──
+    document.getElementById('textInput').addEventListener('input', function(e) {
+      S.text = e.target.value;
+      render();
+    });
+
+    // ── Animation mode ──
+    function updateAnimUI() {
+      document.getElementById('loadInCtrl').classList.toggle('hidden', S.mode !== 'animate');
+      document.getElementById('transitionCtrl').classList.toggle('hidden', S.mode !== 'cycle');
+      document.getElementById('cycleWordCtrl').classList.toggle('hidden', S.mode !== 'cycle');
+      document.getElementById('holdCtrl').classList.toggle('hidden', S.mode !== 'cycle');
+      document.getElementById('speedCtrl').classList.toggle('hidden', S.mode === 'static');
+    }
+
+    document.querySelectorAll('[data-mode]').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('[data-mode]').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        S.mode = btn.dataset.mode;
+        updateAnimUI();
+        render();
+      });
+    });
+
+    // ── Load-In Style ──
+    document.getElementById('loadInStyle').addEventListener('change', function(e) {
+      S.loadInStyle = e.target.value;
+      if (S.mode === 'animate') render();
+    });
+
+    // ── Transition Style ──
+    document.getElementById('transitionStyle').addEventListener('change', function(e) {
+      S.transitionStyle = e.target.value;
+      if (S.mode === 'cycle') render();
+    });
+
+    // ── Idle Animation ──
+    document.getElementById('idleAnimation').addEventListener('change', function(e) {
+      S.idleAnimation = e.target.value;
+      render();
+    });
+
+    // ── Cycle Word ──
+    document.getElementById('cycleWord').addEventListener('input', function(e) {
+      S.cycleWord = e.target.value;
+      if (S.mode === 'cycle') render();
+    });
+
+    // ── Hold Time ──
+    document.getElementById('holdSlider').addEventListener('input', function(e) {
+      S.holdMs = parseInt(e.target.value);
+      document.getElementById('holdVal').textContent = S.holdMs + 'ms';
+    });
+
+    // ── Speed ──
+    document.getElementById('speedSlider').addEventListener('input', function(e) {
+      S.animFrames = parseInt(e.target.value);
+      document.getElementById('speedVal').textContent = S.animFrames;
+    });
+
+    // ── Play / Reset ──
+    document.getElementById('playBtn').addEventListener('click', function() { render(); });
+    document.getElementById('resetBtn').addEventListener('click', function() {
+      stopAnimation();
+      renderStatic();
+    });
+
+    // ── Font ──
+    document.getElementById('fontFamily').addEventListener('change', function(e) {
+      S.fontFamily = e.target.value;
+      render();
+    });
+
+    function bindSlider(id, valId, stateKey, fmt, parser) {
+      document.getElementById(id).addEventListener('input', function(e) {
+        S[stateKey] = parser ? parser(e.target.value) : parseInt(e.target.value);
+        document.getElementById(valId).textContent = fmt ? fmt(S[stateKey]) : S[stateKey];
+        render();
+      });
+    }
+
+    bindSlider('weightSlider', 'weightVal', 'fontWeight', null, String);
+    bindSlider('fontSizeSlider', 'fontSizeVal', 'fontSize');
+    bindSlider('spacingSlider', 'spacingVal', 'dotSpacing');
+    bindSlider('radiusSlider', 'radiusVal', 'dotRadiusRatio', function(v) { return v.toFixed(2); }, parseFloat);
+    bindSlider('lineGapSlider', 'lineGapVal', 'lineGap', function(v) { return v.toFixed(2); }, parseFloat);
+
+    // ── Alignment ──
+    document.querySelectorAll('[data-align]').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('[data-align]').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        S.align = btn.dataset.align;
+        render();
+      });
+    });
+
+    // ── Colors ──
+    function bindColor(pickerId, hexId, stateKey) {
+      var picker = document.getElementById(pickerId);
+      var hex = document.getElementById(hexId);
+      picker.addEventListener('input', function() {
+        S[stateKey] = picker.value;
+        hex.value = picker.value;
+        render();
+      });
+      hex.addEventListener('input', function() {
+        if (hex.value.length === 7 && hex.value[0] === '#') {
+          S[stateKey] = hex.value;
+          picker.value = hex.value;
+          render();
+        }
+      });
+    }
+    bindColor('activeColor', 'activeHex', 'activeColor');
+    bindColor('inactiveColor', 'inactiveHex', 'inactiveColor');
+    bindColor('bgColor', 'bgHex', 'bgColor');
+
+    document.getElementById('inactiveOpacity').addEventListener('input', function(e) {
+      S.inactiveOpacity = parseFloat(e.target.value);
+      document.getElementById('opacityVal').textContent = S.inactiveOpacity.toFixed(2);
+      render();
+    });
+
+    // ── Export ──
+    document.getElementById('exportConfig').addEventListener('click', function() {
+      var config = {
+        text: S.text,
+        mode: S.mode,
+        loadInStyle: S.loadInStyle,
+        transitionStyle: S.transitionStyle,
+        idleAnimation: S.idleAnimation,
+        cycleWord: S.cycleWord,
+        holdMs: S.holdMs,
+        animationFrames: S.animFrames,
+        fontFamily: S.fontFamily,
+        fontWeight: S.fontWeight,
+        fontSize: S.fontSize,
+        dotSpacing: S.dotSpacing,
+        dotRadiusRatio: S.dotRadiusRatio,
+        align: S.align,
+        lineGap: S.lineGap,
+        activeColor: S.activeColor,
+        inactiveColor: inactiveRgba(),
+        bgColor: S.bgColor,
+      };
+      navigator.clipboard.writeText(JSON.stringify(config, null, 2)).then(function() { showToast('Config copied'); });
+    });
+
+    document.getElementById('exportAttrs').addEventListener('click', function() {
+      var attrs = 'data-dot-matrix="' + S.mode + '"';
+      if (S.mode === 'cycle') {
+        attrs += '\ndata-words="' + S.text.split('\n')[0] + ',' + S.cycleWord + '"';
+        attrs += '\ndata-transition="' + S.transitionStyle + '"';
+      } else {
+        attrs += '\ndata-word="' + S.text.split('\n')[0] + '"';
+      }
+      if (S.mode === 'animate') {
+        attrs += '\ndata-load-in="' + S.loadInStyle + '"';
+        attrs += '\ndata-animation-frames="' + S.animFrames + '"';
+      }
+      attrs += '\ndata-active-color="' + S.activeColor + '"';
+      attrs += '\ndata-inactive-color="' + inactiveRgba() + '"';
+      if (S.idleAnimation !== 'none') attrs += '\ndata-idle="' + S.idleAnimation + '"';
+      if (S.mode === 'cycle') attrs += '\ndata-hold="' + S.holdMs + '"';
+      navigator.clipboard.writeText(attrs).then(function() { showToast('Attributes copied'); });
+    });
+
+    document.getElementById('exportPng').addEventListener('click', function() {
+      stopAnimation();
+      var layout = computeLayout(S.text);
+      setupCanvas(layout);
+      drawStaticFrame(layout);
+      var link = document.createElement('a');
+      link.download = 'dot-matrix.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      showToast('PNG downloaded');
+    });
+
+    document.getElementById('exportCSS').addEventListener('click', function() {
+      var css = '.dot-matrix-container {\n';
+      css += '  background: ' + S.bgColor + ';\n';
+      css += '  font-family: ' + S.fontFamily + ', system-ui, sans-serif;\n';
+      css += '  font-size: ' + S.fontSize + 'px;\n';
+      css += '  font-weight: ' + S.fontWeight + ';\n';
+      css += '}';
+      navigator.clipboard.writeText(css).then(function() { showToast('CSS copied'); });
+    });
+
+    // ── Init ──
+    document.fonts.ready.then(render);
+    window.addEventListener('resize', render);
+
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dot Matrix Text — Static Mode</title>
+
+  <!-- Google Font: Space Grotesk -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <!-- Dot Matrix CSS -->
+  <link rel="stylesheet" href="../dot-matrix-text.css">
+
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0a0a0a;
+      color: #f5f5f7;
+      font-family: "Space Grotesk", system-ui, sans-serif;
+    }
+
+    .spacer {
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .spacer p {
+      font-size: 1.25rem;
+      color: rgba(245, 245, 247, 0.35);
+      text-align: center;
+    }
+
+    section {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4rem 2rem;
+    }
+
+    .headline {
+      font-size: clamp(2.5rem, 6vw, 4.5rem);
+      font-weight: 700;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      text-align: center;
+      max-width: 900px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Spacer so the user needs to scroll -->
+  <div class="spacer">
+    <p>Scroll down to trigger the dot-matrix animations.</p>
+  </div>
+
+  <!-- Section 1 -->
+  <section>
+    <h2 class="headline">
+      Hand-off era is
+      <span data-dot-matrix="static"
+            data-word="ending"
+            data-active-color="#ff5d22"
+            data-inactive-color="rgba(255,93,34,0.15)"></span>.
+    </h2>
+  </section>
+
+  <!-- Section 2 -->
+  <section>
+    <h2 class="headline">
+      You already have taste. This gives you
+      <span data-dot-matrix="static"
+            data-word="hands"
+            data-active-color="#ff5d22"
+            data-inactive-color="rgba(255,93,34,0.15)"></span>.
+    </h2>
+  </section>
+
+  <!-- Section 3 -->
+  <section>
+    <h2 class="headline">
+      No hype. Shipped
+      <span data-dot-matrix="static"
+            data-word="work"
+            data-active-color="#ff5d22"
+            data-inactive-color="rgba(255,93,34,0.15)"
+            data-animation-frames="80"></span>.
+    </h2>
+  </section>
+
+  <!-- Dot Matrix JS -->
+  <script src="../dot-matrix-text.js"></script>
+
+</body>
+</html>
