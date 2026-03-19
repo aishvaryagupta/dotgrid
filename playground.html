@@ -43,7 +43,7 @@
     .ascii-preview {
       font-family: 'JetBrains Mono', monospace;
       font-size: 14px;
-      line-height: 1.0;
+      line-height: 1.15;
       letter-spacing: 0.02em;
       white-space: pre;
       user-select: none;
@@ -344,9 +344,6 @@
         <div class="ctrl__render-row">
           <button class="ctrl__toggle-btn active" data-render="dot">Dot Grid</button>
           <button class="ctrl__toggle-btn" data-render="block">Block</button>
-          <button class="ctrl__toggle-btn" data-render="slim">Slim</button>
-          <button class="ctrl__toggle-btn" data-render="braille">Braille</button>
-          <button class="ctrl__toggle-btn" data-render="shadow">Shadow</button>
           <button class="ctrl__toggle-btn" data-render="line">Line Art</button>
         </div>
       </div>
@@ -453,8 +450,8 @@
       </div>
     </div>
 
-    <!-- Font -->
-    <div class="section">
+    <!-- Font (dot grid only) -->
+    <div class="section" id="fontSection">
       <div class="section__label">Font</div>
       <div class="ctrl">
         <div class="ctrl__top"><span class="ctrl__name">Family</span></div>
@@ -480,6 +477,18 @@
           <span class="ctrl__val" id="fontSizeVal">64</span>
         </div>
         <input class="ctrl__slider" id="fontSizeSlider" type="range" min="24" max="160" step="1" value="64" />
+      </div>
+    </div>
+
+    <!-- ASCII Size (block/line only) -->
+    <div class="section hidden" id="asciiSizeSection">
+      <div class="section__label">Display</div>
+      <div class="ctrl">
+        <div class="ctrl__top">
+          <span class="ctrl__name">Text Size</span>
+          <span class="ctrl__val" id="asciiSizeVal">24</span>
+        </div>
+        <input class="ctrl__slider" id="asciiSizeSlider" type="range" min="8" max="64" step="1" value="24" />
       </div>
     </div>
 
@@ -587,13 +596,14 @@
     var S = {
       text: 'ship',
       mode: 'static',             // static | animate | cycle
-      renderMode: 'dot',          // dot | block | slim | braille | shadow | line
+      renderMode: 'dot',          // dot | block | line
       loadInStyle: 'scatter',     // scatter|rain|typewriter|rowscan|colscan|centerburst|fadein|randomfill|wave|spiral
       transitionStyle: 'crossfade', // crossfade|scramble|slide|dissolve|pixelflip
       idleAnimation: 'none',      // none|pulse|shimmer|flicker
       cycleWord: 'build',
       holdMs: 2500,
       animFrames: 60,
+      asciiSize: 24,
       fontFamily: '"Space Grotesk"',
       fontWeight: '700',
       fontSize: 64,
@@ -677,261 +687,122 @@
 
     // Character mappings for each ASCII style
     var ASCII_CHAR_MAP = {
-      block:  { filled: '\u2588\u2588', half: '\u2591\u2591', empty: '  ' },  // ██ ░░ (double-wide for chunky look)
-      slim:   { filled: '#', half: '.', empty: ' ' },
-      braille: { filled: null, half: null, empty: null },         // computed via braille algorithm
-      shadow: { filled: '\u2588\u2588', half: '\u2591\u2591', empty: '  ' },  // ██ ░░ (double-wide + shadow)
-      line:   { filled: '\u2588\u2588', half: '\u2592\u2592', empty: '  ' },  // ██ ▒▒ (double-wide)
+      block:  { filled: '\u2588\u2588', half: '\u2591\u2591', empty: '  ' },
+      line:   { filled: '\u2588\u2588', half: '\u2592\u2592', empty: '  ' },
     };
 
-    // Glitch character sets per style (block/shadow/line are double-wide arrays)
+    // Glitch character sets per style
     var ASCII_GLITCH_CHARS = {
       block:   ['\u2588\u2588','\u2593\u2593','\u2592\u2592','\u2591\u2591','\u2554\u2557','\u255A\u255D','\u2551\u2550','\u2563\u2560','\u2566\u2569','\u253C\u253C','\u2500\u2500','\u2502\u2502'],
-      slim:    ['_','|','/','\\','[',']','{','}','(',')','-','=','+','~','#','.'],
-      braille: ['\u28FF','\u28FE','\u28FD','\u28FB','\u28F7','\u28EF','\u28DF','\u287F','\u28BF','\u2880','\u2884','\u2886','\u2887','\u2847','\u284F','\u285F'],
-      shadow:  ['\u2591\u2591','\u2592\u2592','\u2593\u2593','\u2588\u2588','\u250C\u2510','\u2514\u2518','\u251C\u2524','\u252C\u2534','\u253C\u253C','\u2500\u2500','\u2502\u2502'],
       line:    ['\u2554\u2557','\u255A\u255D','\u2551\u2550','\u2563\u2560','\u2566\u2569','\u253C\u253C','\u2500\u2500','\u2502\u2502','\u256C\u256C','\u2591\u2591','\u2592\u2592'],
     };
 
-    // Rasterize text to a pixel grid using an offscreen canvas
-    // Returns { grid: Uint8Array (0 or 255), width, height }
-    function rasterizeTextToPixelGrid(text, cellW, cellH) {
-      var fontSize = S.fontSize;
-      var offCanvas = document.createElement('canvas');
-      var offCtx = offCanvas.getContext('2d');
-      offCtx.font = fontStr();
+    // FIGlet glitch characters (single-width, for animation)
+    var FIGLET_GLITCH_CHARS = ['\u2588','\u2593','\u2592','\u2591','\u2554','\u2557','\u255A','\u255D','\u2551','\u2550','\u256C','\u2563','\u2560','\u2566','\u2569','\u2503','\u2501','\u250F','\u2513','\u2517','\u251B'];
 
-      var metrics = offCtx.measureText(text || ' ');
-      var textW = metrics.width;
-      var pixelW = Math.ceil(textW) + 4;
-      var pixelH = Math.ceil(fontSize * 1.3);
+    // FIGlet font (ANSI Shadow) — 6 rows per glyph
+    var FIGLET_HEIGHT = 6;
+    var FIGLET_FONT = {
+      ' ': ['   ','   ','   ','   ','   ','   '],
+      'A': [' \u2588\u2588\u2588\u2588\u2588\u2557 ','\u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2557','\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2551','\u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2551','\u2588\u2588\u2551  \u2588\u2588\u2551','\u255A\u2550\u255D  \u255A\u2550\u255D'],
+      'B': ['\u2588\u2588\u2588\u2588\u2588\u2588\u2557 ','\u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2557','\u2588\u2588\u2588\u2588\u2588\u2588\u2554\u255D','\u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2557','\u2588\u2588\u2588\u2588\u2588\u2588\u2554\u255D','\u255A\u2550\u2550\u2550\u2550\u2550\u255D '],
+      'C': [' \u2588\u2588\u2588\u2588\u2588\u2588\u2557','\u2588\u2588\u2554\u2550\u2550\u2550\u2550\u255D','\u2588\u2588\u2551     ','\u2588\u2588\u2551     ','\u255A\u2588\u2588\u2588\u2588\u2588\u2588\u2557',' \u255A\u2550\u2550\u2550\u2550\u2550\u255D'],
+      'D': ['\u2588\u2588\u2588\u2588\u2588\u2588\u2557 ','\u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2557','\u2588\u2588\u2551  \u2588\u2588\u2551','\u2588\u2588\u2551  \u2588\u2588\u2551','\u2588\u2588\u2588\u2588\u2588\u2588\u2554\u255D','\u255A\u2550\u2550\u2550\u2550\u2550\u255D '],
+      'E': ['\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557','\u2588\u2588\u2554\u2550\u2550\u2550\u2550\u255D','\u2588\u2588\u2588\u2588\u2588\u2557  ','\u2588\u2588\u2554\u2550\u2550\u255D  ','\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557','\u255A\u2550\u2550\u2550\u2550\u2550\u2550\u255D'],
+      'F': ['\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557','\u2588\u2588\u2554\u2550\u2550\u2550\u2550\u255D','\u2588\u2588\u2588\u2588\u2588\u2557  ','\u2588\u2588\u2554\u2550\u2550\u255D  ','\u2588\u2588\u2551     ','\u255A\u2550\u255D     '],
+      'G': [' \u2588\u2588\u2588\u2588\u2588\u2588\u2557 ','\u2588\u2588\u2554\u2550\u2550\u2550\u2550\u255D ','\u2588\u2588\u2551  \u2588\u2588\u2588\u2557','\u2588\u2588\u2551   \u2588\u2588\u2551','\u255A\u2588\u2588\u2588\u2588\u2588\u2588\u2554\u255D',' \u255A\u2550\u2550\u2550\u2550\u2550\u255D '],
+      'H': ['\u2588\u2588\u2557  \u2588\u2588\u2557','\u2588\u2588\u2551  \u2588\u2588\u2551','\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2551','\u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2551','\u2588\u2588\u2551  \u2588\u2588\u2551','\u255A\u2550\u255D  \u255A\u2550\u255D'],
+      'I': ['\u2588\u2588\u2557','\u2588\u2588\u2551','\u2588\u2588\u2551','\u2588\u2588\u2551','\u2588\u2588\u2551','\u255A\u2550\u255D'],
+      'J': ['     \u2588\u2588\u2557','     \u2588\u2588\u2551','     \u2588\u2588\u2551','\u2588\u2588   \u2588\u2588\u2551','\u255A\u2588\u2588\u2588\u2588\u2588\u2554\u255D',' \u255A\u2550\u2550\u2550\u2550\u255D '],
+      'K': ['\u2588\u2588\u2557  \u2588\u2588\u2557','\u2588\u2588\u2551 \u2588\u2588\u2554\u255D','\u2588\u2588\u2588\u2588\u2588\u2554\u255D ','\u2588\u2588\u2554\u2550\u2588\u2588\u2557 ','\u2588\u2588\u2551  \u2588\u2588\u2557','\u255A\u2550\u255D  \u255A\u2550\u255D'],
+      'L': ['\u2588\u2588\u2557     ','\u2588\u2588\u2551     ','\u2588\u2588\u2551     ','\u2588\u2588\u2551     ','\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557','\u255A\u2550\u2550\u2550\u2550\u2550\u2550\u255D'],
+      'M': ['\u2588\u2588\u2588\u2557   \u2588\u2588\u2588\u2557','\u2588\u2588\u2588\u2588\u2557 \u2588\u2588\u2588\u2588\u2551','\u2588\u2588\u2554\u2588\u2588\u2588\u2588\u2554\u2588\u2588\u2551','\u2588\u2588\u2551\u255A\u2588\u2588\u2554\u255D\u2588\u2588\u2551','\u2588\u2588\u2551 \u255A\u2550\u255D \u2588\u2588\u2551','\u255A\u2550\u255D     \u255A\u2550\u255D'],
+      'N': ['\u2588\u2588\u2588\u2557   \u2588\u2588\u2557','\u2588\u2588\u2588\u2588\u2557  \u2588\u2588\u2551','\u2588\u2588\u2554\u2588\u2588\u2557 \u2588\u2588\u2551','\u2588\u2588\u2551\u255A\u2588\u2588\u2557\u2588\u2588\u2551','\u2588\u2588\u2551 \u255A\u2588\u2588\u2588\u2588\u2551','\u255A\u2550\u255D  \u255A\u2550\u2550\u2550\u255D'],
+      'O': [' \u2588\u2588\u2588\u2588\u2588\u2588\u2557 ','\u2588\u2588\u2554\u2550\u2550\u2550\u2588\u2588\u2557','\u2588\u2588\u2551   \u2588\u2588\u2551','\u2588\u2588\u2551   \u2588\u2588\u2551','\u255A\u2588\u2588\u2588\u2588\u2588\u2588\u2554\u255D',' \u255A\u2550\u2550\u2550\u2550\u2550\u255D '],
+      'P': ['\u2588\u2588\u2588\u2588\u2588\u2588\u2557 ','\u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2557','\u2588\u2588\u2588\u2588\u2588\u2588\u2554\u255D','\u2588\u2588\u2554\u2550\u2550\u2550\u255D ','\u2588\u2588\u2551     ','\u255A\u2550\u255D     '],
+      'Q': [' \u2588\u2588\u2588\u2588\u2588\u2588\u2557 ','\u2588\u2588\u2554\u2550\u2550\u2550\u2588\u2588\u2557','\u2588\u2588\u2551   \u2588\u2588\u2551','\u2588\u2588\u2551\u2584\u2584 \u2588\u2588\u2551','\u255A\u2588\u2588\u2588\u2588\u2588\u2588\u2554\u255D',' \u255A\u2550\u2550\u2580\u2580\u2550\u255D '],
+      'R': ['\u2588\u2588\u2588\u2588\u2588\u2588\u2557 ','\u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2557','\u2588\u2588\u2588\u2588\u2588\u2588\u2554\u255D','\u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2557','\u2588\u2588\u2551  \u2588\u2588\u2551','\u255A\u2550\u255D  \u255A\u2550\u255D'],
+      'S': ['\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557','\u2588\u2588\u2554\u2550\u2550\u2550\u2550\u255D','\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557','\u255A\u2550\u2550\u2550\u2550\u2588\u2588\u2551','\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2551','\u255A\u2550\u2550\u2550\u2550\u2550\u2550\u255D'],
+      'T': ['\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557','\u255A\u2550\u2550\u2588\u2588\u2554\u2550\u2550\u255D','   \u2588\u2588\u2551   ','   \u2588\u2588\u2551   ','   \u2588\u2588\u2551   ','   \u255A\u2550\u255D   '],
+      'U': ['\u2588\u2588\u2557   \u2588\u2588\u2557','\u2588\u2588\u2551   \u2588\u2588\u2551','\u2588\u2588\u2551   \u2588\u2588\u2551','\u2588\u2588\u2551   \u2588\u2588\u2551','\u255A\u2588\u2588\u2588\u2588\u2588\u2588\u2554\u255D',' \u255A\u2550\u2550\u2550\u2550\u2550\u255D '],
+      'V': ['\u2588\u2588\u2557   \u2588\u2588\u2557','\u2588\u2588\u2551   \u2588\u2588\u2551','\u2588\u2588\u2551   \u2588\u2588\u2551','\u255A\u2588\u2588\u2557 \u2588\u2588\u2554\u255D',' \u255A\u2588\u2588\u2588\u2588\u2554\u255D ','  \u255A\u2550\u2550\u2550\u255D  '],
+      'W': ['\u2588\u2588\u2557    \u2588\u2588\u2557','\u2588\u2588\u2551    \u2588\u2588\u2551','\u2588\u2588\u2551 \u2588\u2557 \u2588\u2588\u2551','\u2588\u2588\u2551\u2588\u2588\u2588\u2557\u2588\u2588\u2551','\u255A\u2588\u2588\u2588\u2554\u2588\u2588\u2588\u2554\u255D',' \u255A\u2550\u2550\u255D\u255A\u2550\u2550\u255D '],
+      'X': ['\u2588\u2588\u2557  \u2588\u2588\u2557','\u255A\u2588\u2588\u2557\u2588\u2588\u2554\u255D',' \u255A\u2588\u2588\u2588\u2554\u255D ',' \u2588\u2588\u2554\u2588\u2588\u2557 ','\u2588\u2588\u2554\u255D \u2588\u2588\u2557','\u255A\u2550\u255D  \u255A\u2550\u255D'],
+      'Y': ['\u2588\u2588\u2557   \u2588\u2588\u2557','\u255A\u2588\u2588\u2557 \u2588\u2588\u2554\u255D',' \u255A\u2588\u2588\u2588\u2588\u2554\u255D ','  \u255A\u2588\u2588\u2554\u255D  ','   \u2588\u2588\u2551   ','   \u255A\u2550\u255D   '],
+      'Z': ['\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557','\u255A\u2550\u2550\u2588\u2588\u2588\u2554\u255D','  \u2588\u2588\u2588\u2554\u255D ',' \u2588\u2588\u2588\u2554\u255D  ','\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557','\u255A\u2550\u2550\u2550\u2550\u2550\u2550\u255D'],
+      '0': [' \u2588\u2588\u2588\u2588\u2588\u2588\u2557 ','\u2588\u2588\u2554\u2550\u2550\u2550\u2588\u2588\u2557','\u2588\u2588\u2551   \u2588\u2588\u2551','\u2588\u2588\u2551   \u2588\u2588\u2551','\u255A\u2588\u2588\u2588\u2588\u2588\u2588\u2554\u255D',' \u255A\u2550\u2550\u2550\u2550\u2550\u255D '],
+      '1': [' \u2588\u2588\u2557','\u2588\u2588\u2588\u2551','\u255A\u2588\u2588\u2551',' \u2588\u2588\u2551',' \u2588\u2588\u2551',' \u255A\u2550\u255D'],
+      '2': ['\u2588\u2588\u2588\u2588\u2588\u2588\u2557 ','\u255A\u2550\u2550\u2550\u2550\u2588\u2588\u2557',' \u2588\u2588\u2588\u2588\u2588\u2554\u255D','\u2588\u2588\u2554\u2550\u2550\u2550\u255D ','\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557','\u255A\u2550\u2550\u2550\u2550\u2550\u2550\u255D'],
+      '3': ['\u2588\u2588\u2588\u2588\u2588\u2588\u2557 ','\u255A\u2550\u2550\u2550\u2550\u2588\u2588\u2557',' \u2588\u2588\u2588\u2588\u2588\u2554\u255D',' \u255A\u2550\u2550\u2550\u2588\u2588\u2557','\u2588\u2588\u2588\u2588\u2588\u2588\u2554\u255D','\u255A\u2550\u2550\u2550\u2550\u2550\u255D '],
+      '4': ['\u2588\u2588\u2557  \u2588\u2588\u2557','\u2588\u2588\u2551  \u2588\u2588\u2551','\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2551','\u255A\u2550\u2550\u2550\u2550\u2588\u2588\u2551','     \u2588\u2588\u2551','     \u255A\u2550\u255D'],
+      '5': ['\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557','\u2588\u2588\u2554\u2550\u2550\u2550\u2550\u255D','\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557','\u255A\u2550\u2550\u2550\u2550\u2588\u2588\u2551','\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2551','\u255A\u2550\u2550\u2550\u2550\u2550\u2550\u255D'],
+      '6': [' \u2588\u2588\u2588\u2588\u2588\u2588\u2557','\u2588\u2588\u2554\u2550\u2550\u2550\u2550\u255D','\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557','\u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2551','\u255A\u2588\u2588\u2588\u2588\u2588\u2554\u255D',' \u255A\u2550\u2550\u2550\u2550\u255D '],
+      '7': ['\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557','\u255A\u2550\u2550\u2550\u2550\u2588\u2588\u2551','    \u2588\u2588\u2554\u255D','   \u2588\u2588\u2554\u255D ','   \u2588\u2588\u2551  ','   \u255A\u2550\u255D  '],
+      '8': [' \u2588\u2588\u2588\u2588\u2588\u2557 ','\u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2557','\u255A\u2588\u2588\u2588\u2588\u2588\u2554\u255D','\u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2557','\u255A\u2588\u2588\u2588\u2588\u2588\u2554\u255D',' \u255A\u2550\u2550\u2550\u2550\u255D '],
+      '9': [' \u2588\u2588\u2588\u2588\u2588\u2557 ','\u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2557','\u255A\u2588\u2588\u2588\u2588\u2588\u2588\u2551',' \u255A\u2550\u2550\u2550\u2588\u2588\u2551',' \u2588\u2588\u2588\u2588\u2588\u2554\u255D',' \u255A\u2550\u2550\u2550\u2550\u255D '],
+      '.': ['   ','   ','   ','   ','\u2588\u2588\u2557','\u255A\u2550\u255D'],
+      '!': ['\u2588\u2588\u2557','\u2588\u2588\u2551','\u2588\u2588\u2551','\u255A\u2550\u255D','\u2588\u2588\u2557','\u255A\u2550\u255D'],
+      '?': ['\u2588\u2588\u2588\u2588\u2588\u2588\u2557 ','\u255A\u2550\u2550\u2550\u2550\u2588\u2588\u2557','  \u2584\u2588\u2588\u2588\u2554\u255D','  \u255A\u2550\u2550\u255D  ','  \u2588\u2588\u2557   ','  \u255A\u2550\u255D   '],
+      '-': ['        ','        ','\u2588\u2588\u2588\u2588\u2588\u2588\u2557 ','\u255A\u2550\u2550\u2550\u2550\u2550\u255D ','        ','        '],
+      '#': [' \u2588\u2588\u2557\u2588\u2588\u2557 ','\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2551','\u2588\u2588\u2554\u2550\u2588\u2588\u2554\u255D','\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2551','\u255A\u2550\u255D\u255A\u2550\u255D ','        '],
+      '@': [' \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557 ','\u2588\u2588\u2554\u2550\u2550\u2550\u2550\u2588\u2588\u2557','\u2588\u2588\u2551\u2588\u2588\u2588\u2557\u2588\u2588\u2551','\u2588\u2588\u2551\u255A\u2550\u2550\u255D\u2588\u2588\u2551','\u255A\u2588\u2588\u2588\u2588\u2588\u2588\u2554\u255D ',' \u255A\u2550\u2550\u2550\u2550\u2550\u255D  '],
+    };
 
-      offCanvas.width = pixelW;
-      offCanvas.height = pixelH;
-      offCtx.font = fontStr();
-      offCtx.fillStyle = '#fff';
-      offCtx.textBaseline = 'top';
-      offCtx.fillText(text || ' ', 0, Math.round((pixelH - fontSize) / 2));
+    // Render text using FIGlet font — returns array of strings
+    function figletRender(text) {
+      var upper = (text || '').toUpperCase();
+      var inputLines = upper.split('\n');
+      var result = [];
 
-      var imgData = offCtx.getImageData(0, 0, pixelW, pixelH);
-      var cols = Math.ceil(pixelW / cellW);
-      var rows = Math.ceil(pixelH / cellH);
+      for (var li = 0; li < inputLines.length; li++) {
+        var chars = inputLines[li];
+        if (!chars.length) chars = ' ';
+        var rows = [];
+        for (var r = 0; r < FIGLET_HEIGHT; r++) rows.push('');
 
-      var grid = new Uint8Array(cols * rows);
-      for (var r = 0; r < rows; r++) {
-        for (var c = 0; c < cols; c++) {
-          // Sample multiple points in the cell and average for better coverage
-          var total = 0;
-          var samples = 0;
-          var x0 = Math.floor(c * cellW);
-          var y0 = Math.floor(r * cellH);
-          var x1 = Math.min(Math.floor((c + 1) * cellW), pixelW);
-          var y1 = Math.min(Math.floor((r + 1) * cellH), pixelH);
-          // Sample a 3x3 grid within the cell
-          for (var sy = y0; sy < y1; sy += Math.max(1, Math.floor((y1 - y0) / 3))) {
-            for (var sx = x0; sx < x1; sx += Math.max(1, Math.floor((x1 - x0) / 3))) {
-              if (sx < pixelW && sy < pixelH) {
-                total += imgData.data[(sy * pixelW + sx) * 4 + 3];
-                samples++;
-              }
-            }
-          }
-          grid[r * cols + c] = samples > 0 ? Math.round(total / samples) : 0;
-        }
-      }
-
-      return { grid: grid, cols: cols, rows: rows };
-    }
-
-    // Convert rasterized grid to Block art string
-    function gridToBlock(raster) {
-      var map = ASCII_CHAR_MAP.block;
-      var lines = [];
-      for (var r = 0; r < raster.rows; r++) {
-        var line = '';
-        for (var c = 0; c < raster.cols; c++) {
-          var v = raster.grid[r * raster.cols + c];
-          if (v > 128) line += map.filled;
-          else if (v > 40) line += map.half;
-          else line += map.empty;
-        }
-        lines.push(line);
-      }
-      return trimAsciiLines(lines);
-    }
-
-    // Convert rasterized grid to Slim art string
-    function gridToSlim(raster) {
-      var map = ASCII_CHAR_MAP.slim;
-      var lines = [];
-      for (var r = 0; r < raster.rows; r++) {
-        var line = '';
-        for (var c = 0; c < raster.cols; c++) {
-          var v = raster.grid[r * raster.cols + c];
-          if (v > 128) line += map.filled;
-          else if (v > 40) line += map.half;
-          else line += map.empty;
-        }
-        lines.push(line);
-      }
-      return trimAsciiLines(lines);
-    }
-
-    // Convert rasterized grid to Braille art using 2x4 pixel blocks
-    function gridToBraille(text) {
-      var fontSize = S.fontSize;
-      var offCanvas = document.createElement('canvas');
-      var offCtx = offCanvas.getContext('2d');
-      offCtx.font = fontStr();
-
-      var metrics = offCtx.measureText(text || ' ');
-      var textW = metrics.width;
-      var pixelW = Math.ceil(textW) + 4;
-      var pixelH = Math.ceil(fontSize * 1.3);
-
-      offCanvas.width = pixelW;
-      offCanvas.height = pixelH;
-      offCtx.font = fontStr();
-      offCtx.fillStyle = '#fff';
-      offCtx.textBaseline = 'top';
-      offCtx.fillText(text || ' ', 0, Math.round((pixelH - fontSize) / 2));
-
-      var imgData = offCtx.getImageData(0, 0, pixelW, pixelH);
-
-      function getPixel(px, py) {
-        if (px < 0 || px >= pixelW || py < 0 || py >= pixelH) return false;
-        return imgData.data[(py * pixelW + px) * 4 + 3] > 80;
-      }
-
-      // Braille: 2 dots wide, 4 dots tall per character
-      // Bit positions:
-      // (0,0)=1  (1,0)=8
-      // (0,1)=2  (1,1)=16
-      // (0,2)=4  (1,2)=32
-      // (0,3)=64 (1,3)=128
-      var brailleCols = Math.ceil(pixelW / 2);
-      var brailleRows = Math.ceil(pixelH / 4);
-
-      var lines = [];
-      for (var br = 0; br < brailleRows; br++) {
-        var line = '';
-        for (var bc = 0; bc < brailleCols; bc++) {
-          var px = bc * 2;
-          var py = br * 4;
-          var bits = 0;
-          if (getPixel(px, py))     bits |= 1;
-          if (getPixel(px, py + 1)) bits |= 2;
-          if (getPixel(px, py + 2)) bits |= 4;
-          if (getPixel(px + 1, py))     bits |= 8;
-          if (getPixel(px + 1, py + 1)) bits |= 16;
-          if (getPixel(px + 1, py + 2)) bits |= 32;
-          if (getPixel(px, py + 3))     bits |= 64;
-          if (getPixel(px + 1, py + 3)) bits |= 128;
-          line += String.fromCharCode(0x2800 + bits);
-        }
-        lines.push(line);
-      }
-      return trimAsciiLines(lines);
-    }
-
-    // Convert rasterized grid to Shadow art (filled + shadow row beneath)
-    function gridToShadow(raster) {
-      var map = ASCII_CHAR_MAP.shadow;
-      var lines = [];
-      for (var r = 0; r < raster.rows; r++) {
-        var line = '';
-        for (var c = 0; c < raster.cols; c++) {
-          var v = raster.grid[r * raster.cols + c];
-          if (v > 128) line += map.filled;
-          else if (v > 40) line += map.half;
-          else line += map.empty;
-        }
-        lines.push(line);
-      }
-      // Add shadow row: for each filled char in the last row that had content,
-      // add a row of ░ shifted right by 1
-      var shadowLine = '';
-      var lastContentRow = '';
-      for (var r = lines.length - 1; r >= 0; r--) {
-        if (lines[r].trim().length > 0) { lastContentRow = lines[r]; break; }
-      }
-      for (var c = 0; c < lastContentRow.length; c++) {
-        if (lastContentRow[c] !== ' ') shadowLine += '\u2591';
-        else shadowLine += ' ';
-      }
-      lines.push(' ' + shadowLine);
-      return trimAsciiLines(lines);
-    }
-
-    // Convert rasterized grid to Line Art (filled + edge detection, double-wide)
-    function gridToLine(raster) {
-      var lines = [];
-      for (var r = 0; r < raster.rows; r++) {
-        var line = '';
-        for (var c = 0; c < raster.cols; c++) {
-          var v = raster.grid[r * raster.cols + c];
-          if (v > 128) {
-            var isEdge = false;
-            if (r === 0 || r === raster.rows - 1 || c === 0 || c === raster.cols - 1) {
-              isEdge = true;
-            } else {
-              var above = raster.grid[(r - 1) * raster.cols + c];
-              var below = raster.grid[(r + 1) * raster.cols + c];
-              var left  = raster.grid[r * raster.cols + (c - 1)];
-              var right = raster.grid[r * raster.cols + (c + 1)];
-              if (above <= 40 || below <= 40 || left <= 40 || right <= 40) isEdge = true;
-            }
-            line += isEdge ? '\u2592\u2592' : '\u2588\u2588';
-          } else if (v > 40) {
-            line += '\u2592\u2592';
-          } else {
-            line += '  ';
+        for (var ci = 0; ci < chars.length; ci++) {
+          var glyph = FIGLET_FONT[chars[ci]] || FIGLET_FONT[' '];
+          for (var r = 0; r < FIGLET_HEIGHT; r++) {
+            rows[r] += glyph[r] || '';
           }
         }
-        lines.push(line);
+
+        for (var r = 0; r < FIGLET_HEIGHT; r++) result.push(rows[r]);
+        if (li < inputLines.length - 1) result.push('');
       }
-      return trimAsciiLines(lines);
+
+      return trimAsciiLines(result);
+    }
+
+    // FIGlet with lighter outline treatment
+    function figletRenderLine(text) {
+      var lines = figletRender(text);
+      return lines.map(function(line) {
+        return line.replace(/\u2588/g, '\u2593');
+      });
     }
 
     // Trim empty rows from top/bottom, trim trailing spaces per line
     function trimAsciiLines(lines) {
-      // Trim trailing spaces per line
       lines = lines.map(function(l) { return l.replace(/\s+$/, ''); });
-      // Remove leading empty lines
       while (lines.length > 0 && lines[0].trim() === '') lines.shift();
-      // Remove trailing empty lines
       while (lines.length > 0 && lines[lines.length - 1].trim() === '') lines.pop();
       return lines;
     }
 
-    // Main ASCII rasterizer: returns array of strings for a given text and style
-    function rasterizeAscii(text, style) {
-      var t = (text || ' ').split('\n')[0]; // use first line only for ASCII
-      if (!t.trim()) t = ' ';
-
-      // Choose cell size based on style
-      var cellW, cellH;
-      if (style === 'braille') {
-        return gridToBraille(t);
-      } else if (style === 'slim') {
-        // Slim: finer grid for thin lines
-        cellW = Math.max(2, Math.round(S.fontSize / 8));
-        cellH = Math.max(3, Math.round(S.fontSize / 5));
-      } else {
-        // block, shadow, line: coarse grid for chunky letters
-        cellW = Math.max(3, Math.round(S.fontSize / 6));
-        cellH = Math.max(4, Math.round(S.fontSize / 4));
-      }
-
-      var raster = rasterizeTextToPixelGrid(t, cellW, cellH);
-
+    // Unified dispatcher: FIGlet for block/line
+    function dotGridToAscii(layout, style) {
+      var text = layout.lines.join('\n');
       switch (style) {
-        case 'block':  return gridToBlock(raster);
-        case 'slim':   return gridToSlim(raster);
-        case 'shadow': return gridToShadow(raster);
-        case 'line':   return gridToLine(raster);
-        default:       return gridToBlock(raster);
+        case 'block': return figletRender(text);
+        case 'line':  return figletRenderLine(text);
+        default:      return figletRender(text);
       }
+    }
+
+    // Set ASCII pre font size from the slider
+    function autoSizeAsciiFont(lines) {
+      asciiPre.style.fontSize = S.asciiSize + 'px';
     }
 
     // ════════════════════════════════════════════════
@@ -958,7 +829,9 @@
     function renderAsciiStatic(text) {
       showAsciiMode();
       applyAsciiColors();
-      var lines = rasterizeAscii(text, S.renderMode);
+      var layout = computeLayout(text);
+      var lines = dotGridToAscii(layout, S.renderMode);
+      autoSizeAsciiFont(lines);
       asciiPre.textContent = lines.join('\n');
     }
 
@@ -966,54 +839,29 @@
     function renderAsciiGlitchIn(text, onDone) {
       showAsciiMode();
       applyAsciiColors();
-      var targetLines = rasterizeAscii(text, S.renderMode);
-      var glitchArr = ASCII_GLITCH_CHARS[S.renderMode] || ASCII_GLITCH_CHARS.block;
-      var isDoubleWide = (S.renderMode === 'block' || S.renderMode === 'shadow' || S.renderMode === 'line');
+      var layout = computeLayout(text);
+      var targetLines = dotGridToAscii(layout, S.renderMode);
+      autoSizeAsciiFont(targetLines);
+      var isFiglet = (S.renderMode === 'block' || S.renderMode === 'line');
+      var glitchArr = isFiglet ? FIGLET_GLITCH_CHARS : (ASCII_GLITCH_CHARS[S.renderMode] || ASCII_GLITCH_CHARS.block);
       var totalFrames = 30;
       var frame = 0;
 
       var targetFlat = targetLines.join('\n');
-
-      // Pre-compute cell boundaries for double-wide modes
-      // In double-wide modes, each "cell" is 2 chars. We process in cell units.
-      var cells = [];
-      if (isDoubleWide) {
-        for (var li = 0; li < targetLines.length; li++) {
-          var line = targetLines[li];
-          for (var ci = 0; ci < line.length; ci += 2) {
-            cells.push({ chars: line.substr(ci, 2), isSpace: line.substr(ci, 2).trim() === '' });
-          }
-          cells.push({ chars: '\n', isNewline: true });
-        }
-      }
 
       function step() {
         frame++;
         var progress = frame / totalFrames;
         var output = '';
 
-        if (isDoubleWide) {
-          for (var i = 0; i < cells.length; i++) {
-            var cell = cells[i];
-            if (cell.isNewline) { output += '\n'; continue; }
-            if (cell.isSpace) { output += cell.chars; continue; }
+        for (var i = 0; i < targetFlat.length; i++) {
+          var ch = targetFlat[i];
+          if (ch === '\n') { output += '\n'; }
+          else if (ch === ' ') { output += ' '; }
+          else {
             var revealT = ((i * 7 + 3) % totalFrames) / totalFrames;
-            if (progress > revealT) {
-              output += cell.chars;
-            } else {
-              output += glitchArr[Math.floor(Math.random() * glitchArr.length)];
-            }
-          }
-        } else {
-          for (var i = 0; i < targetFlat.length; i++) {
-            var ch = targetFlat[i];
-            if (ch === '\n') { output += '\n'; }
-            else if (ch === ' ') { output += ' '; }
-            else {
-              var revealT = ((i * 7 + 3) % totalFrames) / totalFrames;
-              if (progress > revealT) { output += ch; }
-              else { output += glitchArr[Math.floor(Math.random() * glitchArr.length)]; }
-            }
+            if (progress > revealT) { output += ch; }
+            else { output += glitchArr[Math.floor(Math.random() * glitchArr.length)]; }
           }
         }
         asciiPre.textContent = output;
@@ -1032,11 +880,14 @@
     function renderAsciiGlitchTransition(fromText, toText, onDone) {
       showAsciiMode();
       applyAsciiColors();
-      var fromLines = rasterizeAscii(fromText, S.renderMode);
-      var toLines = rasterizeAscii(toText, S.renderMode);
-      var glitchArr = ASCII_GLITCH_CHARS[S.renderMode] || ASCII_GLITCH_CHARS.block;
-      var isDoubleWide = (S.renderMode === 'block' || S.renderMode === 'shadow' || S.renderMode === 'line');
-      var step2 = isDoubleWide ? 2 : 1;
+      var fromLayout = computeLayout(fromText);
+      var fromLines = dotGridToAscii(fromLayout, S.renderMode);
+      var toLayout = computeLayout(toText);
+      var toLines = dotGridToAscii(toLayout, S.renderMode);
+      autoSizeAsciiFont(toLines);
+      var isFiglet = (S.renderMode === 'block' || S.renderMode === 'line');
+      var glitchArr = isFiglet ? FIGLET_GLITCH_CHARS : (ASCII_GLITCH_CHARS[S.renderMode] || ASCII_GLITCH_CHARS.block);
+      var step2 = 1;
 
       var maxRows = Math.max(fromLines.length, toLines.length);
       while (fromLines.length < maxRows) fromLines.push('');
@@ -1057,7 +908,7 @@
           var line = source[r] || '';
           var row = '';
           for (var c = 0; c < Math.max(line.length, step2); c += step2) {
-            var cell = line.substr(c, step2) || (isDoubleWide ? '  ' : ' ');
+            var cell = line.substr(c, step2) || ' ';
             if (cell.trim() === '') {
               row += cell;
             } else if (Math.random() < corruption * 0.7) {
@@ -2251,7 +2102,9 @@
       var cycleWords = [word1, word2];
 
       // Show first word
-      var lines = rasterizeAscii(cycleWords[0], S.renderMode);
+      var cycleLayout = computeLayout(cycleWords[0]);
+      var lines = dotGridToAscii(cycleLayout, S.renderMode);
+      autoSizeAsciiFont(lines);
       asciiPre.textContent = lines.join('\n');
 
       function cycle() {
@@ -2277,7 +2130,7 @@
         else if (S.mode === 'animate') renderDotAnimate();
         else if (S.mode === 'cycle') renderDotCycle();
       } else {
-        // ASCII modes: block, slim, braille, shadow, line
+        // ASCII modes: block, line
         if (S.mode === 'static') renderAsciiStaticMode();
         else if (S.mode === 'animate') renderAsciiAnimate();
         else if (S.mode === 'cycle') renderAsciiCycle();
@@ -2289,6 +2142,12 @@
     // ════════════════════════════════════════════════
     function updatePanelVisibility() {
       var isDot = S.renderMode === 'dot';
+
+      // Font section: only for dot grid
+      document.getElementById('fontSection').classList.toggle('hidden', !isDot);
+
+      // ASCII Size section: only for block/line
+      document.getElementById('asciiSizeSection').classList.toggle('hidden', isDot);
 
       // Grid section: only for dot grid
       document.getElementById('gridSection').classList.toggle('hidden', !isDot);
@@ -2459,6 +2318,7 @@
 
     bindSlider('weightSlider', 'weightVal', 'fontWeight', null, String);
     bindSlider('fontSizeSlider', 'fontSizeVal', 'fontSize');
+    bindSlider('asciiSizeSlider', 'asciiSizeVal', 'asciiSize');
     bindSlider('spacingSlider', 'spacingVal', 'dotSpacing');
     bindSlider('radiusSlider', 'radiusVal', 'dotRadiusRatio', function(v) { return v.toFixed(2); }, parseFloat);
     bindSlider('lineGapSlider', 'lineGapVal', 'lineGap', function(v) { return v.toFixed(2); }, parseFloat);
