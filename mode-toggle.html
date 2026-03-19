@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mode Toggle — Dot Grid vs ASCII Block</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: "JetBrains Mono", monospace;
+      background: #0a0a0b;
+      color: #f5f5f7;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    ::selection { background: #ff5d22; color: #fff; }
+
+    /* Toggle */
+    .toggle {
+      display: flex;
+      gap: 0;
+      margin-bottom: 48px;
+    }
+    .toggle-btn {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 10px 28px;
+      border: 1px solid #262626;
+      background: transparent;
+      color: #525252;
+      cursor: pointer;
+      transition: all 180ms ease;
+    }
+    .toggle-btn { border-right: none; }
+    .toggle-btn:first-child { border-radius: 4px 0 0 4px; }
+    .toggle-btn:last-child  { border-radius: 0 4px 4px 0; border-right: 1px solid #262626; }
+    .toggle-btn.active + .toggle-btn { border-left-color: #ff5d22; }
+    .toggle-btn:last-child.active { border-right-color: #ff5d22; }
+    .toggle-btn.active {
+      background: #ff5d22;
+      border-color: #ff5d22;
+      color: #fff;
+    }
+    .toggle-btn:not(.active):hover {
+      border-color: #ff5d22;
+      color: #ff5d22;
+    }
+
+    /* Container for the word */
+    .word-stage {
+      position: relative;
+      min-width: 400px;
+      min-height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Dot matrix canvas */
+    #dotCanvas {
+      display: block;
+    }
+
+    /* ASCII block art */
+    .ascii-block {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      line-height: 1.15;
+      color: #ff5d22;
+      white-space: pre;
+      user-select: none;
+      text-shadow: 0 0 8px rgba(255, 93, 34, 0.35);
+    }
+
+    .label {
+      font-size: 11px;
+      color: #525252;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-top: 48px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="toggle">
+    <button class="toggle-btn active" data-m="dot">Dot Grid</button>
+    <button class="toggle-btn" data-m="block">Block</button>
+    <button class="toggle-btn" data-m="slim">Slim</button>
+    <button class="toggle-btn" data-m="braille">Braille</button>
+    <button class="toggle-btn" data-m="shadow">Shadow</button>
+    <button class="toggle-btn" data-m="line">Line Art</button>
+  </div>
+
+  <div class="word-stage" id="wordStage">
+    <!-- Filled by JS -->
+  </div>
+
+  <div class="label">ship / build — cycling every 2.5s · 6 rendering modes</div>
+
+<script>
+// ─────────────────────────────────────────
+// CONFIG
+// ─────────────────────────────────────────
+const WORDS = ['ship', 'build'];
+const HOLD_MS = 2500;
+let wordIndex = 0;
+let mode = 'dot';
+let cycleTimer = null;
+let animRaf = null;
+
+// ─────────────────────────────────────────
+// ASCII ART — 5 STYLES
+// ─────────────────────────────────────────
+
+// Style 1: Block (FIGlet heavy)
+const BLOCK = {
+  ship: [
+    '███████╗██╗  ██╗██╗██████╗ ',
+    '██╔════╝██║  ██║██║██╔══██╗',
+    '███████╗███████║██║██████╔╝',
+    '╚════██║██╔══██║██║██╔═══╝ ',
+    '███████║██║  ██║██║██║     ',
+    '╚══════╝╚═╝  ╚═╝╚═╝╚═╝     ',
+  ],
+  build: [
+    '██████╗ ██╗   ██╗██╗██╗     ██████╗ ',
+    '██╔══██╗██║   ██║██║██║     ██╔══██╗',
+    '██████╔╝██║   ██║██║██║     ██║  ██║',
+    '██╔══██╗██║   ██║██║██║     ██║  ██║',
+    '██████╔╝╚██████╔╝██║███████╗██████╔╝',
+    '╚═════╝  ╚═════╝ ╚═╝╚══════╝╚═════╝ ',
+  ],
+};
+
+// Style 2: Slim (thin lines)
+const SLIM = {
+  ship: [
+    ' _____ _     _       ',
+    '|   __| |___|_|___   ',
+    '|__   |   | | | . |  ',
+    '|_____|_|_|_|_|  _|  ',
+    '              |_|    ',
+  ],
+  build: [
+    ' _       _ _    _ ',
+    '| |_ _ _|_| |__| |',
+    '| . | | | | |  . |',
+    '|___|___|_|_|____|',
+  ],
+};
+
+// Style 3: Braille (Unicode braille dots)
+const BRAILLE = {
+  ship: [
+    '⣿⣿⣿⡇⣿⡇ ⣿⡇⣿⣿⡇⣿⣿⣿⡇',
+    '⣿⡇  ⣿⡇ ⣿⡇ ⣿⡇ ⣿⡇ ⣿⡇',
+    '⣿⣿⣿⡇⣿⣿⣿⡇ ⣿⡇ ⣿⣿⣿⡇',
+    '   ⣿⡇⣿⡇ ⣿⡇ ⣿⡇ ⣿⡇  ',
+    '⣿⣿⣿⡇⣿⡇ ⣿⡇ ⣿⡇ ⣿⡇  ',
+  ],
+  build: [
+    '⣿⣿⣿⡇⣿⡇ ⣿⡇⣿⡇⣿⡇  ⣿⣿⣿⡇',
+    '⣿⡇ ⣿⡇⣿⡇ ⣿⡇⣿⡇⣿⡇  ⣿⡇ ⣿⡇',
+    '⣿⣿⣿⡇⣿⡇ ⣿⡇⣿⡇⣿⡇  ⣿⡇ ⣿⡇',
+    '⣿⡇ ⣿⡇⣿⡇ ⣿⡇⣿⡇⣿⡇  ⣿⡇ ⣿⡇',
+    '⣿⣿⣿⡇ ⣿⣿⡇ ⣿⡇⣿⣿⣿⡇⣿⣿⣿⡇',
+  ],
+};
+
+// Style 4: Shadow (3D block shadow)
+const SHADOW = {
+  ship: [
+    ' ┌──┐┬ ┬┬┌─┐ ',
+    ' └──┐├─┤│├─┘ ',
+    ' └──┘┴ ┴┴┴   ',
+    '  ░░░░░░░░░  ',
+  ],
+  build: [
+    ' ┌┐ ┬ ┬┬┬  ┌┬┐',
+    ' ├┴┐│ │││   │││',
+    ' └─┘└─┘┴┴─┘─┴┘',
+    '  ░░░░░░░░░░░░ ',
+  ],
+};
+
+// Style 5: Line Art (box drawing)
+const LINE = {
+  ship: [
+    '╔═══╗╔╗ ╔╗╔╗╔═══╗',
+    '║╔═╗║║║ ║║║║║╔═╗║',
+    '║╚══╗║╚═╝║║║║╚═╝║',
+    '╚══╗║║╔═╗║║║║╔══╝',
+    '║╚═╝║║║ ║║║║║║   ',
+    '╚═══╝╚╝ ╚╝╚╝╚╝   ',
+  ],
+  build: [
+    '╔══╗ ╔╗ ╔╗╔╗╔╗  ╔══╗ ',
+    '║╔╗║ ║║ ║║║║║║  ║╔╗║ ',
+    '║╚╝╚╗║║ ║║║║║║  ║║║║ ',
+    '║╔═╗║║║ ║║║║║║  ║║║║ ',
+    '║╚═╝║║╚═╝║║║║╚═╗║╚╝║ ',
+    '╚═══╝╚═══╝╚╝╚══╝╚══╝ ',
+  ],
+};
+
+const ASCII_STYLES = { block: BLOCK, slim: SLIM, braille: BRAILLE, shadow: SHADOW, line: LINE };
+const GLITCH_MAP = {
+  block:   '█▓▒░╔╗╚╝║═╣╠╦╩┼─│',
+  slim:    '_|/\\[]{}()-=+~',
+  braille: '⣿⣾⣽⣻⣷⣯⣟⡿⢿⣀⣄⣆⣇⡇⡏⡟⡿',
+  shadow:  '░▒▓█┌┐└┘├┤┬┴┼─│',
+  line:    '╔╗╚╝║═╣╠╦╩┼─│╬░▒',
+};
+
+function renderAsciiStatic(word, style) {
+  const stage = document.getElementById('wordStage');
+  stage.innerHTML = '';
+  const pre = document.createElement('pre');
+  pre.className = 'ascii-block';
+  const data = ASCII_STYLES[style];
+  if (!data || !data[word]) return;
+  pre.textContent = data[word].join('\n');
+  stage.appendChild(pre);
+}
+
+function glitchAsciiTransition(fromWord, toWord, style, onDone) {
+  const stage = document.getElementById('wordStage');
+  const pre = stage.querySelector('.ascii-block') || document.createElement('pre');
+  pre.className = 'ascii-block';
+  if (!pre.parentNode) { stage.innerHTML = ''; stage.appendChild(pre); }
+
+  const data = ASCII_STYLES[style];
+  const fromLines = data[fromWord] || [''];
+  const toLines = data[toWord] || [''];
+  const glitchChars = GLITCH_MAP[style] || GLITCH_MAP.block;
+  const maxRows = Math.max(fromLines.length, toLines.length);
+  const totalFrames = 18;
+  let frame = 0;
+
+  function step() {
+    frame++;
+    const progress = frame / totalFrames;
+    const corruption = 1 - Math.abs(progress - 0.5) * 2;
+    const useTarget = progress > 0.5;
+    const source = useTarget ? toLines : fromLines;
+
+    let output = '';
+    for (let r = 0; r < maxRows; r++) {
+      const line = source[r] || '';
+      let row = '';
+      for (let c = 0; c < line.length; c++) {
+        if (line[c] === ' ') {
+          row += ' ';
+        } else if (Math.random() < corruption * 0.7) {
+          row += glitchChars[Math.floor(Math.random() * glitchChars.length)];
+        } else {
+          row += line[c];
+        }
+      }
+      output += row + '\n';
+    }
+    pre.textContent = output;
+
+    if (frame < totalFrames) {
+      animRaf = requestAnimationFrame(step);
+    } else {
+      pre.textContent = toLines.join('\n');
+      onDone();
+    }
+  }
+  animRaf = requestAnimationFrame(step);
+}
+
+// ─────────────────────────────────────────
+// DOT MATRIX (canvas)
+// ─────────────────────────────────────────
+const ACTIVE_COLOR = '#ff5d22';
+const INACTIVE_COLOR = 'rgba(255, 93, 34, 0.15)';
+const FONT_FAMILY = '"Space Grotesk", "Inter", system-ui, sans-serif';
+const DOT_TRANSITION_FRAMES = 14;
+
+let dotCanvas, dotCtx;
+let DOT_SPACING, DOT_RADIUS, dotCols, dotRows;
+let dotGrids = {};
+
+function initDotMatrix() {
+  const fontSize = 64;
+  DOT_SPACING = Math.max(4, Math.round(fontSize / 14));
+  DOT_RADIUS = DOT_SPACING * 0.36;
+
+  const mc = document.createElement('canvas');
+  const mctx = mc.getContext('2d');
+  mctx.font = `700 ${fontSize}px ${FONT_FAMILY}`;
+  const maxW = Math.max(...WORDS.map(w => mctx.measureText(w).width));
+  dotCols = Math.ceil(maxW / DOT_SPACING);
+  dotRows = Math.ceil(fontSize / DOT_SPACING);
+
+  WORDS.forEach(word => {
+    const w = dotCols * DOT_SPACING;
+    const h = dotRows * DOT_SPACING;
+    const off = document.createElement('canvas');
+    const octx = off.getContext('2d');
+    off.width = w; off.height = h;
+    octx.font = `700 ${fontSize}px ${FONT_FAMILY}`;
+    octx.fillStyle = '#fff';
+    octx.textBaseline = 'top';
+    octx.fillText(word, 0, (h - fontSize) / 2);
+    const img = octx.getImageData(0, 0, w, h);
+    const grid = [];
+    for (let r = 0; r < dotRows; r++) {
+      for (let c = 0; c < dotCols; c++) {
+        const sx = Math.floor(c * DOT_SPACING + DOT_SPACING / 2);
+        const sy = Math.floor(r * DOT_SPACING + DOT_SPACING / 2);
+        const i = (sy * w + sx) * 4;
+        grid.push(img.data[i + 3] > 80);
+      }
+    }
+    dotGrids[word] = grid;
+  });
+}
+
+function createDotCanvas() {
+  const stage = document.getElementById('wordStage');
+  stage.innerHTML = '';
+  dotCanvas = document.createElement('canvas');
+  dotCanvas.id = 'dotCanvas';
+  const w = dotCols * DOT_SPACING;
+  const h = dotRows * DOT_SPACING;
+  dotCanvas.width = w;
+  dotCanvas.height = h;
+  dotCanvas.style.width = w + 'px';
+  dotCanvas.style.height = h + 'px';
+  dotCtx = dotCanvas.getContext('2d');
+  stage.appendChild(dotCanvas);
+}
+
+function drawDotGrid(activeGrid) {
+  if (!dotCtx) return;
+  dotCtx.clearRect(0, 0, dotCanvas.width, dotCanvas.height);
+  for (let r = 0; r < dotRows; r++) {
+    for (let c = 0; c < dotCols; c++) {
+      const idx = r * dotCols + c;
+      const cx = c * DOT_SPACING + DOT_SPACING / 2;
+      const cy = r * DOT_SPACING + DOT_SPACING / 2;
+      dotCtx.fillStyle = INACTIVE_COLOR;
+      dotCtx.globalAlpha = 1;
+      dotCtx.beginPath();
+      dotCtx.arc(cx, cy, DOT_RADIUS, 0, Math.PI * 2);
+      dotCtx.fill();
+      if (activeGrid[idx]) {
+        dotCtx.fillStyle = ACTIVE_COLOR;
+        dotCtx.beginPath();
+        dotCtx.arc(cx, cy, DOT_RADIUS, 0, Math.PI * 2);
+        dotCtx.fill();
+      }
+    }
+  }
+}
+
+function dotTransition(fromGrid, toGrid, onDone) {
+  let frame = 0;
+  const total = dotCols * dotRows;
+  const delays = Array.from({ length: total }, () => Math.random() * 0.5);
+
+  function step() {
+    frame++;
+    const progress = frame / DOT_TRANSITION_FRAMES;
+    dotCtx.clearRect(0, 0, dotCanvas.width, dotCanvas.height);
+
+    for (let r = 0; r < dotRows; r++) {
+      for (let c = 0; c < dotCols; c++) {
+        const idx = r * dotCols + c;
+        const cx = c * DOT_SPACING + DOT_SPACING / 2;
+        const cy = r * DOT_SPACING + DOT_SPACING / 2;
+        const localT = Math.max(0, Math.min(1, (progress - delays[idx]) / 0.5));
+        const was = fromGrid[idx], will = toGrid[idx];
+        let opacity = was && will ? 1 : !was && !will ? 0 : was ? 1 - localT : localT;
+
+        dotCtx.fillStyle = INACTIVE_COLOR;
+        dotCtx.globalAlpha = 1;
+        dotCtx.beginPath();
+        dotCtx.arc(cx, cy, DOT_RADIUS, 0, Math.PI * 2);
+        dotCtx.fill();
+
+        if (opacity > 0.01) {
+          dotCtx.fillStyle = ACTIVE_COLOR;
+          dotCtx.globalAlpha = opacity;
+          dotCtx.beginPath();
+          dotCtx.arc(cx, cy, DOT_RADIUS, 0, Math.PI * 2);
+          dotCtx.fill();
+        }
+        dotCtx.globalAlpha = 1;
+      }
+    }
+    if (frame < DOT_TRANSITION_FRAMES) { animRaf = requestAnimationFrame(step); }
+    else onDone();
+  }
+  animRaf = requestAnimationFrame(step);
+}
+
+// ─────────────────────────────────────────
+// CYCLING
+// ─────────────────────────────────────────
+function stopAll() {
+  if (cycleTimer) { clearTimeout(cycleTimer); cycleTimer = null; }
+  if (animRaf) { cancelAnimationFrame(animRaf); animRaf = null; }
+}
+
+function cycle() {
+  const fromWord = WORDS[wordIndex];
+  const nextIndex = (wordIndex + 1) % WORDS.length;
+  const toWord = WORDS[nextIndex];
+
+  if (mode === 'dot') {
+    dotTransition(dotGrids[fromWord], dotGrids[toWord], () => {
+      wordIndex = nextIndex;
+      cycleTimer = setTimeout(cycle, HOLD_MS);
+    });
+  } else {
+    glitchAsciiTransition(fromWord, toWord, mode, () => {
+      wordIndex = nextIndex;
+      cycleTimer = setTimeout(cycle, HOLD_MS);
+    });
+  }
+}
+
+function startCycle() {
+  stopAll();
+  cycleTimer = setTimeout(cycle, HOLD_MS);
+}
+
+// ─────────────────────────────────────────
+// MODE SWITCH
+// ─────────────────────────────────────────
+function setMode(m) {
+  if (m === mode) return;
+  mode = m;
+  stopAll();
+
+  document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('[data-m="' + m + '"]').classList.add('active');
+
+  if (mode === 'dot') {
+    createDotCanvas();
+    drawDotGrid(dotGrids[WORDS[wordIndex]]);
+  } else {
+    renderAsciiStatic(WORDS[wordIndex], mode);
+  }
+
+  startCycle();
+}
+
+// Bind toggle buttons
+document.querySelectorAll('.toggle-btn').forEach(btn => {
+  btn.addEventListener('click', () => setMode(btn.dataset.m));
+});
+
+// ─────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────
+document.fonts.ready.then(() => {
+  initDotMatrix();
+  createDotCanvas();
+  drawDotGrid(dotGrids[WORDS[wordIndex]]);
+  startCycle();
+});
+</script>
+</body>
+</html>
