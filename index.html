@@ -130,6 +130,12 @@
       letter-spacing: -0.02em;
       max-width: 900px;
     }
+    .hero__dotmatrix {
+      font-family: "Space Grotesk", system-ui, sans-serif;
+      font-size: clamp(2.5rem, 6vw, 4.5rem);
+      font-weight: 700;
+      line-height: 1.15;
+    }
     .hero__sub {
       margin-top: 24px;
       font-size: 1.125rem;
@@ -440,9 +446,12 @@
       .hero__headline { font-size: clamp(1.75rem, 8vw, 2.5rem); }
       .hero__headline br { display: none; }
       .hero__dotmatrix {
-        display: block;
-        font-size: 2.5rem;
-        margin-top: 8px;
+        font-family: "Space Grotesk", system-ui, sans-serif;
+        font-weight: 700;
+        font-size: 4rem;
+        margin-top: 16px;
+        margin-bottom: 8px;
+        text-align: center;
       }
       .hero__sub { font-size: 1rem; margin-top: 20px; }
       .hero__actions { margin-top: 28px; flex-direction: column; width: 100%; }
@@ -473,7 +482,7 @@
 
     @media (max-width: 480px) {
       .hero__headline { font-size: 1.6rem; }
-      .hero__dotmatrix { font-size: 2rem; }
+      .hero__dotmatrix { font-size: 3rem; }
       .demo-card__preview .headline-text { font-size: 1rem; }
       .code-block pre { font-size: 10px; }
       .features__grid { grid-template-columns: 1fr 1fr; }
@@ -507,12 +516,13 @@
     <h1 class="hero__headline">
       Animated dot-matrix<br/>
       text for the
-      <span class="hero__dotmatrix"
-            data-dot-matrix="cycle"
+    </h1>
+    <div class="hero__dotmatrix">
+      <span data-dot-matrix="cycle"
             data-words="web,future,bold"
             data-active-color="#ff5d22"
             data-inactive-color="rgba(255,93,34,0.15)"></span>
-    </h1>
+    </div>
 
     <p class="hero__sub">
       A tiny, zero-dependency JavaScript library that renders beautiful animated
