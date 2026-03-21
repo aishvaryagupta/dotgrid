@@ -439,6 +439,11 @@
       .hero__badge { font-size: 10px; padding: 5px 12px; margin-bottom: 24px; }
       .hero__headline { font-size: clamp(1.75rem, 8vw, 2.5rem); }
       .hero__headline br { display: none; }
+      .hero__dotmatrix {
+        display: block;
+        font-size: 2.5rem;
+        margin-top: 8px;
+      }
       .hero__sub { font-size: 1rem; margin-top: 20px; }
       .hero__actions { margin-top: 28px; flex-direction: column; width: 100%; }
       .hero__actions .btn { width: 100%; justify-content: center; }
@@ -468,6 +473,7 @@
 
     @media (max-width: 480px) {
       .hero__headline { font-size: 1.6rem; }
+      .hero__dotmatrix { font-size: 2rem; }
       .demo-card__preview .headline-text { font-size: 1rem; }
       .code-block pre { font-size: 10px; }
       .features__grid { grid-template-columns: 1fr 1fr; }
@@ -501,7 +507,8 @@
     <h1 class="hero__headline">
       Animated dot-matrix<br/>
       text for the
-      <span data-dot-matrix="cycle"
+      <span class="hero__dotmatrix"
+            data-dot-matrix="cycle"
             data-words="web,future,bold"
             data-active-color="#ff5d22"
             data-inactive-color="rgba(255,93,34,0.15)"></span>
