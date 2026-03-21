@@ -317,9 +317,70 @@
       z-index: 100;
     }
     .toast.show { opacity: 1; }
+
+    /* ── Mobile Gate ── */
+    .mobile-gate {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: #0a0a0b;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 32px;
+      gap: 20px;
+    }
+    .mobile-gate__icon {
+      font-size: 48px;
+      margin-bottom: 8px;
+    }
+    .mobile-gate__title {
+      font-family: "Space Grotesk", system-ui, sans-serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .mobile-gate__desc {
+      font-size: 0.95rem;
+      color: rgba(245, 245, 247, 0.5);
+      max-width: 320px;
+      line-height: 1.6;
+    }
+    .mobile-gate__btn {
+      display: inline-block;
+      margin-top: 12px;
+      padding: 14px 28px;
+      background: #ff5d22;
+      color: #fff;
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      text-decoration: none;
+      transition: background 150ms;
+    }
+    .mobile-gate__btn:hover { background: #e04e17; }
+    @media (max-width: 768px) {
+      .mobile-gate { display: flex; }
+    }
   </style>
 </head>
 <body>
+
+  <!-- Mobile Gate -->
+  <div class="mobile-gate">
+    <div class="mobile-gate__icon">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ff5d22" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+      </svg>
+    </div>
+    <h2 class="mobile-gate__title">Best on desktop</h2>
+    <p class="mobile-gate__desc">The playground is built for larger screens with a side panel and canvas preview. Open this page on a desktop or laptop for the full experience.</p>
+    <a href="/" class="mobile-gate__btn">Back to Home</a>
+  </div>
 
   <!-- Preview -->
   <div class="preview">
