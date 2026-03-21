@@ -218,6 +218,14 @@
       padding: 48px 32px;
       border-bottom: 1px solid var(--border);
     }
+    .demo-card__content {
+      display: flex;
+      align-items: baseline;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 0 8px;
+      text-align: center;
+    }
     .demo-card__preview .headline-text {
       font-family: "Space Grotesk", system-ui, sans-serif;
       font-size: clamp(1.5rem, 4vw, 2.5rem);
@@ -226,7 +234,13 @@
       letter-spacing: -0.02em;
       text-align: center;
     }
-    .demo-card__preview .headline-text--left {
+    .demo-card__dotmatrix {
+      font-family: "Space Grotesk", system-ui, sans-serif;
+      font-size: clamp(1.5rem, 4vw, 2.5rem);
+      font-weight: 700;
+      line-height: 1.15;
+    }
+    .demo-card__dotmatrix--headline {
       text-align: left;
       max-width: 700px;
       width: 100%;
@@ -460,8 +474,20 @@
       .demos { padding: 60px 16px 60px; }
       .demos__title { margin-bottom: 32px; }
       .demo-card__preview { padding: 32px 16px; min-height: 150px; }
-      .demo-card__preview .headline-text { font-size: clamp(1.1rem, 5vw, 1.5rem); }
-      .demo-card__preview .headline-text--left { text-align: center; }
+      .demo-card__content {
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+      }
+      .demo-card__preview .headline-text { font-size: 1.25rem; }
+      .demo-card__dotmatrix {
+        font-size: 2.5rem;
+        text-align: center;
+      }
+      .demo-card__dotmatrix--headline {
+        font-size: 1.75rem;
+        text-align: center;
+      }
       .demo-card__info { flex-direction: column; align-items: flex-start; padding: 16px; }
 
       .code-section { padding: 60px 16px 60px; }
@@ -484,6 +510,8 @@
       .hero__headline { font-size: 1.6rem; }
       .hero__dotmatrix { font-size: 3rem; }
       .demo-card__preview .headline-text { font-size: 1rem; }
+      .demo-card__dotmatrix { font-size: 2rem; }
+      .demo-card__dotmatrix--headline { font-size: 1.5rem; }
       .code-block pre { font-size: 10px; }
       .features__grid { grid-template-columns: 1fr 1fr; }
       .feature-card { padding: 16px; }
@@ -547,14 +575,16 @@
       <!-- Cycle mode -->
       <div class="demo-card">
         <div class="demo-card__preview">
-          <h3 class="headline-text">
-            Learn to
-            <span data-dot-matrix="cycle"
-                  data-words="ship,build,design,create"
-                  data-active-color="#ff5d22"
-                  data-inactive-color="rgba(255,93,34,0.15)"></span>
-            what you imagine.
-          </h3>
+          <div class="demo-card__content">
+            <h3 class="headline-text">Learn to</h3>
+            <div class="demo-card__dotmatrix">
+              <span data-dot-matrix="cycle"
+                    data-words="ship,build,design,create"
+                    data-active-color="#ff5d22"
+                    data-inactive-color="rgba(255,93,34,0.15)"></span>
+            </div>
+            <h3 class="headline-text">what you imagine.</h3>
+          </div>
         </div>
         <div class="demo-card__info">
           <span class="demo-card__mode">Cycle</span>
@@ -565,13 +595,15 @@
       <!-- Static mode -->
       <div class="demo-card">
         <div class="demo-card__preview">
-          <h3 class="headline-text">
-            The hand-off era is
-            <span data-dot-matrix="static"
-                  data-word="ending"
-                  data-active-color="#ff5d22"
-                  data-inactive-color="rgba(255,93,34,0.15)"></span>.
-          </h3>
+          <div class="demo-card__content">
+            <h3 class="headline-text">The hand-off era is</h3>
+            <div class="demo-card__dotmatrix">
+              <span data-dot-matrix="static"
+                    data-word="ending"
+                    data-active-color="#ff5d22"
+                    data-inactive-color="rgba(255,93,34,0.15)"></span>
+            </div>
+          </div>
         </div>
         <div class="demo-card__info">
           <span class="demo-card__mode">Static</span>
@@ -582,7 +614,7 @@
       <!-- Headline mode -->
       <div class="demo-card">
         <div class="demo-card__preview">
-          <div class="headline-text headline-text--left"
+          <div class="demo-card__dotmatrix demo-card__dotmatrix--headline"
                data-dot-matrix="headline"
                data-lines='["We don\u0027t just {think,dream,talk},","we {ship,build}."]'
                data-active-color="#ff5d22"
