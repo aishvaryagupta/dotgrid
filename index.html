@@ -59,6 +59,23 @@
       color: var(--orange);
       text-decoration: none;
       letter-spacing: 0.04em;
+      flex-shrink: 0;
+    }
+    .nav__toggle {
+      display: none;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      flex-shrink: 0;
+    }
+    .nav__toggle span {
+      display: block;
+      width: 20px;
+      height: 2px;
+      background: var(--text);
+      margin: 5px 0;
+      transition: all 200ms;
     }
     .nav__links {
       display: flex;
@@ -388,10 +405,76 @@
     /* ── Responsive ── */
     @media (max-width: 768px) {
       .nav { padding: 14px 20px; }
-      .nav__links { gap: 16px; }
-      .features__grid { grid-template-columns: 1fr; }
-      .demo-card__info { flex-direction: column; align-items: flex-start; }
-      .footer { flex-direction: column; gap: 8px; text-align: center; }
+      .nav__toggle { display: block; }
+      .nav__links {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        flex-direction: column;
+        background: rgba(10, 10, 11, 0.97);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--border);
+        padding: 16px 20px;
+        gap: 0;
+      }
+      .nav__links.open { display: flex; }
+      .nav__links li { width: 100%; }
+      .nav__links a {
+        display: block;
+        padding: 12px 0;
+        font-size: 15px;
+        border-bottom: 1px solid var(--border);
+      }
+      .nav__links li:last-child a { border-bottom: none; }
+      .nav__links .nav__cta {
+        display: block;
+        text-align: center;
+        margin-top: 8px;
+        padding: 12px 18px;
+      }
+
+      .hero { padding: 100px 20px 60px; min-height: auto; min-height: 100svh; }
+      .hero__badge { font-size: 10px; padding: 5px 12px; margin-bottom: 24px; }
+      .hero__headline { font-size: clamp(1.75rem, 8vw, 2.5rem); }
+      .hero__headline br { display: none; }
+      .hero__sub { font-size: 1rem; margin-top: 20px; }
+      .hero__actions { margin-top: 28px; flex-direction: column; width: 100%; }
+      .hero__actions .btn { width: 100%; justify-content: center; }
+
+      .demos { padding: 60px 16px 60px; }
+      .demos__title { margin-bottom: 32px; }
+      .demo-card__preview { padding: 32px 16px; min-height: 150px; }
+      .demo-card__preview .headline-text { font-size: clamp(1.1rem, 5vw, 1.5rem); }
+      .demo-card__preview .headline-text--left { text-align: center; }
+      .demo-card__info { flex-direction: column; align-items: flex-start; padding: 16px; }
+
+      .code-section { padding: 60px 16px 60px; }
+      .code-section__title { margin-bottom: 32px; }
+      .code-block pre { font-size: 11px; padding: 16px; line-height: 1.6; }
+      .code-block__header { padding: 10px 16px; }
+
+      .features { padding: 60px 16px 60px; }
+      .features__title { margin-bottom: 32px; }
+      .features__grid { grid-template-columns: 1fr; gap: 12px; }
+      .feature-card { padding: 20px; }
+
+      .final-cta { padding: 60px 20px; }
+      .final-cta .btn { width: 100%; justify-content: center; }
+
+      .footer { flex-direction: column; gap: 8px; text-align: center; padding: 20px; }
+    }
+
+    @media (max-width: 480px) {
+      .hero__headline { font-size: 1.6rem; }
+      .demo-card__preview .headline-text { font-size: 1rem; }
+      .code-block pre { font-size: 10px; }
+      .features__grid { grid-template-columns: 1fr 1fr; }
+      .feature-card { padding: 16px; }
+      .feature-card__icon { font-size: 18px; margin-bottom: 10px; }
+      .feature-card__title { font-size: 13px; }
+      .feature-card__desc { font-size: 12px; }
     }
   </style>
 </head>
@@ -400,6 +483,9 @@
   <!-- ── Nav ── -->
   <nav class="nav">
     <a href="/" class="nav__logo">DOTGRID</a>
+    <button class="nav__toggle" aria-label="Menu" onclick="this.closest('.nav').querySelector('.nav__links').classList.toggle('open')">
+      <span></span><span></span><span></span>
+    </button>
     <ul class="nav__links">
       <li><a href="#demos">Demos</a></li>
       <li><a href="#code">Code</a></li>
