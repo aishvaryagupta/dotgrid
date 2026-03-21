@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DotGrid — Animated Dot Matrix Text for the Web</title>
+  <meta name="description" content="Zero-dependency JavaScript library for rendering animated dot-matrix text on canvas. Static, cycling, and headline modes. Drop in a script tag and go." />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+
+  <!-- Dot Matrix CSS -->
+  <link rel="stylesheet" href="dot-matrix-text.css" />
+
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --orange: #ff5d22;
+      --orange-hover: #e04e17;
+      --bg: #0a0a0b;
+      --surface: #111112;
+      --border: #1a1a1a;
+      --text: #f5f5f7;
+      --text-muted: rgba(245, 245, 247, 0.5);
+      --text-dim: #525252;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: "Inter", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Nav ── */
+    .nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 32px;
+      background: rgba(10, 10, 11, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav__logo {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--orange);
+      text-decoration: none;
+      letter-spacing: 0.04em;
+    }
+    .nav__links {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      list-style: none;
+    }
+    .nav__links a {
+      font-size: 13px;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 150ms;
+    }
+    .nav__links a:hover { color: var(--text); }
+    .nav__cta {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text) !important;
+      background: var(--orange);
+      padding: 8px 18px;
+      border-radius: 6px;
+      transition: background 150ms;
+    }
+    .nav__cta:hover { background: var(--orange-hover); }
+
+    /* ── Hero ── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 120px 24px 80px;
+    }
+    .hero__badge {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--orange);
+      border: 1px solid rgba(255, 93, 34, 0.3);
+      padding: 6px 16px;
+      border-radius: 100px;
+      margin-bottom: 32px;
+    }
+    .hero__headline {
+      font-family: "Space Grotesk", system-ui, sans-serif;
+      font-size: clamp(2.5rem, 6vw, 4.5rem);
+      font-weight: 700;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      max-width: 900px;
+    }
+    .hero__sub {
+      margin-top: 24px;
+      font-size: 1.125rem;
+      color: var(--text-muted);
+      max-width: 520px;
+      line-height: 1.6;
+    }
+    .hero__actions {
+      display: flex;
+      gap: 16px;
+      margin-top: 40px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 28px;
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 600;
+      border-radius: 8px;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 150ms;
+      border: none;
+    }
+    .btn--primary {
+      background: var(--orange);
+      color: #fff;
+    }
+    .btn--primary:hover { background: var(--orange-hover); }
+    .btn--secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid #333;
+    }
+    .btn--secondary:hover { border-color: var(--text-muted); }
+
+    /* ── Demos ── */
+    .demos {
+      padding: 80px 24px 100px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .demos__label {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--orange);
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    .demos__title {
+      font-family: "Space Grotesk", system-ui, sans-serif;
+      font-size: clamp(1.75rem, 4vw, 2.5rem);
+      font-weight: 700;
+      text-align: center;
+      letter-spacing: -0.02em;
+      margin-bottom: 56px;
+    }
+    .demo-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+    .demo-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .demo-card__preview {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 200px;
+      padding: 48px 32px;
+      border-bottom: 1px solid var(--border);
+    }
+    .demo-card__preview .headline-text {
+      font-family: "Space Grotesk", system-ui, sans-serif;
+      font-size: clamp(1.5rem, 4vw, 2.5rem);
+      font-weight: 700;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      text-align: center;
+    }
+    .demo-card__preview .headline-text--left {
+      text-align: left;
+      max-width: 700px;
+      width: 100%;
+    }
+    .demo-card__info {
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .demo-card__mode {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--orange);
+    }
+    .demo-card__desc {
+      font-size: 13px;
+      color: var(--text-dim);
+      flex: 1;
+    }
+
+    /* ── Code ── */
+    .code-section {
+      padding: 80px 24px 100px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .code-section__label {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--orange);
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    .code-section__title {
+      font-family: "Space Grotesk", system-ui, sans-serif;
+      font-size: clamp(1.75rem, 4vw, 2.5rem);
+      font-weight: 700;
+      text-align: center;
+      letter-spacing: -0.02em;
+      margin-bottom: 48px;
+    }
+    .code-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+    .code-block__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .code-block__lang {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .code-block__copy {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11px;
+      color: var(--text-dim);
+      background: none;
+      border: 1px solid var(--border);
+      padding: 4px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 150ms;
+    }
+    .code-block__copy:hover {
+      color: var(--text);
+      border-color: #333;
+    }
+    .code-block pre {
+      padding: 20px;
+      overflow-x: auto;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 13px;
+      line-height: 1.7;
+      color: #a3a3a3;
+    }
+    .code-block pre .hl-tag { color: #ff5d22; }
+    .code-block pre .hl-attr { color: #7dd3fc; }
+    .code-block pre .hl-str { color: #86efac; }
+    .code-block pre .hl-comment { color: #525252; }
+
+    /* ── Features ── */
+    .features {
+      padding: 80px 24px 100px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .features__label {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--orange);
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    .features__title {
+      font-family: "Space Grotesk", system-ui, sans-serif;
+      font-size: clamp(1.75rem, 4vw, 2.5rem);
+      font-weight: 700;
+      text-align: center;
+      letter-spacing: -0.02em;
+      margin-bottom: 56px;
+    }
+    .features__grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px 24px;
+    }
+    .feature-card__icon {
+      font-size: 24px;
+      margin-bottom: 16px;
+    }
+    .feature-card__title {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .feature-card__desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* ── CTA ── */
+    .final-cta {
+      padding: 100px 24px;
+      text-align: center;
+      border-top: 1px solid var(--border);
+    }
+    .final-cta__title {
+      font-family: "Space Grotesk", system-ui, sans-serif;
+      font-size: clamp(1.75rem, 4vw, 2.5rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 16px;
+    }
+    .final-cta__sub {
+      font-size: 1rem;
+      color: var(--text-muted);
+      margin-bottom: 32px;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      padding: 24px 32px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+    .footer a {
+      color: var(--text-dim);
+      text-decoration: none;
+      transition: color 150ms;
+    }
+    .footer a:hover { color: var(--text); }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .nav { padding: 14px 20px; }
+      .nav__links { gap: 16px; }
+      .features__grid { grid-template-columns: 1fr; }
+      .demo-card__info { flex-direction: column; align-items: flex-start; }
+      .footer { flex-direction: column; gap: 8px; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Nav ── -->
+  <nav class="nav">
+    <a href="/" class="nav__logo">DOTGRID</a>
+    <ul class="nav__links">
+      <li><a href="#demos">Demos</a></li>
+      <li><a href="#code">Code</a></li>
+      <li><a href="#features">Features</a></li>
+      <li><a href="playground.html" class="nav__cta">Playground</a></li>
+    </ul>
+  </nav>
+
+  <!-- ── Hero ── -->
+  <section class="hero">
+    <div class="hero__badge">Zero dependencies. One script tag.</div>
+
+    <h1 class="hero__headline">
+      Animated dot-matrix<br/>
+      text for the
+      <span data-dot-matrix="cycle"
+            data-words="web,future,bold"
+            data-active-color="#ff5d22"
+            data-inactive-color="rgba(255,93,34,0.15)"></span>
+    </h1>
+
+    <p class="hero__sub">
+      A tiny, zero-dependency JavaScript library that renders beautiful animated
+      dot-matrix text on canvas. Drop in a script tag and go.
+    </p>
+
+    <div class="hero__actions">
+      <a href="playground.html" class="btn btn--primary">Open Playground</a>
+      <a href="#code" class="btn btn--secondary">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:13px;">&lt;/&gt;</span>
+        View Code
+      </a>
+    </div>
+  </section>
+
+  <!-- ── Live Demos ── -->
+  <section class="demos" id="demos">
+    <div class="demos__label">Live Demos</div>
+    <h2 class="demos__title">Three modes, one library</h2>
+
+    <div class="demo-grid">
+      <!-- Cycle mode -->
+      <div class="demo-card">
+        <div class="demo-card__preview">
+          <h3 class="headline-text">
+            Learn to
+            <span data-dot-matrix="cycle"
+                  data-words="ship,build,design,create"
+                  data-active-color="#ff5d22"
+                  data-inactive-color="rgba(255,93,34,0.15)"></span>
+            what you imagine.
+          </h3>
+        </div>
+        <div class="demo-card__info">
+          <span class="demo-card__mode">Cycle</span>
+          <span class="demo-card__desc">Inline canvas that crossfades between words</span>
+        </div>
+      </div>
+
+      <!-- Static mode -->
+      <div class="demo-card">
+        <div class="demo-card__preview">
+          <h3 class="headline-text">
+            The hand-off era is
+            <span data-dot-matrix="static"
+                  data-word="ending"
+                  data-active-color="#ff5d22"
+                  data-inactive-color="rgba(255,93,34,0.15)"></span>.
+          </h3>
+        </div>
+        <div class="demo-card__info">
+          <span class="demo-card__mode">Static</span>
+          <span class="demo-card__desc">Scatter-to-form animation triggered on scroll</span>
+        </div>
+      </div>
+
+      <!-- Headline mode -->
+      <div class="demo-card">
+        <div class="demo-card__preview">
+          <div class="headline-text headline-text--left"
+               data-dot-matrix="headline"
+               data-lines='["We don\u0027t just {think,dream,talk},","we {ship,build}."]'
+               data-active-color="#ff5d22"
+               data-static-color="#f5f5f7"
+               data-hold="2500"
+               data-transition-frames="14"
+               data-trigger="immediate">
+          </div>
+        </div>
+        <div class="demo-card__info">
+          <span class="demo-card__mode">Headline</span>
+          <span class="demo-card__desc">Full multi-line canvas with static + cycling segments</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Code ── -->
+  <section class="code-section" id="code">
+    <div class="code-section__label">Get Started</div>
+    <h2 class="code-section__title">Two lines. That's it.</h2>
+
+    <div class="code-block">
+      <div class="code-block__header">
+        <span class="code-block__lang">HTML</span>
+        <button class="code-block__copy" onclick="copyCode(this)">Copy</button>
+      </div>
+      <pre><span class="hl-comment">&lt;!-- 1. Add the script --&gt;</span>
+<span class="hl-tag">&lt;script</span> <span class="hl-attr">src</span>=<span class="hl-str">"dot-matrix-text.js"</span><span class="hl-tag">&gt;&lt;/script&gt;</span>
+
+<span class="hl-comment">&lt;!-- 2. Use it --&gt;</span>
+<span class="hl-tag">&lt;h1&gt;</span>
+  We make the
+  <span class="hl-tag">&lt;span</span> <span class="hl-attr">data-dot-matrix</span>=<span class="hl-str">"cycle"</span>
+        <span class="hl-attr">data-words</span>=<span class="hl-str">"future,web,magic"</span>
+        <span class="hl-attr">data-active-color</span>=<span class="hl-str">"#ff5d22"</span><span class="hl-tag">&gt;&lt;/span&gt;</span>
+<span class="hl-tag">&lt;/h1&gt;</span></pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-block__header">
+        <span class="code-block__lang">Headline Mode</span>
+        <button class="code-block__copy" onclick="copyCode(this)">Copy</button>
+      </div>
+      <pre><span class="hl-tag">&lt;div</span> <span class="hl-attr">data-dot-matrix</span>=<span class="hl-str">"headline"</span>
+     <span class="hl-attr">data-lines</span>=<span class="hl-str">'["Learn to {ship,build} what","you design."]'</span>
+     <span class="hl-attr">data-active-color</span>=<span class="hl-str">"#ff5d22"</span>
+     <span class="hl-attr">data-static-color</span>=<span class="hl-str">"#f5f5f7"</span><span class="hl-tag">&gt;&lt;/div&gt;</span></pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-block__header">
+        <span class="code-block__lang">JS API</span>
+        <button class="code-block__copy" onclick="copyCode(this)">Copy</button>
+      </div>
+      <pre><span class="hl-comment">// Auto-initialize all [data-dot-matrix] elements</span>
+DotMatrix.init();
+
+<span class="hl-comment">// Or create manually with full control</span>
+<span class="hl-tag">const</span> instance = DotMatrix.create(el, {
+  activeColor: <span class="hl-str">'#ff5d22'</span>,
+  hold: <span class="hl-str">2500</span>,
+  trigger: <span class="hl-str">'immediate'</span>
+});
+
+instance.play();
+instance.pause();
+instance.destroy();</pre>
+    </div>
+  </section>
+
+  <!-- ── Features ── -->
+  <section class="features" id="features">
+    <div class="features__label">Why DotGrid</div>
+    <h2 class="features__title">Built different</h2>
+
+    <div class="features__grid">
+      <div class="feature-card">
+        <div class="feature-card__icon">0kb</div>
+        <h3 class="feature-card__title">Zero Dependencies</h3>
+        <p class="feature-card__desc">Pure vanilla JavaScript. No React, no build step, no node_modules. One 33KB script tag.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-card__icon">&lt;/&gt;</div>
+        <h3 class="feature-card__title">Data Attributes API</h3>
+        <p class="feature-card__desc">Configure everything in HTML. Colors, timing, words, animation frames. No JS required to get started.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-card__icon">&amp;</div>
+        <h3 class="feature-card__title">3 Modes</h3>
+        <p class="feature-card__desc">Static (scroll-triggered), Cycle (word rotation), and Headline (multi-line with mixed segments).</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-card__icon">60fps</div>
+        <h3 class="feature-card__title">Canvas Rendered</h3>
+        <p class="feature-card__desc">Hardware-accelerated canvas rendering. Smooth animations at 60fps with no DOM thrashing.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-card__icon">Aa</div>
+        <h3 class="feature-card__title">Any Font</h3>
+        <p class="feature-card__desc">Uses your page's computed font styles. Works with Google Fonts, system fonts, or custom typefaces.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-card__icon">UMD</div>
+        <h3 class="feature-card__title">Universal Module</h3>
+        <p class="feature-card__desc">Works everywhere. Script tag, CommonJS, AMD. Drop it into any project without config.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Final CTA ── -->
+  <section class="final-cta">
+    <h2 class="final-cta__title">Ready to build?</h2>
+    <p class="final-cta__sub">Open the playground and design your animation visually.</p>
+    <a href="playground.html" class="btn btn--primary">Open Playground</a>
+  </section>
+
+  <!-- ── Footer ── -->
+  <footer class="footer">
+    <span>DotGrid &mdash; Animated dot-matrix text for the web</span>
+    <a href="playground.html">Playground</a>
+  </footer>
+
+  <!-- Dot Matrix JS -->
+  <script src="dot-matrix-text.js"></script>
+  <script>
+    function copyCode(btn) {
+      var pre = btn.closest('.code-block').querySelector('pre');
+      var text = pre.textContent;
+      navigator.clipboard.writeText(text).then(function () {
+        btn.textContent = 'Copied!';
+        setTimeout(function () { btn.textContent = 'Copy'; }, 1500);
+      });
+    }
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "cleanUrls": true,
+  "headers": [
+    {
+      "source": "/dot-matrix-text.js",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/dot-matrix-text.css",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    }
+  ]
+}
