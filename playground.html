@@ -2346,20 +2346,25 @@
         maxWidth: maxWidth,
       };
 
-      // Build full grids (all lines combined) for each word
+      // Re-rasterize each word's lines into the shared canvas dimensions
+      // so alignment (center/right) is relative to the full shared width
+      var mc = document.createElement('canvas').getContext('2d');
+      mc.font = fontStr();
       var grids = {};
       [layout1, layout2].forEach(function(layout, idx) {
         var fullGrid = [];
         for (var li = 0; li < layout.lines.length; li++) {
           var yBase = li * (layout.rowsPerLine + layout.gapRows);
-          var lineGrid = layout.allGrids[li];
+          var lineText = layout.lines[li] || ' ';
+          var lw = mc.measureText(lineText).width;
+          var xOff = 0;
+          if (S.align === 'center') xOff = (w - lw) / 2;
+          else if (S.align === 'right') xOff = w - lw;
+          var img = rasterizeLine(lineText, w, layout.rowsPerLine * DS, layout.fontSize, xOff);
+          var lineGrid = imageDataToGrid(img, cols, layout.rowsPerLine, w, DS);
           for (var r = 0; r < layout.rowsPerLine; r++) {
             for (var c = 0; c < cols; c++) {
-              if (c < layout.cols) {
-                fullGrid[(yBase + r) * cols + c] = lineGrid[r * layout.cols + c];
-              } else {
-                fullGrid[(yBase + r) * cols + c] = false;
-              }
+              fullGrid[(yBase + r) * cols + c] = lineGrid[r * cols + c];
             }
           }
           // Fill gap rows with false
