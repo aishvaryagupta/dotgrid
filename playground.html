@@ -989,6 +989,35 @@
       root.setProperty('--accent-hover', 'rgb(' + hr + ',' + hg + ',' + hb + ')');
     }
 
+    function setPanelTheme(mode) {
+      var root = document.documentElement.style;
+      if (mode === 'light') {
+        root.setProperty('--panel-bg', '#f0f0f2');
+        root.setProperty('--panel-bg-elevated', '#e8e8eb');
+        root.setProperty('--panel-border', 'rgba(0, 0, 0, 0.08)');
+        root.setProperty('--panel-border-hover', 'rgba(0, 0, 0, 0.14)');
+        root.setProperty('--surface', '#e4e4e7');
+        root.setProperty('--surface-hover', '#dcdce0');
+        root.setProperty('--surface-active', '#d4d4d8');
+        root.setProperty('--text-primary', '#18181b');
+        root.setProperty('--text-secondary', '#52525b');
+        root.setProperty('--text-tertiary', '#a1a1aa');
+        root.setProperty('--text-on-accent', '#ffffff');
+      } else {
+        root.setProperty('--panel-bg', '#111113');
+        root.setProperty('--panel-bg-elevated', '#161618');
+        root.setProperty('--panel-border', 'rgba(255, 255, 255, 0.06)');
+        root.setProperty('--panel-border-hover', 'rgba(255, 255, 255, 0.10)');
+        root.setProperty('--surface', '#1a1a1c');
+        root.setProperty('--surface-hover', '#1e1e21');
+        root.setProperty('--surface-active', '#222225');
+        root.setProperty('--text-primary', '#ececee');
+        root.setProperty('--text-secondary', '#8b8b8e');
+        root.setProperty('--text-tertiary', '#56565a');
+        root.setProperty('--text-on-accent', '#ffffff');
+      }
+    }
+
     function showToast(msg) {
       toastEl.textContent = msg;
       toastEl.classList.add('show');
@@ -2636,6 +2665,7 @@
         S.bgColor = mode.bgColor;
         document.getElementById('bgColor').value = mode.bgColor;
         document.getElementById('bgHex').value = mode.bgColor;
+        setPanelTheme(i === 0 ? 'dark' : 'light');
         currentColorPreset = 0;
         buildPresets();
         applyColorPreset(0);
@@ -3045,6 +3075,7 @@
       bgToggleEl.querySelectorAll('.ctrl__toggle-btn').forEach(function(b, i) {
         b.classList.toggle('active', i === 0);
       });
+      setPanelTheme('dark');
       buildPresets();
       setAccentColor(DEFAULTS.activeColor);
       syncUIFromState();
