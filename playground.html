@@ -18,9 +18,10 @@
       --surface-hover: #1e1e21;
       --surface-active: #222225;
       --accent: #ff5d22;
+      --accent-r: 255; --accent-g: 93; --accent-b: 34;
       --accent-hover: #ff7042;
-      --accent-muted: rgba(255, 93, 34, 0.12);
-      --accent-subtle: rgba(255, 93, 34, 0.06);
+      --accent-muted: rgba(var(--accent-r), var(--accent-g), var(--accent-b), 0.12);
+      --accent-subtle: rgba(var(--accent-r), var(--accent-g), var(--accent-b), 0.06);
       --text-primary: #ececee;
       --text-secondary: #8b8b8e;
       --text-tertiary: #56565a;
@@ -50,7 +51,7 @@
       /* ── Shadows ── */
       --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
       --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.4);
-      --shadow-glow: 0 0 0 1px var(--accent), 0 0 12px rgba(255, 93, 34, 0.15);
+      --shadow-glow: 0 0 0 1px var(--accent), 0 0 12px rgba(var(--accent-r), var(--accent-g), var(--accent-b),0.15);
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -235,7 +236,7 @@
     .ctrl__text:focus, .ctrl__textarea:focus {
       border-color: var(--accent);
       background: var(--canvas-bg);
-      box-shadow: 0 0 0 2px rgba(255, 93, 34, 0.1);
+      box-shadow: 0 0 0 2px rgba(var(--accent-r), var(--accent-g), var(--accent-b),0.1);
     }
     .ctrl__textarea {
       resize: vertical;
@@ -264,7 +265,7 @@
       transition: border-color var(--t-normal), background var(--t-normal), box-shadow var(--t-normal);
     }
     .ctrl__select:hover { border-color: var(--panel-border-hover); background-color: var(--surface-hover); }
-    .ctrl__select:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(255, 93, 34, 0.1); }
+    .ctrl__select:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(var(--accent-r), var(--accent-g), var(--accent-b),0.1); }
 
     /* Slider */
     .ctrl__slider {
@@ -295,11 +296,11 @@
     .ctrl__slider::-webkit-slider-thumb:hover {
       background: var(--accent);
       transform: scale(1.15);
-      box-shadow: 0 0 0 3px rgba(255, 93, 34, 0.15), var(--shadow-sm);
+      box-shadow: 0 0 0 3px rgba(var(--accent-r), var(--accent-g), var(--accent-b),0.15), var(--shadow-sm);
     }
     .ctrl__slider:active::-webkit-slider-thumb {
       transform: scale(1.05);
-      box-shadow: 0 0 0 4px rgba(255, 93, 34, 0.2), var(--shadow-sm);
+      box-shadow: 0 0 0 4px rgba(var(--accent-r), var(--accent-g), var(--accent-b),0.2), var(--shadow-sm);
     }
     .ctrl__slider::-moz-range-track {
       height: 3px;
@@ -350,7 +351,7 @@
       transition: border-color var(--t-normal), box-shadow var(--t-normal);
     }
     .ctrl__hex:hover { border-color: var(--panel-border-hover); }
-    .ctrl__hex:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(255, 93, 34, 0.1); }
+    .ctrl__hex:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(var(--accent-r), var(--accent-g), var(--accent-b),0.1); }
     .ctrl__opacity-row {
       display: flex;
       align-items: center;
@@ -377,7 +378,7 @@
       transition: transform var(--t-smooth), width var(--t-smooth);
       z-index: 0;
       pointer-events: none;
-      border: 1px solid rgba(255, 93, 34, 0.18);
+      border: 1px solid rgba(var(--accent-r), var(--accent-g), var(--accent-b),0.18);
     }
     .ctrl__toggle-btn {
       flex: 1;
@@ -428,20 +429,20 @@
     .ctrl__btn:active { background: var(--surface-active); transform: scale(0.98); }
     .ctrl__btn--primary {
       background: linear-gradient(180deg, #ff6a33 0%, #ff5d22 100%);
-      border-color: rgba(255, 93, 34, 0.3);
+      border-color: rgba(var(--accent-r), var(--accent-g), var(--accent-b),0.3);
       color: var(--text-on-accent);
       font-weight: 500;
-      box-shadow: 0 1px 4px rgba(255, 93, 34, 0.2);
+      box-shadow: 0 1px 4px rgba(var(--accent-r), var(--accent-g), var(--accent-b),0.2);
     }
     .ctrl__btn--primary:hover {
       background: linear-gradient(180deg, #ff7a45 0%, #ff6a33 100%);
-      border-color: rgba(255, 93, 34, 0.4);
+      border-color: rgba(var(--accent-r), var(--accent-g), var(--accent-b),0.4);
       color: var(--text-on-accent);
-      box-shadow: 0 2px 8px rgba(255, 93, 34, 0.3);
+      box-shadow: 0 2px 8px rgba(var(--accent-r), var(--accent-g), var(--accent-b),0.3);
     }
     .ctrl__btn--primary:active {
       background: linear-gradient(180deg, #e5521e 0%, #d4481a 100%);
-      box-shadow: 0 1px 2px rgba(255, 93, 34, 0.2);
+      box-shadow: 0 1px 2px rgba(var(--accent-r), var(--accent-g), var(--accent-b),0.2);
     }
 
     /* Presets */
@@ -459,7 +460,7 @@
     .preset.active {
       border-color: var(--accent);
       border-width: 1.5px;
-      box-shadow: 0 0 0 2px rgba(255, 93, 34, 0.15), 0 0 12px rgba(255, 93, 34, 0.08);
+      box-shadow: 0 0 0 2px rgba(var(--accent-r), var(--accent-g), var(--accent-b),0.15), 0 0 12px rgba(var(--accent-r), var(--accent-g), var(--accent-b),0.08);
     }
     .preset__dots {
       position: absolute;
@@ -750,9 +751,9 @@
         <div class="ctrl">
           <div class="ctrl__top">
             <span class="ctrl__name">Size</span>
-            <span class="ctrl__val" id="fontSizeVal">64</span>
+            <span class="ctrl__val" id="fontSizeVal">72</span>
           </div>
-          <input class="ctrl__slider" id="fontSizeSlider" type="range" min="24" max="160" step="1" value="64" />
+          <input class="ctrl__slider" id="fontSizeSlider" type="range" min="24" max="160" step="1" value="72" />
         </div>
       </div>
     </div>
@@ -791,9 +792,9 @@
         <div class="ctrl">
           <div class="ctrl__top">
             <span class="ctrl__name">Dot Radius</span>
-            <span class="ctrl__val" id="radiusVal">0.36</span>
+            <span class="ctrl__val" id="radiusVal">0.38</span>
           </div>
-          <input class="ctrl__slider" id="radiusSlider" type="range" min="0.10" max="0.50" step="0.01" value="0.36" />
+          <input class="ctrl__slider" id="radiusSlider" type="range" min="0.10" max="0.50" step="0.01" value="0.38" />
         </div>
         <div class="ctrl">
           <div class="ctrl__top"><span class="ctrl__name">Dot Shape</span></div>
@@ -809,17 +810,17 @@
         <div class="ctrl">
           <div class="ctrl__top"><span class="ctrl__name">Alignment</span></div>
           <div class="ctrl__toggle-row">
-            <button class="ctrl__toggle-btn active" data-align="left">Left</button>
-            <button class="ctrl__toggle-btn" data-align="center">Center</button>
+            <button class="ctrl__toggle-btn" data-align="left">Left</button>
+            <button class="ctrl__toggle-btn active" data-align="center">Center</button>
             <button class="ctrl__toggle-btn" data-align="right">Right</button>
           </div>
         </div>
         <div class="ctrl">
           <div class="ctrl__top">
             <span class="ctrl__name">Line Gap</span>
-            <span class="ctrl__val" id="lineGapVal">0.20</span>
+            <span class="ctrl__val" id="lineGapVal">0.25</span>
           </div>
-          <input class="ctrl__slider" id="lineGapSlider" type="range" min="0" max="0.6" step="0.02" value="0.20" />
+          <input class="ctrl__slider" id="lineGapSlider" type="range" min="0" max="0.6" step="0.02" value="0.25" />
         </div>
       </div>
     </div>
@@ -881,6 +882,11 @@
         </div>
       </div>
     </div>
+
+    <!-- Reset All -->
+    <div style="padding: 0 var(--sp-5) var(--sp-5);">
+      <button class="ctrl__btn" id="resetAllBtn" style="width: 100%; margin-top: var(--sp-2); opacity: 0.6;">Reset All</button>
+    </div>
   </div>
 
   <div class="toast" id="toast">Copied</div>
@@ -901,30 +907,33 @@
     // ════════════════════════════════════════════════
     // State
     // ════════════════════════════════════════════════
-    var S = {
+    var DEFAULTS = {
       text: 'ship',
-      mode: 'static',             // static | animate | cycle
-      renderMode: 'dot',          // dot | block | line
-      loadInStyle: 'scatter',     // scatter|rain|typewriter|rowscan|colscan|centerburst|fadein|randomfill|wave|spiral
-      transitionStyle: 'crossfade', // crossfade|scramble|slide|dissolve|pixelflip
-      idleAnimation: 'none',      // none|pulse|shimmer|flicker
+      mode: 'static',
+      renderMode: 'dot',
+      loadInStyle: 'scatter',
+      transitionStyle: 'crossfade',
+      idleAnimation: 'none',
       cycleWord: 'build',
       holdMs: 2500,
       animFrames: 60,
       asciiSize: 24,
       fontFamily: '"Space Grotesk"',
       fontWeight: '700',
-      fontSize: 64,
+      fontSize: 72,
       dotSpacing: 5,
-      dotRadiusRatio: 0.36,
+      dotRadiusRatio: 0.38,
       dotShape: 'circle',
-      align: 'left',
-      lineGap: 0.20,
+      align: 'center',
+      lineGap: 0.25,
       activeColor: '#ff5d22',
       inactiveColor: '#ff5d22',
       inactiveOpacity: 0.15,
       bgColor: '#0a0a0b',
     };
+
+    var S = {};
+    Object.keys(DEFAULTS).forEach(function(k) { S[k] = DEFAULTS[k]; });
 
     // ════════════════════════════════════════════════
     // Presets
@@ -966,6 +975,18 @@
     // ════════════════════════════════════════════════
     function hexToRgb(hex) {
       return { r: parseInt(hex.slice(1,3),16), g: parseInt(hex.slice(3,5),16), b: parseInt(hex.slice(5,7),16) };
+    }
+
+    function setAccentColor(hex) {
+      var rgb = hexToRgb(hex);
+      var root = document.documentElement.style;
+      root.setProperty('--accent', hex);
+      root.setProperty('--accent-r', rgb.r);
+      root.setProperty('--accent-g', rgb.g);
+      root.setProperty('--accent-b', rgb.b);
+      // Compute a lighter hover variant
+      var hr = Math.min(255, rgb.r + 30), hg = Math.min(255, rgb.g + 30), hb = Math.min(255, rgb.b + 30);
+      root.setProperty('--accent-hover', 'rgb(' + hr + ',' + hg + ',' + hb + ')');
     }
 
     function showToast(msg) {
@@ -2641,6 +2662,7 @@
       document.getElementById('inactiveHex').value = p.color;
       document.getElementById('inactiveOpacity').value = p.opacity;
       document.getElementById('opacityVal').textContent = p.opacity.toFixed(2);
+      setAccentColor(p.color);
     }
 
     function buildPresets() {
@@ -2981,7 +3003,57 @@
       slider.addEventListener('input', function() { updateSliderFill(slider); });
     });
 
+    // ── Reset All ──
+    function syncUIFromState() {
+      document.getElementById('textInput').value = S.text;
+      document.getElementById('fontFamily').value = S.fontFamily;
+      document.getElementById('weightSlider').value = S.fontWeight;
+      document.getElementById('weightVal').textContent = S.fontWeight;
+      document.getElementById('fontSizeSlider').value = S.fontSize;
+      document.getElementById('fontSizeVal').textContent = S.fontSize;
+      document.getElementById('spacingSlider').value = S.dotSpacing;
+      document.getElementById('spacingVal').textContent = S.dotSpacing;
+      document.getElementById('radiusSlider').value = S.dotRadiusRatio;
+      document.getElementById('radiusVal').textContent = S.dotRadiusRatio.toFixed(2);
+      document.getElementById('lineGapSlider').value = S.lineGap;
+      document.getElementById('lineGapVal').textContent = S.lineGap.toFixed(2);
+      document.getElementById('activeColor').value = S.activeColor;
+      document.getElementById('activeHex').value = S.activeColor;
+      document.getElementById('inactiveColor').value = S.inactiveColor;
+      document.getElementById('inactiveHex').value = S.inactiveColor;
+      document.getElementById('inactiveOpacity').value = S.inactiveOpacity;
+      document.getElementById('opacityVal').textContent = S.inactiveOpacity.toFixed(2);
+      document.getElementById('bgColor').value = S.bgColor;
+      document.getElementById('bgHex').value = S.bgColor;
+
+      // Sync segmented toggles by clicking the right button
+      document.querySelectorAll('[data-render]').forEach(function(b) {
+        b.classList.toggle('active', b.dataset.render === S.renderMode);
+      });
+
+      // Update slider fills
+      document.querySelectorAll('.ctrl__slider').forEach(updateSliderFill);
+      // Re-init segmented control indicators
+      document.querySelectorAll('.ctrl__toggle-row, .ctrl__render-row').forEach(initSegmentedControl);
+    }
+
+    document.getElementById('resetAllBtn').addEventListener('click', function() {
+      Object.keys(DEFAULTS).forEach(function(k) { S[k] = DEFAULTS[k]; });
+      currentBgMode = 0;
+      currentColorPreset = 0;
+      // Reset bg toggle
+      bgToggleEl.querySelectorAll('.ctrl__toggle-btn').forEach(function(b, i) {
+        b.classList.toggle('active', i === 0);
+      });
+      buildPresets();
+      setAccentColor(DEFAULTS.activeColor);
+      syncUIFromState();
+      updatePanelVisibility();
+      render();
+    });
+
     // ── Init ──
+    setAccentColor(S.activeColor);
     document.fonts.ready.then(function() {
       updatePanelVisibility();
       render();
