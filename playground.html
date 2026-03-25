@@ -445,7 +445,7 @@
     }
 
     /* Presets */
-    .presets { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+    .presets { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-3); }
     .preset {
       width: 44px; height: 44px;
       border: 1.5px solid var(--panel-border);
@@ -934,18 +934,32 @@
       { name: 'Light', bgColor: '#f5f5f7' },
     ];
 
-    var COLOR_PRESETS = [
-      { name: 'Orange',     color: '#ff5d22', darkOpacity: 0.15, lightOpacity: 0.10 },
-      { name: 'White',      color: '#f5f5f7', darkOpacity: 0.08, lightOpacity: 0 },
-      { name: 'Neon Green', color: '#22c55e', darkOpacity: 0.12, lightOpacity: 0.08 },
-      { name: 'Blue LED',   color: '#3b82f6', darkOpacity: 0.15, lightOpacity: 0.10 },
-      { name: 'Cyan',       color: '#06b6d4', darkOpacity: 0.12, lightOpacity: 0.08 },
-      { name: 'Purple',     color: '#a855f7', darkOpacity: 0.12, lightOpacity: 0.08 },
-      { name: 'Gold',       color: '#eab308', darkOpacity: 0.12, lightOpacity: 0.08 },
-      { name: 'Red',        color: '#ef4444', darkOpacity: 0.12, lightOpacity: 0.08 },
-      { name: 'Ink',        color: '#18181b', darkOpacity: 0, lightOpacity: 0.08 },
-      { name: 'Rose',       color: '#f43f5e', darkOpacity: 0.12, lightOpacity: 0.08 },
-    ];
+    var COLOR_PRESETS = {
+      dark: [
+        { name: 'Orange',     color: '#ff5d22', opacity: 0.15 },
+        { name: 'White',      color: '#f5f5f7', opacity: 0.08 },
+        { name: 'Neon Green', color: '#22c55e', opacity: 0.12 },
+        { name: 'Blue LED',   color: '#3b82f6', opacity: 0.15 },
+        { name: 'Cyan',       color: '#06b6d4', opacity: 0.12 },
+        { name: 'Purple',     color: '#a855f7', opacity: 0.12 },
+        { name: 'Gold',       color: '#eab308', opacity: 0.12 },
+        { name: 'Red',        color: '#ef4444', opacity: 0.12 },
+        { name: 'Rose',       color: '#f43f5e', opacity: 0.12 },
+        { name: 'Teal',       color: '#14b8a6', opacity: 0.12 },
+      ],
+      light: [
+        { name: 'Orange',     color: '#ea580c', opacity: 0.10 },
+        { name: 'Ink',        color: '#18181b', opacity: 0.08 },
+        { name: 'Forest',     color: '#16a34a', opacity: 0.08 },
+        { name: 'Blue',       color: '#2563eb', opacity: 0.10 },
+        { name: 'Teal',       color: '#0d9488', opacity: 0.08 },
+        { name: 'Purple',     color: '#7c3aed', opacity: 0.08 },
+        { name: 'Amber',      color: '#d97706', opacity: 0.08 },
+        { name: 'Red',        color: '#dc2626', opacity: 0.10 },
+        { name: 'Rose',       color: '#e11d48', opacity: 0.08 },
+        { name: 'Slate',      color: '#475569', opacity: 0.06 },
+      ],
+    };
 
     // ════════════════════════════════════════════════
     // Helpers
@@ -2588,6 +2602,8 @@
     // ── Background toggle ──
     var bgToggleEl = document.getElementById('bgToggle');
     var currentBgMode = 0; // 0 = dark
+    var currentColorPreset = 0;
+
     BG_MODES.forEach(function(mode, i) {
       var btn = document.createElement('button');
       btn.className = 'ctrl__toggle-btn' + (i === 0 ? ' active' : '');
@@ -2599,8 +2615,9 @@
         S.bgColor = mode.bgColor;
         document.getElementById('bgColor').value = mode.bgColor;
         document.getElementById('bgHex').value = mode.bgColor;
-        // Re-apply current color preset with correct opacity for this bg
-        applyColorPreset(currentColorPreset);
+        currentColorPreset = 0;
+        buildPresets();
+        applyColorPreset(0);
         render();
       });
       bgToggleEl.appendChild(btn);
@@ -2608,75 +2625,60 @@
 
     // ── Color presets ──
     var presetsEl = document.getElementById('presets');
-    var currentColorPreset = 0;
 
-    function isDarkBg() { return currentBgMode === 0; }
+    function getPresets() {
+      return currentBgMode === 0 ? COLOR_PRESETS.dark : COLOR_PRESETS.light;
+    }
 
     function applyColorPreset(idx) {
-      var p = COLOR_PRESETS[idx];
-      var opacity = isDarkBg() ? p.darkOpacity : p.lightOpacity;
+      var p = getPresets()[idx];
       S.activeColor = p.color;
       S.inactiveColor = p.color;
-      S.inactiveOpacity = opacity;
+      S.inactiveOpacity = p.opacity;
       document.getElementById('activeColor').value = p.color;
       document.getElementById('activeHex').value = p.color;
       document.getElementById('inactiveColor').value = p.color;
       document.getElementById('inactiveHex').value = p.color;
-      document.getElementById('inactiveOpacity').value = opacity;
-      document.getElementById('opacityVal').textContent = opacity.toFixed(2);
-      // Update preset thumbnails for current bg
-      updatePresetThumbnails();
+      document.getElementById('inactiveOpacity').value = p.opacity;
+      document.getElementById('opacityVal').textContent = p.opacity.toFixed(2);
     }
 
-    function updatePresetThumbnails() {
+    function buildPresets() {
+      presetsEl.innerHTML = '';
+      var presets = getPresets();
       var bgColor = BG_MODES[currentBgMode].bgColor;
-      presetsEl.querySelectorAll('.preset').forEach(function(el, i) {
-        var p = COLOR_PRESETS[i];
-        var opacity = isDarkBg() ? p.darkOpacity : p.lightOpacity;
+      presets.forEach(function(p, i) {
+        var el = document.createElement('div');
+        el.className = 'preset' + (i === currentColorPreset ? ' active' : '');
+        el.title = p.name;
         el.style.background = bgColor;
-        var dots = el.querySelectorAll('.preset__dot');
-        dots.forEach(function(dot, d) {
+        var dots = document.createElement('div');
+        dots.className = 'preset__dots';
+        for (var d = 0; d < 16; d++) {
+          var dot = document.createElement('div');
+          dot.className = 'preset__dot';
           var isLit = [1,2,5,6,9,10,13,14].indexOf(d) !== -1;
           if (isLit) {
             dot.style.background = p.color;
           } else {
             var rgb = hexToRgb(p.color);
-            dot.style.background = 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',' + opacity + ')';
+            dot.style.background = 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',' + p.opacity + ')';
           }
+          dots.appendChild(dot);
+        }
+        el.appendChild(dots);
+        el.addEventListener('click', function() {
+          presetsEl.querySelectorAll('.preset').forEach(function(pe) { pe.classList.remove('active'); });
+          el.classList.add('active');
+          currentColorPreset = i;
+          applyColorPreset(i);
+          render();
         });
+        presetsEl.appendChild(el);
       });
     }
 
-    COLOR_PRESETS.forEach(function(p, i) {
-      var el = document.createElement('div');
-      el.className = 'preset' + (i === 0 ? ' active' : '');
-      el.title = p.name;
-      el.style.background = BG_MODES[currentBgMode].bgColor;
-      var dots = document.createElement('div');
-      dots.className = 'preset__dots';
-      var opacity = p.darkOpacity;
-      for (var d = 0; d < 16; d++) {
-        var dot = document.createElement('div');
-        dot.className = 'preset__dot';
-        var isLit = [1,2,5,6,9,10,13,14].indexOf(d) !== -1;
-        if (isLit) {
-          dot.style.background = p.color;
-        } else {
-          var rgb = hexToRgb(p.color);
-          dot.style.background = 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',' + opacity + ')';
-        }
-        dots.appendChild(dot);
-      }
-      el.appendChild(dots);
-      el.addEventListener('click', function() {
-        presetsEl.querySelectorAll('.preset').forEach(function(pe) { pe.classList.remove('active'); });
-        el.classList.add('active');
-        currentColorPreset = i;
-        applyColorPreset(i);
-        render();
-      });
-      presetsEl.appendChild(el);
-    });
+    buildPresets();
 
     // ── Text ──
     document.getElementById('textInput').addEventListener('input', function(e) {
