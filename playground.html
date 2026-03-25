@@ -18,9 +18,10 @@
       --surface-hover: #1e1e21;
       --surface-active: #222225;
       --accent: #ff5d22;
+      --accent-r: 255; --accent-g: 93; --accent-b: 34;
       --accent-hover: #ff7042;
-      --accent-muted: rgba(255, 93, 34, 0.12);
-      --accent-subtle: rgba(255, 93, 34, 0.06);
+      --accent-muted: rgba(var(--accent-r), var(--accent-g), var(--accent-b), 0.12);
+      --accent-subtle: rgba(var(--accent-r), var(--accent-g), var(--accent-b), 0.06);
       --text-primary: #ececee;
       --text-secondary: #8b8b8e;
       --text-tertiary: #56565a;
@@ -50,7 +51,7 @@
       /* ── Shadows ── */
       --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
       --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.4);
-      --shadow-glow: 0 0 0 1px var(--accent), 0 0 12px rgba(255, 93, 34, 0.15);
+      --shadow-glow: 0 0 0 1px var(--accent), 0 0 12px rgba(var(--accent-r), var(--accent-g), var(--accent-b),0.15);
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -235,7 +236,7 @@
     .ctrl__text:focus, .ctrl__textarea:focus {
       border-color: var(--accent);
       background: var(--canvas-bg);
-      box-shadow: 0 0 0 2px rgba(255, 93, 34, 0.1);
+      box-shadow: 0 0 0 2px rgba(var(--accent-r), var(--accent-g), var(--accent-b),0.1);
     }
     .ctrl__textarea {
       resize: vertical;
@@ -264,7 +265,7 @@
       transition: border-color var(--t-normal), background var(--t-normal), box-shadow var(--t-normal);
     }
     .ctrl__select:hover { border-color: var(--panel-border-hover); background-color: var(--surface-hover); }
-    .ctrl__select:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(255, 93, 34, 0.1); }
+    .ctrl__select:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(var(--accent-r), var(--accent-g), var(--accent-b),0.1); }
 
     /* Slider */
     .ctrl__slider {
@@ -295,11 +296,11 @@
     .ctrl__slider::-webkit-slider-thumb:hover {
       background: var(--accent);
       transform: scale(1.15);
-      box-shadow: 0 0 0 3px rgba(255, 93, 34, 0.15), var(--shadow-sm);
+      box-shadow: 0 0 0 3px rgba(var(--accent-r), var(--accent-g), var(--accent-b),0.15), var(--shadow-sm);
     }
     .ctrl__slider:active::-webkit-slider-thumb {
       transform: scale(1.05);
-      box-shadow: 0 0 0 4px rgba(255, 93, 34, 0.2), var(--shadow-sm);
+      box-shadow: 0 0 0 4px rgba(var(--accent-r), var(--accent-g), var(--accent-b),0.2), var(--shadow-sm);
     }
     .ctrl__slider::-moz-range-track {
       height: 3px;
@@ -350,7 +351,7 @@
       transition: border-color var(--t-normal), box-shadow var(--t-normal);
     }
     .ctrl__hex:hover { border-color: var(--panel-border-hover); }
-    .ctrl__hex:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(255, 93, 34, 0.1); }
+    .ctrl__hex:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(var(--accent-r), var(--accent-g), var(--accent-b),0.1); }
     .ctrl__opacity-row {
       display: flex;
       align-items: center;
@@ -377,7 +378,7 @@
       transition: transform var(--t-smooth), width var(--t-smooth);
       z-index: 0;
       pointer-events: none;
-      border: 1px solid rgba(255, 93, 34, 0.18);
+      border: 1px solid rgba(var(--accent-r), var(--accent-g), var(--accent-b),0.18);
     }
     .ctrl__toggle-btn {
       flex: 1;
@@ -428,24 +429,24 @@
     .ctrl__btn:active { background: var(--surface-active); transform: scale(0.98); }
     .ctrl__btn--primary {
       background: linear-gradient(180deg, #ff6a33 0%, #ff5d22 100%);
-      border-color: rgba(255, 93, 34, 0.3);
+      border-color: rgba(var(--accent-r), var(--accent-g), var(--accent-b),0.3);
       color: var(--text-on-accent);
       font-weight: 500;
-      box-shadow: 0 1px 4px rgba(255, 93, 34, 0.2);
+      box-shadow: 0 1px 4px rgba(var(--accent-r), var(--accent-g), var(--accent-b),0.2);
     }
     .ctrl__btn--primary:hover {
       background: linear-gradient(180deg, #ff7a45 0%, #ff6a33 100%);
-      border-color: rgba(255, 93, 34, 0.4);
+      border-color: rgba(var(--accent-r), var(--accent-g), var(--accent-b),0.4);
       color: var(--text-on-accent);
-      box-shadow: 0 2px 8px rgba(255, 93, 34, 0.3);
+      box-shadow: 0 2px 8px rgba(var(--accent-r), var(--accent-g), var(--accent-b),0.3);
     }
     .ctrl__btn--primary:active {
       background: linear-gradient(180deg, #e5521e 0%, #d4481a 100%);
-      box-shadow: 0 1px 2px rgba(255, 93, 34, 0.2);
+      box-shadow: 0 1px 2px rgba(var(--accent-r), var(--accent-g), var(--accent-b),0.2);
     }
 
     /* Presets */
-    .presets { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+    .presets { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-3); }
     .preset {
       width: 44px; height: 44px;
       border: 1.5px solid var(--panel-border);
@@ -459,7 +460,7 @@
     .preset.active {
       border-color: var(--accent);
       border-width: 1.5px;
-      box-shadow: 0 0 0 2px rgba(255, 93, 34, 0.15), 0 0 12px rgba(255, 93, 34, 0.08);
+      box-shadow: 0 0 0 2px rgba(var(--accent-r), var(--accent-g), var(--accent-b),0.15), 0 0 12px rgba(var(--accent-r), var(--accent-g), var(--accent-b),0.08);
     }
     .preset__dots {
       position: absolute;
@@ -587,33 +588,10 @@
     <div class="panel__header">
       <div class="panel__title">Dot Matrix</div>
       <div class="panel__subtitle">Playground</div>
-    </div>
-
-    <!-- Render Mode -->
-    <div class="section" data-section>
-      <button class="section__header" aria-expanded="true">
-        <span class="section__label">Render Mode</span>
-        <svg class="section__chevron" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <div class="section__body">
-        <div class="ctrl">
-          <div class="ctrl__render-row">
-            <button class="ctrl__toggle-btn active" data-render="dot">Dot Grid</button>
-            <button class="ctrl__toggle-btn" data-render="block">Block</button>
-            <button class="ctrl__toggle-btn" data-render="line">Line Art</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Presets -->
-    <div class="section" data-section>
-      <button class="section__header" aria-expanded="true">
-        <span class="section__label">Presets</span>
-        <svg class="section__chevron" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <div class="section__body">
-        <div class="presets" id="presets"></div>
+      <div class="ctrl__render-row" style="margin-top: var(--sp-3);">
+        <button class="ctrl__toggle-btn active" data-render="dot">Dot Grid</button>
+        <button class="ctrl__toggle-btn" data-render="block">Block</button>
+        <button class="ctrl__toggle-btn" data-render="line">Line Art</button>
       </div>
     </div>
 
@@ -626,6 +604,152 @@
       <div class="section__body">
         <div class="ctrl">
           <textarea class="ctrl__textarea" id="textInput" rows="2" placeholder="Type anything... (new line for multi-line)">ship</textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Presets -->
+    <div class="section" data-section>
+      <button class="section__header" aria-expanded="true">
+        <span class="section__label">Presets</span>
+        <svg class="section__chevron" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="section__body">
+        <div class="ctrl__toggle-row" id="bgToggle"></div>
+        <div class="presets" id="presets"></div>
+      </div>
+    </div>
+
+    <!-- Typography (merged Font + Display) -->
+    <div class="section" id="typographySection" data-section>
+      <button class="section__header" aria-expanded="true">
+        <span class="section__label">Typography</span>
+        <svg class="section__chevron" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="section__body">
+        <!-- Font controls (dot grid) -->
+        <div id="fontControls">
+          <div class="ctrl">
+            <div class="ctrl__top"><span class="ctrl__name">Family</span></div>
+            <select class="ctrl__select" id="fontFamily">
+              <option value='"Space Grotesk"' selected>Space Grotesk</option>
+              <option value='"Inter"'>Inter</option>
+              <option value='"JetBrains Mono"'>JetBrains Mono</option>
+              <option value='"Chakra Petch"'>Chakra Petch</option>
+              <option value='"Outfit"'>Outfit</option>
+              <option value='"Syne"'>Syne</option>
+            </select>
+          </div>
+          <div class="ctrl">
+            <div class="ctrl__top">
+              <span class="ctrl__name">Weight</span>
+              <span class="ctrl__val" id="weightVal">700</span>
+            </div>
+            <input class="ctrl__slider" id="weightSlider" type="range" min="400" max="900" step="100" value="700" />
+          </div>
+          <div class="ctrl">
+            <div class="ctrl__top">
+              <span class="ctrl__name">Size</span>
+              <span class="ctrl__val" id="fontSizeVal">72</span>
+            </div>
+            <input class="ctrl__slider" id="fontSizeSlider" type="range" min="24" max="160" step="1" value="72" />
+          </div>
+        </div>
+        <!-- Display controls (block/line art) -->
+        <div id="displayControls" class="hidden">
+          <div class="ctrl">
+            <div class="ctrl__top">
+              <span class="ctrl__name">Text Size</span>
+              <span class="ctrl__val" id="asciiSizeVal">24</span>
+            </div>
+            <input class="ctrl__slider" id="asciiSizeSlider" type="range" min="8" max="64" step="1" value="24" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grid (dot grid only) -->
+    <div class="section" id="gridSection" data-section>
+      <button class="section__header" aria-expanded="true">
+        <span class="section__label">Grid</span>
+        <svg class="section__chevron" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="section__body">
+        <div class="ctrl">
+          <div class="ctrl__top">
+            <span class="ctrl__name">Dot Spacing</span>
+            <span class="ctrl__val" id="spacingVal">5</span>
+          </div>
+          <input class="ctrl__slider" id="spacingSlider" type="range" min="3" max="14" step="1" value="5" />
+        </div>
+        <div class="ctrl">
+          <div class="ctrl__top">
+            <span class="ctrl__name">Dot Radius</span>
+            <span class="ctrl__val" id="radiusVal">0.38</span>
+          </div>
+          <input class="ctrl__slider" id="radiusSlider" type="range" min="0.10" max="0.50" step="0.01" value="0.38" />
+        </div>
+        <div class="ctrl">
+          <div class="ctrl__top"><span class="ctrl__name">Dot Shape</span></div>
+          <div class="ctrl__toggle-row ctrl__shape-row">
+            <button class="ctrl__toggle-btn active" data-dot-shape="circle" title="Circle"><svg width="14" height="14" viewBox="0 0 14 14"><circle cx="7" cy="7" r="5" fill="currentColor"/></svg></button>
+            <button class="ctrl__toggle-btn" data-dot-shape="square" title="Square"><svg width="14" height="14" viewBox="0 0 14 14"><rect x="2" y="2" width="10" height="10" fill="currentColor"/></svg></button>
+            <button class="ctrl__toggle-btn" data-dot-shape="diamond" title="Diamond"><svg width="14" height="14" viewBox="0 0 14 14"><polygon points="7,1 13,7 7,13 1,7" fill="currentColor"/></svg></button>
+            <button class="ctrl__toggle-btn" data-dot-shape="triangle" title="Triangle"><svg width="14" height="14" viewBox="0 0 14 14"><polygon points="7,1 13,13 1,13" fill="currentColor"/></svg></button>
+            <button class="ctrl__toggle-btn" data-dot-shape="star" title="Star"><svg width="14" height="14" viewBox="0 0 14 14"><polygon points="7,0.5 8.8,5 13.5,5.2 9.8,8.2 11,13 7,10.5 3,13 4.2,8.2 0.5,5.2 5.2,5" fill="currentColor"/></svg></button>
+            <button class="ctrl__toggle-btn" data-dot-shape="cross" title="Cross"><svg width="14" height="14" viewBox="0 0 14 14"><polygon points="5,1 9,1 9,5 13,5 13,9 9,9 9,13 5,13 5,9 1,9 1,5 5,5" fill="currentColor"/></svg></button>
+          </div>
+        </div>
+        <div class="ctrl">
+          <div class="ctrl__top"><span class="ctrl__name">Alignment</span></div>
+          <div class="ctrl__toggle-row">
+            <button class="ctrl__toggle-btn" data-align="left">Left</button>
+            <button class="ctrl__toggle-btn active" data-align="center">Center</button>
+            <button class="ctrl__toggle-btn" data-align="right">Right</button>
+          </div>
+        </div>
+        <div class="ctrl">
+          <div class="ctrl__top">
+            <span class="ctrl__name">Line Gap</span>
+            <span class="ctrl__val" id="lineGapVal">0.25</span>
+          </div>
+          <input class="ctrl__slider" id="lineGapSlider" type="range" min="0" max="0.6" step="0.02" value="0.25" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Colors -->
+    <div class="section" data-section>
+      <button class="section__header" aria-expanded="true">
+        <span class="section__label">Colors</span>
+        <svg class="section__chevron" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="section__body">
+        <div class="ctrl">
+          <div class="ctrl__top"><span class="ctrl__name">Active Dots</span></div>
+          <div class="ctrl__color-row">
+            <input class="ctrl__color" id="activeColor" type="color" value="#ff5d22" />
+            <input class="ctrl__hex" id="activeHex" type="text" value="#ff5d22" />
+          </div>
+        </div>
+        <div class="ctrl" id="inactiveColorCtrl">
+          <div class="ctrl__top"><span class="ctrl__name">Grid Dots</span></div>
+          <div class="ctrl__color-row">
+            <input class="ctrl__color" id="inactiveColor" type="color" value="#ff5d22" />
+            <input class="ctrl__hex" id="inactiveHex" type="text" value="#ff5d22" />
+          </div>
+          <div class="ctrl__opacity-row">
+            <span class="ctrl__name" style="font-size: 11px; white-space: nowrap;">Opacity</span>
+            <input class="ctrl__slider" id="inactiveOpacity" type="range" min="0" max="0.5" step="0.01" value="0.15" />
+            <span class="ctrl__val" id="opacityVal">0.15</span>
+          </div>
+        </div>
+        <div class="ctrl">
+          <div class="ctrl__top"><span class="ctrl__name">Background</span></div>
+          <div class="ctrl__color-row">
+            <input class="ctrl__color" id="bgColor" type="color" value="#0a0a0b" />
+            <input class="ctrl__hex" id="bgHex" type="text" value="#0a0a0b" />
+          </div>
         </div>
       </div>
     </div>
@@ -721,144 +845,6 @@
       </div>
     </div>
 
-    <!-- Font (dot grid only) -->
-    <div class="section" id="fontSection" data-section>
-      <button class="section__header" aria-expanded="true">
-        <span class="section__label">Font</span>
-        <svg class="section__chevron" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <div class="section__body">
-        <div class="ctrl">
-          <div class="ctrl__top"><span class="ctrl__name">Family</span></div>
-          <select class="ctrl__select" id="fontFamily">
-            <option value='"Space Grotesk"' selected>Space Grotesk</option>
-            <option value='"Inter"'>Inter</option>
-            <option value='"JetBrains Mono"'>JetBrains Mono</option>
-            <option value='"Chakra Petch"'>Chakra Petch</option>
-            <option value='"Outfit"'>Outfit</option>
-            <option value='"Syne"'>Syne</option>
-          </select>
-        </div>
-        <div class="ctrl">
-          <div class="ctrl__top">
-            <span class="ctrl__name">Weight</span>
-            <span class="ctrl__val" id="weightVal">700</span>
-          </div>
-          <input class="ctrl__slider" id="weightSlider" type="range" min="400" max="900" step="100" value="700" />
-        </div>
-        <div class="ctrl">
-          <div class="ctrl__top">
-            <span class="ctrl__name">Size</span>
-            <span class="ctrl__val" id="fontSizeVal">64</span>
-          </div>
-          <input class="ctrl__slider" id="fontSizeSlider" type="range" min="24" max="160" step="1" value="64" />
-        </div>
-      </div>
-    </div>
-
-    <!-- ASCII Size (block/line only) -->
-    <div class="section hidden" id="asciiSizeSection" data-section>
-      <button class="section__header" aria-expanded="true">
-        <span class="section__label">Display</span>
-        <svg class="section__chevron" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <div class="section__body">
-        <div class="ctrl">
-          <div class="ctrl__top">
-            <span class="ctrl__name">Text Size</span>
-            <span class="ctrl__val" id="asciiSizeVal">24</span>
-          </div>
-          <input class="ctrl__slider" id="asciiSizeSlider" type="range" min="8" max="64" step="1" value="24" />
-        </div>
-      </div>
-    </div>
-
-    <!-- Grid (dot grid only) -->
-    <div class="section" id="gridSection" data-section>
-      <button class="section__header" aria-expanded="true">
-        <span class="section__label">Grid</span>
-        <svg class="section__chevron" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <div class="section__body">
-        <div class="ctrl">
-          <div class="ctrl__top">
-            <span class="ctrl__name">Dot Spacing</span>
-            <span class="ctrl__val" id="spacingVal">5</span>
-          </div>
-          <input class="ctrl__slider" id="spacingSlider" type="range" min="3" max="14" step="1" value="5" />
-        </div>
-        <div class="ctrl">
-          <div class="ctrl__top">
-            <span class="ctrl__name">Dot Radius</span>
-            <span class="ctrl__val" id="radiusVal">0.36</span>
-          </div>
-          <input class="ctrl__slider" id="radiusSlider" type="range" min="0.10" max="0.50" step="0.01" value="0.36" />
-        </div>
-        <div class="ctrl">
-          <div class="ctrl__top"><span class="ctrl__name">Dot Shape</span></div>
-          <div class="ctrl__toggle-row ctrl__shape-row">
-            <button class="ctrl__toggle-btn active" data-dot-shape="circle" title="Circle"><svg width="14" height="14" viewBox="0 0 14 14"><circle cx="7" cy="7" r="5" fill="currentColor"/></svg></button>
-            <button class="ctrl__toggle-btn" data-dot-shape="square" title="Square"><svg width="14" height="14" viewBox="0 0 14 14"><rect x="2" y="2" width="10" height="10" fill="currentColor"/></svg></button>
-            <button class="ctrl__toggle-btn" data-dot-shape="diamond" title="Diamond"><svg width="14" height="14" viewBox="0 0 14 14"><polygon points="7,1 13,7 7,13 1,7" fill="currentColor"/></svg></button>
-            <button class="ctrl__toggle-btn" data-dot-shape="triangle" title="Triangle"><svg width="14" height="14" viewBox="0 0 14 14"><polygon points="7,1 13,13 1,13" fill="currentColor"/></svg></button>
-            <button class="ctrl__toggle-btn" data-dot-shape="star" title="Star"><svg width="14" height="14" viewBox="0 0 14 14"><polygon points="7,0.5 8.8,5 13.5,5.2 9.8,8.2 11,13 7,10.5 3,13 4.2,8.2 0.5,5.2 5.2,5" fill="currentColor"/></svg></button>
-            <button class="ctrl__toggle-btn" data-dot-shape="cross" title="Cross"><svg width="14" height="14" viewBox="0 0 14 14"><polygon points="5,1 9,1 9,5 13,5 13,9 9,9 9,13 5,13 5,9 1,9 1,5 5,5" fill="currentColor"/></svg></button>
-          </div>
-        </div>
-        <div class="ctrl">
-          <div class="ctrl__top"><span class="ctrl__name">Alignment</span></div>
-          <div class="ctrl__toggle-row">
-            <button class="ctrl__toggle-btn active" data-align="left">Left</button>
-            <button class="ctrl__toggle-btn" data-align="center">Center</button>
-            <button class="ctrl__toggle-btn" data-align="right">Right</button>
-          </div>
-        </div>
-        <div class="ctrl">
-          <div class="ctrl__top">
-            <span class="ctrl__name">Line Gap</span>
-            <span class="ctrl__val" id="lineGapVal">0.20</span>
-          </div>
-          <input class="ctrl__slider" id="lineGapSlider" type="range" min="0" max="0.6" step="0.02" value="0.20" />
-        </div>
-      </div>
-    </div>
-
-    <!-- Colors -->
-    <div class="section" data-section>
-      <button class="section__header" aria-expanded="true">
-        <span class="section__label">Colors</span>
-        <svg class="section__chevron" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <div class="section__body">
-        <div class="ctrl">
-          <div class="ctrl__top"><span class="ctrl__name">Active Dots</span></div>
-          <div class="ctrl__color-row">
-            <input class="ctrl__color" id="activeColor" type="color" value="#ff5d22" />
-            <input class="ctrl__hex" id="activeHex" type="text" value="#ff5d22" />
-          </div>
-        </div>
-        <div class="ctrl" id="inactiveColorCtrl">
-          <div class="ctrl__top"><span class="ctrl__name">Grid Dots</span></div>
-          <div class="ctrl__color-row">
-            <input class="ctrl__color" id="inactiveColor" type="color" value="#ff5d22" />
-            <input class="ctrl__hex" id="inactiveHex" type="text" value="#ff5d22" />
-          </div>
-          <div class="ctrl__opacity-row">
-            <span class="ctrl__name" style="font-size: 11px; white-space: nowrap;">Opacity</span>
-            <input class="ctrl__slider" id="inactiveOpacity" type="range" min="0" max="0.5" step="0.01" value="0.15" />
-            <span class="ctrl__val" id="opacityVal">0.15</span>
-          </div>
-        </div>
-        <div class="ctrl">
-          <div class="ctrl__top"><span class="ctrl__name">Background</span></div>
-          <div class="ctrl__color-row">
-            <input class="ctrl__color" id="bgColor" type="color" value="#0a0a0b" />
-            <input class="ctrl__hex" id="bgHex" type="text" value="#0a0a0b" />
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- Export -->
     <div class="section" data-section>
       <button class="section__header" aria-expanded="true">
@@ -880,6 +866,11 @@
         </div>
       </div>
     </div>
+
+    <!-- Reset All -->
+    <div style="padding: 0 var(--sp-5) var(--sp-5);">
+      <button class="ctrl__btn" id="resetAllBtn" style="width: 100%; margin-top: var(--sp-2); opacity: 0.6;">Reset All</button>
+    </div>
   </div>
 
   <div class="toast" id="toast">Copied</div>
@@ -900,52 +891,115 @@
     // ════════════════════════════════════════════════
     // State
     // ════════════════════════════════════════════════
-    var S = {
+    var DEFAULTS = {
       text: 'ship',
-      mode: 'static',             // static | animate | cycle
-      renderMode: 'dot',          // dot | block | line
-      loadInStyle: 'scatter',     // scatter|rain|typewriter|rowscan|colscan|centerburst|fadein|randomfill|wave|spiral
-      transitionStyle: 'crossfade', // crossfade|scramble|slide|dissolve|pixelflip
-      idleAnimation: 'none',      // none|pulse|shimmer|flicker
+      mode: 'static',
+      renderMode: 'dot',
+      loadInStyle: 'scatter',
+      transitionStyle: 'crossfade',
+      idleAnimation: 'none',
       cycleWord: 'build',
       holdMs: 2500,
       animFrames: 60,
       asciiSize: 24,
       fontFamily: '"Space Grotesk"',
       fontWeight: '700',
-      fontSize: 64,
+      fontSize: 72,
       dotSpacing: 5,
-      dotRadiusRatio: 0.36,
+      dotRadiusRatio: 0.38,
       dotShape: 'circle',
-      align: 'left',
-      lineGap: 0.20,
+      align: 'center',
+      lineGap: 0.25,
       activeColor: '#ff5d22',
       inactiveColor: '#ff5d22',
       inactiveOpacity: 0.15,
       bgColor: '#0a0a0b',
     };
 
+    var S = {};
+    Object.keys(DEFAULTS).forEach(function(k) { S[k] = DEFAULTS[k]; });
+
     // ════════════════════════════════════════════════
     // Presets
     // ════════════════════════════════════════════════
-    var PRESETS = [
-      { name: 'Default',     activeColor: '#ff5d22', inactiveColor: '#ff5d22', inactiveOpacity: 0.15, bgColor: '#0a0a0b' },
-      { name: 'White',       activeColor: '#f5f5f7', inactiveColor: '#f5f5f7', inactiveOpacity: 0.08, bgColor: '#0a0a0b' },
-      { name: 'Neon Green',  activeColor: '#22c55e', inactiveColor: '#22c55e', inactiveOpacity: 0.12, bgColor: '#0a0a0b' },
-      { name: 'Blue LED',    activeColor: '#3b82f6', inactiveColor: '#3b82f6', inactiveOpacity: 0.15, bgColor: '#0a0a0b' },
-      { name: 'Cyan',        activeColor: '#06b6d4', inactiveColor: '#06b6d4', inactiveOpacity: 0.12, bgColor: '#0a0a0b' },
-      { name: 'Purple',      activeColor: '#a855f7', inactiveColor: '#a855f7', inactiveOpacity: 0.12, bgColor: '#0a0a0b' },
-      { name: 'Gold',        activeColor: '#eab308', inactiveColor: '#eab308', inactiveOpacity: 0.12, bgColor: '#0a0a0b' },
-      { name: 'Red',         activeColor: '#ef4444', inactiveColor: '#ef4444', inactiveOpacity: 0.12, bgColor: '#0a0a0b' },
-      { name: 'Light',       activeColor: '#18181b', inactiveColor: '#18181b', inactiveOpacity: 0.08, bgColor: '#f5f5f7' },
-      { name: 'Light Orange',activeColor: '#ff5d22', inactiveColor: '#ff5d22', inactiveOpacity: 0.10, bgColor: '#fafafa' },
+    var BG_MODES = [
+      { name: 'Dark',  bgColor: '#0a0a0b' },
+      { name: 'Light', bgColor: '#f5f5f7' },
     ];
+
+    var COLOR_PRESETS = {
+      dark: [
+        { name: 'Orange',     color: '#ff5d22', opacity: 0.15 },
+        { name: 'White',      color: '#f5f5f7', opacity: 0.08 },
+        { name: 'Neon Green', color: '#22c55e', opacity: 0.12 },
+        { name: 'Blue LED',   color: '#3b82f6', opacity: 0.15 },
+        { name: 'Cyan',       color: '#06b6d4', opacity: 0.12 },
+        { name: 'Purple',     color: '#a855f7', opacity: 0.12 },
+        { name: 'Gold',       color: '#eab308', opacity: 0.12 },
+        { name: 'Red',        color: '#ef4444', opacity: 0.12 },
+        { name: 'Rose',       color: '#f43f5e', opacity: 0.12 },
+        { name: 'Teal',       color: '#14b8a6', opacity: 0.12 },
+      ],
+      light: [
+        { name: 'Orange',     color: '#ea580c', opacity: 0.10 },
+        { name: 'Ink',        color: '#18181b', opacity: 0.08 },
+        { name: 'Forest',     color: '#16a34a', opacity: 0.08 },
+        { name: 'Blue',       color: '#2563eb', opacity: 0.10 },
+        { name: 'Teal',       color: '#0d9488', opacity: 0.08 },
+        { name: 'Purple',     color: '#7c3aed', opacity: 0.08 },
+        { name: 'Amber',      color: '#d97706', opacity: 0.08 },
+        { name: 'Red',        color: '#dc2626', opacity: 0.10 },
+        { name: 'Rose',       color: '#e11d48', opacity: 0.08 },
+        { name: 'Slate',      color: '#475569', opacity: 0.06 },
+      ],
+    };
 
     // ════════════════════════════════════════════════
     // Helpers
     // ════════════════════════════════════════════════
     function hexToRgb(hex) {
       return { r: parseInt(hex.slice(1,3),16), g: parseInt(hex.slice(3,5),16), b: parseInt(hex.slice(5,7),16) };
+    }
+
+    function setAccentColor(hex) {
+      var rgb = hexToRgb(hex);
+      var root = document.documentElement.style;
+      root.setProperty('--accent', hex);
+      root.setProperty('--accent-r', rgb.r);
+      root.setProperty('--accent-g', rgb.g);
+      root.setProperty('--accent-b', rgb.b);
+      // Compute a lighter hover variant
+      var hr = Math.min(255, rgb.r + 30), hg = Math.min(255, rgb.g + 30), hb = Math.min(255, rgb.b + 30);
+      root.setProperty('--accent-hover', 'rgb(' + hr + ',' + hg + ',' + hb + ')');
+    }
+
+    function setPanelTheme(mode) {
+      var root = document.documentElement.style;
+      if (mode === 'light') {
+        root.setProperty('--panel-bg', '#f0f0f2');
+        root.setProperty('--panel-bg-elevated', '#e8e8eb');
+        root.setProperty('--panel-border', 'rgba(0, 0, 0, 0.08)');
+        root.setProperty('--panel-border-hover', 'rgba(0, 0, 0, 0.14)');
+        root.setProperty('--surface', '#e4e4e7');
+        root.setProperty('--surface-hover', '#dcdce0');
+        root.setProperty('--surface-active', '#d4d4d8');
+        root.setProperty('--text-primary', '#18181b');
+        root.setProperty('--text-secondary', '#52525b');
+        root.setProperty('--text-tertiary', '#a1a1aa');
+        root.setProperty('--text-on-accent', '#ffffff');
+      } else {
+        root.setProperty('--panel-bg', '#111113');
+        root.setProperty('--panel-bg-elevated', '#161618');
+        root.setProperty('--panel-border', 'rgba(255, 255, 255, 0.06)');
+        root.setProperty('--panel-border-hover', 'rgba(255, 255, 255, 0.10)');
+        root.setProperty('--surface', '#1a1a1c');
+        root.setProperty('--surface-hover', '#1e1e21');
+        root.setProperty('--surface-active', '#222225');
+        root.setProperty('--text-primary', '#ececee');
+        root.setProperty('--text-secondary', '#8b8b8e');
+        root.setProperty('--text-tertiary', '#56565a');
+        root.setProperty('--text-on-accent', '#ffffff');
+      }
     }
 
     function showToast(msg) {
@@ -2526,11 +2580,9 @@
     function updatePanelVisibility() {
       var isDot = S.renderMode === 'dot';
 
-      // Font section: only for dot grid
-      document.getElementById('fontSection').classList.toggle('hidden', !isDot);
-
-      // ASCII Size section: only for block/line
-      document.getElementById('asciiSizeSection').classList.toggle('hidden', isDot);
+      // Typography: swap font controls vs display controls
+      document.getElementById('fontControls').classList.toggle('hidden', !isDot);
+      document.getElementById('displayControls').classList.toggle('hidden', isDot);
 
       // Grid section: only for dot grid
       document.getElementById('gridSection').classList.toggle('hidden', !isDot);
@@ -2579,47 +2631,88 @@
       });
     });
 
-    // ── Presets ──
-    var presetsEl = document.getElementById('presets');
-    PRESETS.forEach(function(p, i) {
-      var el = document.createElement('div');
-      el.className = 'preset' + (i === 0 ? ' active' : '');
-      el.title = p.name;
-      el.style.background = p.bgColor;
-      var dots = document.createElement('div');
-      dots.className = 'preset__dots';
-      for (var d = 0; d < 16; d++) {
-        var dot = document.createElement('div');
-        dot.className = 'preset__dot';
-        var isLit = [1,2,5,6,9,10,13,14].indexOf(d) !== -1;
-        if (isLit) {
-          dot.style.background = p.activeColor;
-        } else {
-          var rgb = hexToRgb(p.inactiveColor);
-          dot.style.background = 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',' + p.inactiveOpacity + ')';
-        }
-        dots.appendChild(dot);
-      }
-      el.appendChild(dots);
-      el.addEventListener('click', function() {
-        presetsEl.querySelectorAll('.preset').forEach(function(pe) { pe.classList.remove('active'); });
-        el.classList.add('active');
-        S.activeColor = p.activeColor;
-        S.inactiveColor = p.inactiveColor;
-        S.inactiveOpacity = p.inactiveOpacity;
-        S.bgColor = p.bgColor;
-        document.getElementById('activeColor').value = p.activeColor;
-        document.getElementById('activeHex').value = p.activeColor;
-        document.getElementById('inactiveColor').value = p.inactiveColor;
-        document.getElementById('inactiveHex').value = p.inactiveColor;
-        document.getElementById('inactiveOpacity').value = p.inactiveOpacity;
-        document.getElementById('opacityVal').textContent = p.inactiveOpacity.toFixed(2);
-        document.getElementById('bgColor').value = p.bgColor;
-        document.getElementById('bgHex').value = p.bgColor;
+    // ── Background toggle ──
+    var bgToggleEl = document.getElementById('bgToggle');
+    var currentBgMode = 0; // 0 = dark
+    var currentColorPreset = 0;
+
+    BG_MODES.forEach(function(mode, i) {
+      var btn = document.createElement('button');
+      btn.className = 'ctrl__toggle-btn' + (i === 0 ? ' active' : '');
+      btn.textContent = mode.name;
+      btn.addEventListener('click', function() {
+        bgToggleEl.querySelectorAll('.ctrl__toggle-btn').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        currentBgMode = i;
+        S.bgColor = mode.bgColor;
+        document.getElementById('bgColor').value = mode.bgColor;
+        document.getElementById('bgHex').value = mode.bgColor;
+        setPanelTheme(i === 0 ? 'dark' : 'light');
+        currentColorPreset = 0;
+        buildPresets();
+        applyColorPreset(0);
         render();
       });
-      presetsEl.appendChild(el);
+      bgToggleEl.appendChild(btn);
     });
+
+    // ── Color presets ──
+    var presetsEl = document.getElementById('presets');
+
+    function getPresets() {
+      return currentBgMode === 0 ? COLOR_PRESETS.dark : COLOR_PRESETS.light;
+    }
+
+    function applyColorPreset(idx) {
+      var p = getPresets()[idx];
+      S.activeColor = p.color;
+      S.inactiveColor = p.color;
+      S.inactiveOpacity = p.opacity;
+      document.getElementById('activeColor').value = p.color;
+      document.getElementById('activeHex').value = p.color;
+      document.getElementById('inactiveColor').value = p.color;
+      document.getElementById('inactiveHex').value = p.color;
+      document.getElementById('inactiveOpacity').value = p.opacity;
+      document.getElementById('opacityVal').textContent = p.opacity.toFixed(2);
+      setAccentColor(p.color);
+    }
+
+    function buildPresets() {
+      presetsEl.innerHTML = '';
+      var presets = getPresets();
+      var bgColor = BG_MODES[currentBgMode].bgColor;
+      presets.forEach(function(p, i) {
+        var el = document.createElement('div');
+        el.className = 'preset' + (i === currentColorPreset ? ' active' : '');
+        el.title = p.name;
+        el.style.background = bgColor;
+        var dots = document.createElement('div');
+        dots.className = 'preset__dots';
+        for (var d = 0; d < 16; d++) {
+          var dot = document.createElement('div');
+          dot.className = 'preset__dot';
+          var isLit = [1,2,5,6,9,10,13,14].indexOf(d) !== -1;
+          if (isLit) {
+            dot.style.background = p.color;
+          } else {
+            var rgb = hexToRgb(p.color);
+            dot.style.background = 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',' + p.opacity + ')';
+          }
+          dots.appendChild(dot);
+        }
+        el.appendChild(dots);
+        el.addEventListener('click', function() {
+          presetsEl.querySelectorAll('.preset').forEach(function(pe) { pe.classList.remove('active'); });
+          el.classList.add('active');
+          currentColorPreset = i;
+          applyColorPreset(i);
+          render();
+        });
+        presetsEl.appendChild(el);
+      });
+    }
+
+    buildPresets();
 
     // ── Text ──
     document.getElementById('textInput').addEventListener('input', function(e) {
@@ -2727,18 +2820,25 @@
     });
 
     // ── Colors ──
+    function deselectPreset() {
+      currentColorPreset = -1;
+      presetsEl.querySelectorAll('.preset').forEach(function(pe) { pe.classList.remove('active'); });
+    }
+
     function bindColor(pickerId, hexId, stateKey) {
       var picker = document.getElementById(pickerId);
       var hex = document.getElementById(hexId);
       picker.addEventListener('input', function() {
         S[stateKey] = picker.value;
         hex.value = picker.value;
+        deselectPreset();
         render();
       });
       hex.addEventListener('input', function() {
         if (hex.value.length === 7 && hex.value[0] === '#') {
           S[stateKey] = hex.value;
           picker.value = hex.value;
+          deselectPreset();
           render();
         }
       });
@@ -2750,6 +2850,7 @@
     document.getElementById('inactiveOpacity').addEventListener('input', function(e) {
       S.inactiveOpacity = parseFloat(e.target.value);
       document.getElementById('opacityVal').textContent = S.inactiveOpacity.toFixed(2);
+      deselectPreset();
       render();
     });
 
@@ -2922,7 +3023,58 @@
       slider.addEventListener('input', function() { updateSliderFill(slider); });
     });
 
+    // ── Reset All ──
+    function syncUIFromState() {
+      document.getElementById('textInput').value = S.text;
+      document.getElementById('fontFamily').value = S.fontFamily;
+      document.getElementById('weightSlider').value = S.fontWeight;
+      document.getElementById('weightVal').textContent = S.fontWeight;
+      document.getElementById('fontSizeSlider').value = S.fontSize;
+      document.getElementById('fontSizeVal').textContent = S.fontSize;
+      document.getElementById('spacingSlider').value = S.dotSpacing;
+      document.getElementById('spacingVal').textContent = S.dotSpacing;
+      document.getElementById('radiusSlider').value = S.dotRadiusRatio;
+      document.getElementById('radiusVal').textContent = S.dotRadiusRatio.toFixed(2);
+      document.getElementById('lineGapSlider').value = S.lineGap;
+      document.getElementById('lineGapVal').textContent = S.lineGap.toFixed(2);
+      document.getElementById('activeColor').value = S.activeColor;
+      document.getElementById('activeHex').value = S.activeColor;
+      document.getElementById('inactiveColor').value = S.inactiveColor;
+      document.getElementById('inactiveHex').value = S.inactiveColor;
+      document.getElementById('inactiveOpacity').value = S.inactiveOpacity;
+      document.getElementById('opacityVal').textContent = S.inactiveOpacity.toFixed(2);
+      document.getElementById('bgColor').value = S.bgColor;
+      document.getElementById('bgHex').value = S.bgColor;
+
+      // Sync segmented toggles by clicking the right button
+      document.querySelectorAll('[data-render]').forEach(function(b) {
+        b.classList.toggle('active', b.dataset.render === S.renderMode);
+      });
+
+      // Update slider fills
+      document.querySelectorAll('.ctrl__slider').forEach(updateSliderFill);
+      // Re-init segmented control indicators
+      document.querySelectorAll('.ctrl__toggle-row, .ctrl__render-row').forEach(initSegmentedControl);
+    }
+
+    document.getElementById('resetAllBtn').addEventListener('click', function() {
+      Object.keys(DEFAULTS).forEach(function(k) { S[k] = DEFAULTS[k]; });
+      currentBgMode = 0;
+      currentColorPreset = 0;
+      // Reset bg toggle
+      bgToggleEl.querySelectorAll('.ctrl__toggle-btn').forEach(function(b, i) {
+        b.classList.toggle('active', i === 0);
+      });
+      setPanelTheme('dark');
+      buildPresets();
+      setAccentColor(DEFAULTS.activeColor);
+      syncUIFromState();
+      updatePanelVisibility();
+      render();
+    });
+
     // ── Init ──
+    setAccentColor(S.activeColor);
     document.fonts.ready.then(function() {
       updatePanelVisibility();
       render();
