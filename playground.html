@@ -1318,10 +1318,31 @@
     }
 
     // ════════════════════════════════════════════════
+    // Word-wrap a single line to fit within maxPx width
+    // ════════════════════════════════════════════════
+    function wrapLine(text, maxPx, canvasCtx) {
+      if (!text || !maxPx || maxPx <= 0) return [text || ' '];
+      if (canvasCtx.measureText(text).width <= maxPx) return [text];
+      var words = text.split(/\s+/);
+      var wrapped = [];
+      var current = '';
+      for (var i = 0; i < words.length; i++) {
+        var test = current ? current + ' ' + words[i] : words[i];
+        if (canvasCtx.measureText(test).width > maxPx && current) {
+          wrapped.push(current);
+          current = words[i];
+        } else {
+          current = test;
+        }
+      }
+      if (current) wrapped.push(current);
+      return wrapped.length ? wrapped : [text];
+    }
+
     // Compute layout (shared by dot grid renderers)
     // ════════════════════════════════════════════════
     function computeLayout(text) {
-      var lines = (text || ' ').split('\n');
+      var rawLines = (text || ' ').split('\n');
       var fontSize = S.fontSize;
       var DS = S.dotSpacing;
       var DR = DS * S.dotRadiusRatio;
@@ -1329,6 +1350,16 @@
 
       var mc = document.createElement('canvas').getContext('2d');
       mc.font = fontStr();
+
+      // Word-wrap lines to fit within the preview area
+      var previewEl = document.querySelector('.preview');
+      var availWidth = previewEl ? previewEl.clientWidth - 40 : 0; // 40px padding
+      var lines = [];
+      for (var i = 0; i < rawLines.length; i++) {
+        var wrapped = availWidth > 0 ? wrapLine(rawLines[i], availWidth, mc) : [rawLines[i]];
+        for (var j = 0; j < wrapped.length; j++) lines.push(wrapped[j]);
+      }
+
       var lineWidths = lines.map(function(l) { return mc.measureText(l || ' ').width; });
       var maxWidth = Math.max.apply(null, lineWidths);
 
