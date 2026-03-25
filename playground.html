@@ -588,21 +588,22 @@
     <div class="panel__header">
       <div class="panel__title">Dot Matrix</div>
       <div class="panel__subtitle">Playground</div>
+      <div class="ctrl__render-row" style="margin-top: var(--sp-3);">
+        <button class="ctrl__toggle-btn active" data-render="dot">Dot Grid</button>
+        <button class="ctrl__toggle-btn" data-render="block">Block</button>
+        <button class="ctrl__toggle-btn" data-render="line">Line Art</button>
+      </div>
     </div>
 
-    <!-- Render Mode -->
+    <!-- Text -->
     <div class="section" data-section>
       <button class="section__header" aria-expanded="true">
-        <span class="section__label">Render Mode</span>
+        <span class="section__label">Text</span>
         <svg class="section__chevron" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
       <div class="section__body">
         <div class="ctrl">
-          <div class="ctrl__render-row">
-            <button class="ctrl__toggle-btn active" data-render="dot">Dot Grid</button>
-            <button class="ctrl__toggle-btn" data-render="block">Block</button>
-            <button class="ctrl__toggle-btn" data-render="line">Line Art</button>
-          </div>
+          <textarea class="ctrl__textarea" id="textInput" rows="2" placeholder="Type anything... (new line for multi-line)">ship</textarea>
         </div>
       </div>
     </div>
@@ -619,15 +620,136 @@
       </div>
     </div>
 
-    <!-- Text -->
-    <div class="section" data-section>
+    <!-- Typography (merged Font + Display) -->
+    <div class="section" id="typographySection" data-section>
       <button class="section__header" aria-expanded="true">
-        <span class="section__label">Text</span>
+        <span class="section__label">Typography</span>
+        <svg class="section__chevron" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="section__body">
+        <!-- Font controls (dot grid) -->
+        <div id="fontControls">
+          <div class="ctrl">
+            <div class="ctrl__top"><span class="ctrl__name">Family</span></div>
+            <select class="ctrl__select" id="fontFamily">
+              <option value='"Space Grotesk"' selected>Space Grotesk</option>
+              <option value='"Inter"'>Inter</option>
+              <option value='"JetBrains Mono"'>JetBrains Mono</option>
+              <option value='"Chakra Petch"'>Chakra Petch</option>
+              <option value='"Outfit"'>Outfit</option>
+              <option value='"Syne"'>Syne</option>
+            </select>
+          </div>
+          <div class="ctrl">
+            <div class="ctrl__top">
+              <span class="ctrl__name">Weight</span>
+              <span class="ctrl__val" id="weightVal">700</span>
+            </div>
+            <input class="ctrl__slider" id="weightSlider" type="range" min="400" max="900" step="100" value="700" />
+          </div>
+          <div class="ctrl">
+            <div class="ctrl__top">
+              <span class="ctrl__name">Size</span>
+              <span class="ctrl__val" id="fontSizeVal">72</span>
+            </div>
+            <input class="ctrl__slider" id="fontSizeSlider" type="range" min="24" max="160" step="1" value="72" />
+          </div>
+        </div>
+        <!-- Display controls (block/line art) -->
+        <div id="displayControls" class="hidden">
+          <div class="ctrl">
+            <div class="ctrl__top">
+              <span class="ctrl__name">Text Size</span>
+              <span class="ctrl__val" id="asciiSizeVal">24</span>
+            </div>
+            <input class="ctrl__slider" id="asciiSizeSlider" type="range" min="8" max="64" step="1" value="24" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grid (dot grid only) -->
+    <div class="section" id="gridSection" data-section>
+      <button class="section__header" aria-expanded="true">
+        <span class="section__label">Grid</span>
         <svg class="section__chevron" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
       <div class="section__body">
         <div class="ctrl">
-          <textarea class="ctrl__textarea" id="textInput" rows="2" placeholder="Type anything... (new line for multi-line)">ship</textarea>
+          <div class="ctrl__top">
+            <span class="ctrl__name">Dot Spacing</span>
+            <span class="ctrl__val" id="spacingVal">5</span>
+          </div>
+          <input class="ctrl__slider" id="spacingSlider" type="range" min="3" max="14" step="1" value="5" />
+        </div>
+        <div class="ctrl">
+          <div class="ctrl__top">
+            <span class="ctrl__name">Dot Radius</span>
+            <span class="ctrl__val" id="radiusVal">0.38</span>
+          </div>
+          <input class="ctrl__slider" id="radiusSlider" type="range" min="0.10" max="0.50" step="0.01" value="0.38" />
+        </div>
+        <div class="ctrl">
+          <div class="ctrl__top"><span class="ctrl__name">Dot Shape</span></div>
+          <div class="ctrl__toggle-row ctrl__shape-row">
+            <button class="ctrl__toggle-btn active" data-dot-shape="circle" title="Circle"><svg width="14" height="14" viewBox="0 0 14 14"><circle cx="7" cy="7" r="5" fill="currentColor"/></svg></button>
+            <button class="ctrl__toggle-btn" data-dot-shape="square" title="Square"><svg width="14" height="14" viewBox="0 0 14 14"><rect x="2" y="2" width="10" height="10" fill="currentColor"/></svg></button>
+            <button class="ctrl__toggle-btn" data-dot-shape="diamond" title="Diamond"><svg width="14" height="14" viewBox="0 0 14 14"><polygon points="7,1 13,7 7,13 1,7" fill="currentColor"/></svg></button>
+            <button class="ctrl__toggle-btn" data-dot-shape="triangle" title="Triangle"><svg width="14" height="14" viewBox="0 0 14 14"><polygon points="7,1 13,13 1,13" fill="currentColor"/></svg></button>
+            <button class="ctrl__toggle-btn" data-dot-shape="star" title="Star"><svg width="14" height="14" viewBox="0 0 14 14"><polygon points="7,0.5 8.8,5 13.5,5.2 9.8,8.2 11,13 7,10.5 3,13 4.2,8.2 0.5,5.2 5.2,5" fill="currentColor"/></svg></button>
+            <button class="ctrl__toggle-btn" data-dot-shape="cross" title="Cross"><svg width="14" height="14" viewBox="0 0 14 14"><polygon points="5,1 9,1 9,5 13,5 13,9 9,9 9,13 5,13 5,9 1,9 1,5 5,5" fill="currentColor"/></svg></button>
+          </div>
+        </div>
+        <div class="ctrl">
+          <div class="ctrl__top"><span class="ctrl__name">Alignment</span></div>
+          <div class="ctrl__toggle-row">
+            <button class="ctrl__toggle-btn" data-align="left">Left</button>
+            <button class="ctrl__toggle-btn active" data-align="center">Center</button>
+            <button class="ctrl__toggle-btn" data-align="right">Right</button>
+          </div>
+        </div>
+        <div class="ctrl">
+          <div class="ctrl__top">
+            <span class="ctrl__name">Line Gap</span>
+            <span class="ctrl__val" id="lineGapVal">0.25</span>
+          </div>
+          <input class="ctrl__slider" id="lineGapSlider" type="range" min="0" max="0.6" step="0.02" value="0.25" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Colors -->
+    <div class="section" data-section>
+      <button class="section__header" aria-expanded="true">
+        <span class="section__label">Colors</span>
+        <svg class="section__chevron" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="section__body">
+        <div class="ctrl">
+          <div class="ctrl__top"><span class="ctrl__name">Active Dots</span></div>
+          <div class="ctrl__color-row">
+            <input class="ctrl__color" id="activeColor" type="color" value="#ff5d22" />
+            <input class="ctrl__hex" id="activeHex" type="text" value="#ff5d22" />
+          </div>
+        </div>
+        <div class="ctrl" id="inactiveColorCtrl">
+          <div class="ctrl__top"><span class="ctrl__name">Grid Dots</span></div>
+          <div class="ctrl__color-row">
+            <input class="ctrl__color" id="inactiveColor" type="color" value="#ff5d22" />
+            <input class="ctrl__hex" id="inactiveHex" type="text" value="#ff5d22" />
+          </div>
+          <div class="ctrl__opacity-row">
+            <span class="ctrl__name" style="font-size: 11px; white-space: nowrap;">Opacity</span>
+            <input class="ctrl__slider" id="inactiveOpacity" type="range" min="0" max="0.5" step="0.01" value="0.15" />
+            <span class="ctrl__val" id="opacityVal">0.15</span>
+          </div>
+        </div>
+        <div class="ctrl">
+          <div class="ctrl__top"><span class="ctrl__name">Background</span></div>
+          <div class="ctrl__color-row">
+            <input class="ctrl__color" id="bgColor" type="color" value="#0a0a0b" />
+            <input class="ctrl__hex" id="bgHex" type="text" value="#0a0a0b" />
+          </div>
         </div>
       </div>
     </div>
@@ -718,144 +840,6 @@
           <div class="ctrl__btn-row">
             <button class="ctrl__btn" id="playBtn">Play</button>
             <button class="ctrl__btn" id="resetBtn">Reset</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Font (dot grid only) -->
-    <div class="section" id="fontSection" data-section>
-      <button class="section__header" aria-expanded="true">
-        <span class="section__label">Font</span>
-        <svg class="section__chevron" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <div class="section__body">
-        <div class="ctrl">
-          <div class="ctrl__top"><span class="ctrl__name">Family</span></div>
-          <select class="ctrl__select" id="fontFamily">
-            <option value='"Space Grotesk"' selected>Space Grotesk</option>
-            <option value='"Inter"'>Inter</option>
-            <option value='"JetBrains Mono"'>JetBrains Mono</option>
-            <option value='"Chakra Petch"'>Chakra Petch</option>
-            <option value='"Outfit"'>Outfit</option>
-            <option value='"Syne"'>Syne</option>
-          </select>
-        </div>
-        <div class="ctrl">
-          <div class="ctrl__top">
-            <span class="ctrl__name">Weight</span>
-            <span class="ctrl__val" id="weightVal">700</span>
-          </div>
-          <input class="ctrl__slider" id="weightSlider" type="range" min="400" max="900" step="100" value="700" />
-        </div>
-        <div class="ctrl">
-          <div class="ctrl__top">
-            <span class="ctrl__name">Size</span>
-            <span class="ctrl__val" id="fontSizeVal">72</span>
-          </div>
-          <input class="ctrl__slider" id="fontSizeSlider" type="range" min="24" max="160" step="1" value="72" />
-        </div>
-      </div>
-    </div>
-
-    <!-- ASCII Size (block/line only) -->
-    <div class="section hidden" id="asciiSizeSection" data-section>
-      <button class="section__header" aria-expanded="true">
-        <span class="section__label">Display</span>
-        <svg class="section__chevron" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <div class="section__body">
-        <div class="ctrl">
-          <div class="ctrl__top">
-            <span class="ctrl__name">Text Size</span>
-            <span class="ctrl__val" id="asciiSizeVal">24</span>
-          </div>
-          <input class="ctrl__slider" id="asciiSizeSlider" type="range" min="8" max="64" step="1" value="24" />
-        </div>
-      </div>
-    </div>
-
-    <!-- Grid (dot grid only) -->
-    <div class="section" id="gridSection" data-section>
-      <button class="section__header" aria-expanded="true">
-        <span class="section__label">Grid</span>
-        <svg class="section__chevron" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <div class="section__body">
-        <div class="ctrl">
-          <div class="ctrl__top">
-            <span class="ctrl__name">Dot Spacing</span>
-            <span class="ctrl__val" id="spacingVal">5</span>
-          </div>
-          <input class="ctrl__slider" id="spacingSlider" type="range" min="3" max="14" step="1" value="5" />
-        </div>
-        <div class="ctrl">
-          <div class="ctrl__top">
-            <span class="ctrl__name">Dot Radius</span>
-            <span class="ctrl__val" id="radiusVal">0.38</span>
-          </div>
-          <input class="ctrl__slider" id="radiusSlider" type="range" min="0.10" max="0.50" step="0.01" value="0.38" />
-        </div>
-        <div class="ctrl">
-          <div class="ctrl__top"><span class="ctrl__name">Dot Shape</span></div>
-          <div class="ctrl__toggle-row ctrl__shape-row">
-            <button class="ctrl__toggle-btn active" data-dot-shape="circle" title="Circle"><svg width="14" height="14" viewBox="0 0 14 14"><circle cx="7" cy="7" r="5" fill="currentColor"/></svg></button>
-            <button class="ctrl__toggle-btn" data-dot-shape="square" title="Square"><svg width="14" height="14" viewBox="0 0 14 14"><rect x="2" y="2" width="10" height="10" fill="currentColor"/></svg></button>
-            <button class="ctrl__toggle-btn" data-dot-shape="diamond" title="Diamond"><svg width="14" height="14" viewBox="0 0 14 14"><polygon points="7,1 13,7 7,13 1,7" fill="currentColor"/></svg></button>
-            <button class="ctrl__toggle-btn" data-dot-shape="triangle" title="Triangle"><svg width="14" height="14" viewBox="0 0 14 14"><polygon points="7,1 13,13 1,13" fill="currentColor"/></svg></button>
-            <button class="ctrl__toggle-btn" data-dot-shape="star" title="Star"><svg width="14" height="14" viewBox="0 0 14 14"><polygon points="7,0.5 8.8,5 13.5,5.2 9.8,8.2 11,13 7,10.5 3,13 4.2,8.2 0.5,5.2 5.2,5" fill="currentColor"/></svg></button>
-            <button class="ctrl__toggle-btn" data-dot-shape="cross" title="Cross"><svg width="14" height="14" viewBox="0 0 14 14"><polygon points="5,1 9,1 9,5 13,5 13,9 9,9 9,13 5,13 5,9 1,9 1,5 5,5" fill="currentColor"/></svg></button>
-          </div>
-        </div>
-        <div class="ctrl">
-          <div class="ctrl__top"><span class="ctrl__name">Alignment</span></div>
-          <div class="ctrl__toggle-row">
-            <button class="ctrl__toggle-btn" data-align="left">Left</button>
-            <button class="ctrl__toggle-btn active" data-align="center">Center</button>
-            <button class="ctrl__toggle-btn" data-align="right">Right</button>
-          </div>
-        </div>
-        <div class="ctrl">
-          <div class="ctrl__top">
-            <span class="ctrl__name">Line Gap</span>
-            <span class="ctrl__val" id="lineGapVal">0.25</span>
-          </div>
-          <input class="ctrl__slider" id="lineGapSlider" type="range" min="0" max="0.6" step="0.02" value="0.25" />
-        </div>
-      </div>
-    </div>
-
-    <!-- Colors -->
-    <div class="section" data-section>
-      <button class="section__header" aria-expanded="true">
-        <span class="section__label">Colors</span>
-        <svg class="section__chevron" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <div class="section__body">
-        <div class="ctrl">
-          <div class="ctrl__top"><span class="ctrl__name">Active Dots</span></div>
-          <div class="ctrl__color-row">
-            <input class="ctrl__color" id="activeColor" type="color" value="#ff5d22" />
-            <input class="ctrl__hex" id="activeHex" type="text" value="#ff5d22" />
-          </div>
-        </div>
-        <div class="ctrl" id="inactiveColorCtrl">
-          <div class="ctrl__top"><span class="ctrl__name">Grid Dots</span></div>
-          <div class="ctrl__color-row">
-            <input class="ctrl__color" id="inactiveColor" type="color" value="#ff5d22" />
-            <input class="ctrl__hex" id="inactiveHex" type="text" value="#ff5d22" />
-          </div>
-          <div class="ctrl__opacity-row">
-            <span class="ctrl__name" style="font-size: 11px; white-space: nowrap;">Opacity</span>
-            <input class="ctrl__slider" id="inactiveOpacity" type="range" min="0" max="0.5" step="0.01" value="0.15" />
-            <span class="ctrl__val" id="opacityVal">0.15</span>
-          </div>
-        </div>
-        <div class="ctrl">
-          <div class="ctrl__top"><span class="ctrl__name">Background</span></div>
-          <div class="ctrl__color-row">
-            <input class="ctrl__color" id="bgColor" type="color" value="#0a0a0b" />
-            <input class="ctrl__hex" id="bgHex" type="text" value="#0a0a0b" />
           </div>
         </div>
       </div>
@@ -2596,11 +2580,9 @@
     function updatePanelVisibility() {
       var isDot = S.renderMode === 'dot';
 
-      // Font section: only for dot grid
-      document.getElementById('fontSection').classList.toggle('hidden', !isDot);
-
-      // ASCII Size section: only for block/line
-      document.getElementById('asciiSizeSection').classList.toggle('hidden', isDot);
+      // Typography: swap font controls vs display controls
+      document.getElementById('fontControls').classList.toggle('hidden', !isDot);
+      document.getElementById('displayControls').classList.toggle('hidden', isDot);
 
       // Grid section: only for dot grid
       document.getElementById('gridSection').classList.toggle('hidden', !isDot);
@@ -2838,18 +2820,25 @@
     });
 
     // ── Colors ──
+    function deselectPreset() {
+      currentColorPreset = -1;
+      presetsEl.querySelectorAll('.preset').forEach(function(pe) { pe.classList.remove('active'); });
+    }
+
     function bindColor(pickerId, hexId, stateKey) {
       var picker = document.getElementById(pickerId);
       var hex = document.getElementById(hexId);
       picker.addEventListener('input', function() {
         S[stateKey] = picker.value;
         hex.value = picker.value;
+        deselectPreset();
         render();
       });
       hex.addEventListener('input', function() {
         if (hex.value.length === 7 && hex.value[0] === '#') {
           S[stateKey] = hex.value;
           picker.value = hex.value;
+          deselectPreset();
           render();
         }
       });
@@ -2861,6 +2850,7 @@
     document.getElementById('inactiveOpacity').addEventListener('input', function(e) {
       S.inactiveOpacity = parseFloat(e.target.value);
       document.getElementById('opacityVal').textContent = S.inactiveOpacity.toFixed(2);
+      deselectPreset();
       render();
     });
 
