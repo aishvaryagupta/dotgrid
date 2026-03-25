@@ -855,15 +855,21 @@
       <div class="section__body">
         <div class="ctrl">
           <div class="ctrl__btn-row">
-            <button class="ctrl__btn ctrl__btn--primary" id="exportConfig">Copy Config</button>
-            <button class="ctrl__btn" id="exportAttrs">Copy Attrs</button>
+            <button class="ctrl__btn ctrl__btn--primary" id="exportHtml">Copy HTML</button>
+            <button class="ctrl__btn" id="exportPng">Download PNG</button>
           </div>
         </div>
         <div class="ctrl">
           <div class="ctrl__btn-row">
-            <button class="ctrl__btn" id="exportPng">Download PNG</button>
-            <button class="ctrl__btn" id="exportCSS">Copy CSS</button>
+            <button class="ctrl__btn" id="exportJs">Copy JS</button>
+            <button class="ctrl__btn" id="exportSave">Save Config</button>
           </div>
+        </div>
+        <div class="ctrl">
+          <div class="ctrl__btn-row">
+            <button class="ctrl__btn" id="exportLoad">Load Config</button>
+          </div>
+          <input type="file" id="configFileInput" accept=".json" style="display: none;" />
         </div>
       </div>
     </div>
@@ -2855,59 +2861,44 @@
       render();
     });
 
-    // ── Export ──
-    document.getElementById('exportConfig').addEventListener('click', function() {
-      var config = {
-        text: S.text,
-        renderMode: S.renderMode,
-        mode: S.mode,
-        loadInStyle: S.loadInStyle,
-        transitionStyle: S.transitionStyle,
-        idleAnimation: S.idleAnimation,
-        cycleWord: S.cycleWord,
-        holdMs: S.holdMs,
-        animationFrames: S.animFrames,
-        fontFamily: S.fontFamily,
-        fontWeight: S.fontWeight,
-        fontSize: S.fontSize,
-        dotSpacing: S.dotSpacing,
-        dotRadiusRatio: S.dotRadiusRatio,
-        dotShape: S.dotShape,
-        align: S.align,
-        lineGap: S.lineGap,
-        activeColor: S.activeColor,
-        inactiveColor: inactiveRgba(),
-        bgColor: S.bgColor,
-      };
-      navigator.clipboard.writeText(JSON.stringify(config, null, 2)).then(function() { showToast('Config copied'); });
-    });
-
-    document.getElementById('exportAttrs').addEventListener('click', function() {
-      var attrs = 'data-dot-matrix="' + S.mode + '"';
-      attrs += '\ndata-render-mode="' + S.renderMode + '"';
+    // ── Export: build data attributes string ──
+    function buildAttrs() {
+      var attrs = '';
       if (S.mode === 'cycle') {
-        attrs += '\ndata-words="' + S.text.split('\n')[0] + ',' + S.cycleWord + '"';
-        if (S.renderMode === 'dot') attrs += '\ndata-transition="' + S.transitionStyle + '"';
+        attrs += ' data-dot-matrix="cycle"';
+        attrs += ' data-words="' + S.text.split('\n')[0] + ',' + S.cycleWord + '"';
+        attrs += ' data-hold="' + S.holdMs + '"';
+        if (S.renderMode === 'dot') attrs += ' data-transition="' + S.transitionStyle + '"';
       } else {
-        attrs += '\ndata-word="' + S.text.split('\n')[0] + '"';
+        attrs += ' data-dot-matrix="' + S.mode + '"';
+        attrs += ' data-word="' + S.text.split('\n')[0] + '"';
       }
       if (S.mode === 'animate' && S.renderMode === 'dot') {
-        attrs += '\ndata-load-in="' + S.loadInStyle + '"';
-        attrs += '\ndata-animation-frames="' + S.animFrames + '"';
+        attrs += ' data-load-in="' + S.loadInStyle + '"';
+        attrs += ' data-animation-frames="' + S.animFrames + '"';
       }
-      attrs += '\ndata-active-color="' + S.activeColor + '"';
+      attrs += ' data-active-color="' + S.activeColor + '"';
       if (S.renderMode === 'dot') {
-        attrs += '\ndata-inactive-color="' + inactiveRgba() + '"';
-        if (S.dotShape !== 'circle') attrs += '\ndata-dot-shape="' + S.dotShape + '"';
-        if (S.idleAnimation !== 'none') attrs += '\ndata-idle="' + S.idleAnimation + '"';
+        attrs += ' data-inactive-color="' + inactiveRgba() + '"';
+        if (S.dotShape !== 'circle') attrs += ' data-dot-shape="' + S.dotShape + '"';
+        if (S.idleAnimation !== 'none') attrs += ' data-idle="' + S.idleAnimation + '"';
       }
-      if (S.mode === 'cycle') attrs += '\ndata-hold="' + S.holdMs + '"';
-      navigator.clipboard.writeText(attrs).then(function() { showToast('Attributes copied'); });
+      return attrs;
+    }
+
+    // ── Export: Copy HTML ──
+    document.getElementById('exportHtml').addEventListener('click', function() {
+      var tag = (S.mode === 'headline') ? 'div' : 'span';
+      var html = '<!-- Dot Matrix -->\n';
+      html += '<script src="dot-matrix-text.js"><\/script>\n';
+      html += '<' + tag + buildAttrs() + '></' + tag + '>\n';
+      html += '<script>DotMatrix.init();<\/script>';
+      navigator.clipboard.writeText(html).then(function() { showToast('HTML copied'); });
     });
 
+    // ── Export: Download PNG ──
     document.getElementById('exportPng').addEventListener('click', function() {
       if (S.renderMode !== 'dot') {
-        // For ASCII modes, create a temporary canvas from the pre content
         var preText = asciiPre.textContent;
         var tmpCanvas = document.createElement('canvas');
         var tmpCtx = tmpCanvas.getContext('2d');
@@ -2947,29 +2938,85 @@
       showToast('PNG downloaded');
     });
 
-    document.getElementById('exportCSS').addEventListener('click', function() {
-      var css;
-      if (S.renderMode !== 'dot') {
-        css = '.ascii-art {\n';
-        css += '  font-family: "JetBrains Mono", monospace;\n';
-        css += '  font-size: 10px;\n';
-        css += '  line-height: 1.15;\n';
-        css += '  white-space: pre;\n';
-        css += '  color: ' + S.activeColor + ';\n';
-        var rgb = hexToRgb(S.activeColor);
-        css += '  text-shadow: 0 0 8px rgba(' + rgb.r + ', ' + rgb.g + ', ' + rgb.b + ', 0.35);\n';
-        css += '  background: ' + S.bgColor + ';\n';
-        css += '  /* render-mode: ' + S.renderMode + ' */\n';
-        css += '}';
-      } else {
-        css = '.dot-matrix-container {\n';
-        css += '  background: ' + S.bgColor + ';\n';
-        css += '  font-family: ' + S.fontFamily + ', system-ui, sans-serif;\n';
-        css += '  font-size: ' + S.fontSize + 'px;\n';
-        css += '  font-weight: ' + S.fontWeight + ';\n';
-        css += '}';
+    // ── Export: Copy JS ──
+    document.getElementById('exportJs').addEventListener('click', function() {
+      var opts = {};
+      opts.activeColor = S.activeColor;
+      if (S.renderMode === 'dot') {
+        opts.inactiveColor = inactiveRgba();
+        if (S.dotShape !== 'circle') opts.dotShape = S.dotShape;
       }
-      navigator.clipboard.writeText(css).then(function() { showToast('CSS copied'); });
+      if (S.mode === 'cycle') {
+        opts.hold = S.holdMs;
+        if (S.renderMode === 'dot') opts.transitionFrames = 14;
+      }
+      if (S.mode === 'animate' && S.renderMode === 'dot') {
+        opts.animationFrames = S.animFrames;
+      }
+      if (S.idleAnimation !== 'none') opts.idle = S.idleAnimation;
+
+      var js = '// Dot Matrix — JS API\n';
+      js += 'var el = document.querySelector(\'#my-dot-matrix\');\n';
+      js += 'DotMatrix.create(el, ' + JSON.stringify(opts, null, 2) + ');';
+      navigator.clipboard.writeText(js).then(function() { showToast('JS copied'); });
+    });
+
+    // ── Export: Save Config (download JSON file) ──
+    document.getElementById('exportSave').addEventListener('click', function() {
+      var config = {
+        text: S.text, renderMode: S.renderMode, mode: S.mode,
+        loadInStyle: S.loadInStyle, transitionStyle: S.transitionStyle,
+        idleAnimation: S.idleAnimation, cycleWord: S.cycleWord,
+        holdMs: S.holdMs, animFrames: S.animFrames,
+        fontFamily: S.fontFamily, fontWeight: S.fontWeight, fontSize: S.fontSize,
+        dotSpacing: S.dotSpacing, dotRadiusRatio: S.dotRadiusRatio,
+        dotShape: S.dotShape, align: S.align, lineGap: S.lineGap,
+        activeColor: S.activeColor, inactiveColor: S.inactiveColor,
+        inactiveOpacity: S.inactiveOpacity, bgColor: S.bgColor,
+      };
+      var blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+      var link = document.createElement('a');
+      link.download = 'dot-matrix-config.json';
+      link.href = URL.createObjectURL(blob);
+      link.click();
+      URL.revokeObjectURL(link.href);
+      showToast('Config saved');
+    });
+
+    // ── Export: Load Config (import JSON file) ──
+    document.getElementById('exportLoad').addEventListener('click', function() {
+      document.getElementById('configFileInput').click();
+    });
+    document.getElementById('configFileInput').addEventListener('change', function(e) {
+      var file = e.target.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function(ev) {
+        try {
+          var config = JSON.parse(ev.target.result);
+          // Apply config values to state
+          Object.keys(config).forEach(function(k) {
+            if (S.hasOwnProperty(k)) S[k] = config[k];
+          });
+          // Determine bg mode from loaded bgColor
+          currentBgMode = (S.bgColor === '#f5f5f7') ? 1 : 0;
+          setPanelTheme(currentBgMode === 0 ? 'dark' : 'light');
+          bgToggleEl.querySelectorAll('.ctrl__toggle-btn').forEach(function(b, i) {
+            b.classList.toggle('active', i === currentBgMode);
+          });
+          deselectPreset();
+          buildPresets();
+          setAccentColor(S.activeColor);
+          syncUIFromState();
+          updatePanelVisibility();
+          render();
+          showToast('Config loaded');
+        } catch (err) {
+          showToast('Invalid config file');
+        }
+      };
+      reader.readAsText(file);
+      e.target.value = ''; // reset so same file can be loaded again
     });
 
     // ── Collapsible sections ──
