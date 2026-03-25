@@ -2304,24 +2304,22 @@
       showDotMode();
       currentCycleIndex = 0;
 
-      var words = [S.text || ' ', S.cycleWord || ' '];
-      var word1 = words[0].split('\n')[0];
-      var word2 = words[1].split('\n')[0];
+      var word1 = (S.text || ' ').split('\n')[0];
+      var word2 = (S.cycleWord || ' ').split('\n')[0];
       var cycleWords = [word1, word2];
 
-      var fontSize = S.fontSize;
-      var DS = S.dotSpacing;
-      var DR = DS * S.dotRadiusRatio;
-      var dpr = window.devicePixelRatio || 1;
+      // Use computeLayout for both words so wrapping is applied
+      var layout1 = computeLayout(word1);
+      var layout2 = computeLayout(word2);
 
-      var mc = document.createElement('canvas').getContext('2d');
-      mc.font = fontStr();
-      var maxWidth = Math.max(mc.measureText(word1).width, mc.measureText(word2).width);
-
-      var cols = Math.ceil(maxWidth / DS) + 1;
-      var rows = Math.ceil(fontSize / DS);
+      // Use the larger dimensions to fit both words
+      var DS = layout1.DS;
+      var DR = layout1.DR;
+      var cols = Math.max(layout1.cols, layout2.cols);
+      var totalRows = Math.max(layout1.totalRows, layout2.totalRows);
       var w = cols * DS;
-      var h = rows * DS;
+      var h = totalRows * DS;
+      var dpr = window.devicePixelRatio || 1;
 
       canvas.width = w * dpr;
       canvas.height = h * dpr;
@@ -2329,26 +2327,55 @@
       canvas.style.height = h + 'px';
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
+      var rows = totalRows;
+      var maxWidth = Math.max(layout1.maxWidth, layout2.maxWidth);
+
       var cycleLayout = {
-        lines: [''],
-        fontSize: fontSize,
+        lines: layout1.lines,
+        fontSize: layout1.fontSize,
         DS: DS,
         DR: DR,
         cols: cols,
-        rowsPerLine: rows,
-        gapRows: 0,
-        totalRows: rows,
+        rowsPerLine: layout1.rowsPerLine,
+        gapRows: layout1.gapRows,
+        totalRows: totalRows,
         w: w,
         h: h,
-        allGrids: [[]],
-        lineWidths: [0],
+        allGrids: layout1.allGrids,
+        lineWidths: layout1.lineWidths,
         maxWidth: maxWidth,
       };
 
+      // Build full grids (all lines combined) for each word
       var grids = {};
-      cycleWords.forEach(function(word) {
-        var img = rasterizeLine(word, w, h, fontSize, 0);
-        grids[word] = imageDataToGrid(img, cols, rows, w, DS);
+      [layout1, layout2].forEach(function(layout, idx) {
+        var fullGrid = [];
+        for (var li = 0; li < layout.lines.length; li++) {
+          var yBase = li * (layout.rowsPerLine + layout.gapRows);
+          var lineGrid = layout.allGrids[li];
+          for (var r = 0; r < layout.rowsPerLine; r++) {
+            for (var c = 0; c < cols; c++) {
+              if (c < layout.cols) {
+                fullGrid[(yBase + r) * cols + c] = lineGrid[r * layout.cols + c];
+              } else {
+                fullGrid[(yBase + r) * cols + c] = false;
+              }
+            }
+          }
+          // Fill gap rows with false
+          for (var gr = 0; gr < layout.gapRows; gr++) {
+            for (var gc = 0; gc < cols; gc++) {
+              fullGrid[(yBase + layout.rowsPerLine + gr) * cols + gc] = false;
+            }
+          }
+        }
+        // Fill remaining rows if this layout is shorter
+        for (var rr = layout.totalRows; rr < totalRows; rr++) {
+          for (var cc = 0; cc < cols; cc++) {
+            fullGrid[rr * cols + cc] = false;
+          }
+        }
+        grids[cycleWords[idx]] = fullGrid;
       });
 
       var inColor = inactiveRgba();
