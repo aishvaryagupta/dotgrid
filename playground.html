@@ -613,6 +613,7 @@
         <svg class="section__chevron" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
       <div class="section__body">
+        <div class="ctrl__toggle-row" id="bgToggle"></div>
         <div class="presets" id="presets"></div>
       </div>
     </div>
@@ -928,17 +929,22 @@
     // ════════════════════════════════════════════════
     // Presets
     // ════════════════════════════════════════════════
-    var PRESETS = [
-      { name: 'Default',     activeColor: '#ff5d22', inactiveColor: '#ff5d22', inactiveOpacity: 0.15, bgColor: '#0a0a0b' },
-      { name: 'White',       activeColor: '#f5f5f7', inactiveColor: '#f5f5f7', inactiveOpacity: 0.08, bgColor: '#0a0a0b' },
-      { name: 'Neon Green',  activeColor: '#22c55e', inactiveColor: '#22c55e', inactiveOpacity: 0.12, bgColor: '#0a0a0b' },
-      { name: 'Blue LED',    activeColor: '#3b82f6', inactiveColor: '#3b82f6', inactiveOpacity: 0.15, bgColor: '#0a0a0b' },
-      { name: 'Cyan',        activeColor: '#06b6d4', inactiveColor: '#06b6d4', inactiveOpacity: 0.12, bgColor: '#0a0a0b' },
-      { name: 'Purple',      activeColor: '#a855f7', inactiveColor: '#a855f7', inactiveOpacity: 0.12, bgColor: '#0a0a0b' },
-      { name: 'Gold',        activeColor: '#eab308', inactiveColor: '#eab308', inactiveOpacity: 0.12, bgColor: '#0a0a0b' },
-      { name: 'Red',         activeColor: '#ef4444', inactiveColor: '#ef4444', inactiveOpacity: 0.12, bgColor: '#0a0a0b' },
-      { name: 'Light',       activeColor: '#18181b', inactiveColor: '#18181b', inactiveOpacity: 0.08, bgColor: '#f5f5f7' },
-      { name: 'Light Orange',activeColor: '#ff5d22', inactiveColor: '#ff5d22', inactiveOpacity: 0.10, bgColor: '#fafafa' },
+    var BG_MODES = [
+      { name: 'Dark',  bgColor: '#0a0a0b' },
+      { name: 'Light', bgColor: '#f5f5f7' },
+    ];
+
+    var COLOR_PRESETS = [
+      { name: 'Orange',     color: '#ff5d22', darkOpacity: 0.15, lightOpacity: 0.10 },
+      { name: 'White',      color: '#f5f5f7', darkOpacity: 0.08, lightOpacity: 0 },
+      { name: 'Neon Green', color: '#22c55e', darkOpacity: 0.12, lightOpacity: 0.08 },
+      { name: 'Blue LED',   color: '#3b82f6', darkOpacity: 0.15, lightOpacity: 0.10 },
+      { name: 'Cyan',       color: '#06b6d4', darkOpacity: 0.12, lightOpacity: 0.08 },
+      { name: 'Purple',     color: '#a855f7', darkOpacity: 0.12, lightOpacity: 0.08 },
+      { name: 'Gold',       color: '#eab308', darkOpacity: 0.12, lightOpacity: 0.08 },
+      { name: 'Red',        color: '#ef4444', darkOpacity: 0.12, lightOpacity: 0.08 },
+      { name: 'Ink',        color: '#18181b', darkOpacity: 0, lightOpacity: 0.08 },
+      { name: 'Rose',       color: '#f43f5e', darkOpacity: 0.12, lightOpacity: 0.08 },
     ];
 
     // ════════════════════════════════════════════════
@@ -2579,24 +2585,85 @@
       });
     });
 
-    // ── Presets ──
+    // ── Background toggle ──
+    var bgToggleEl = document.getElementById('bgToggle');
+    var currentBgMode = 0; // 0 = dark
+    BG_MODES.forEach(function(mode, i) {
+      var btn = document.createElement('button');
+      btn.className = 'ctrl__toggle-btn' + (i === 0 ? ' active' : '');
+      btn.textContent = mode.name;
+      btn.addEventListener('click', function() {
+        bgToggleEl.querySelectorAll('.ctrl__toggle-btn').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        currentBgMode = i;
+        S.bgColor = mode.bgColor;
+        document.getElementById('bgColor').value = mode.bgColor;
+        document.getElementById('bgHex').value = mode.bgColor;
+        // Re-apply current color preset with correct opacity for this bg
+        applyColorPreset(currentColorPreset);
+        render();
+      });
+      bgToggleEl.appendChild(btn);
+    });
+
+    // ── Color presets ──
     var presetsEl = document.getElementById('presets');
-    PRESETS.forEach(function(p, i) {
+    var currentColorPreset = 0;
+
+    function isDarkBg() { return currentBgMode === 0; }
+
+    function applyColorPreset(idx) {
+      var p = COLOR_PRESETS[idx];
+      var opacity = isDarkBg() ? p.darkOpacity : p.lightOpacity;
+      S.activeColor = p.color;
+      S.inactiveColor = p.color;
+      S.inactiveOpacity = opacity;
+      document.getElementById('activeColor').value = p.color;
+      document.getElementById('activeHex').value = p.color;
+      document.getElementById('inactiveColor').value = p.color;
+      document.getElementById('inactiveHex').value = p.color;
+      document.getElementById('inactiveOpacity').value = opacity;
+      document.getElementById('opacityVal').textContent = opacity.toFixed(2);
+      // Update preset thumbnails for current bg
+      updatePresetThumbnails();
+    }
+
+    function updatePresetThumbnails() {
+      var bgColor = BG_MODES[currentBgMode].bgColor;
+      presetsEl.querySelectorAll('.preset').forEach(function(el, i) {
+        var p = COLOR_PRESETS[i];
+        var opacity = isDarkBg() ? p.darkOpacity : p.lightOpacity;
+        el.style.background = bgColor;
+        var dots = el.querySelectorAll('.preset__dot');
+        dots.forEach(function(dot, d) {
+          var isLit = [1,2,5,6,9,10,13,14].indexOf(d) !== -1;
+          if (isLit) {
+            dot.style.background = p.color;
+          } else {
+            var rgb = hexToRgb(p.color);
+            dot.style.background = 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',' + opacity + ')';
+          }
+        });
+      });
+    }
+
+    COLOR_PRESETS.forEach(function(p, i) {
       var el = document.createElement('div');
       el.className = 'preset' + (i === 0 ? ' active' : '');
       el.title = p.name;
-      el.style.background = p.bgColor;
+      el.style.background = BG_MODES[currentBgMode].bgColor;
       var dots = document.createElement('div');
       dots.className = 'preset__dots';
+      var opacity = p.darkOpacity;
       for (var d = 0; d < 16; d++) {
         var dot = document.createElement('div');
         dot.className = 'preset__dot';
         var isLit = [1,2,5,6,9,10,13,14].indexOf(d) !== -1;
         if (isLit) {
-          dot.style.background = p.activeColor;
+          dot.style.background = p.color;
         } else {
-          var rgb = hexToRgb(p.inactiveColor);
-          dot.style.background = 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',' + p.inactiveOpacity + ')';
+          var rgb = hexToRgb(p.color);
+          dot.style.background = 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',' + opacity + ')';
         }
         dots.appendChild(dot);
       }
@@ -2604,18 +2671,8 @@
       el.addEventListener('click', function() {
         presetsEl.querySelectorAll('.preset').forEach(function(pe) { pe.classList.remove('active'); });
         el.classList.add('active');
-        S.activeColor = p.activeColor;
-        S.inactiveColor = p.inactiveColor;
-        S.inactiveOpacity = p.inactiveOpacity;
-        S.bgColor = p.bgColor;
-        document.getElementById('activeColor').value = p.activeColor;
-        document.getElementById('activeHex').value = p.activeColor;
-        document.getElementById('inactiveColor').value = p.inactiveColor;
-        document.getElementById('inactiveHex').value = p.inactiveColor;
-        document.getElementById('inactiveOpacity').value = p.inactiveOpacity;
-        document.getElementById('opacityVal').textContent = p.inactiveOpacity.toFixed(2);
-        document.getElementById('bgColor').value = p.bgColor;
-        document.getElementById('bgHex').value = p.bgColor;
+        currentColorPreset = i;
+        applyColorPreset(i);
         render();
       });
       presetsEl.appendChild(el);
