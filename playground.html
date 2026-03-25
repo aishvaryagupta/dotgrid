@@ -8,6 +8,51 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Chakra+Petch:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
+    :root {
+      /* ── Colors ── */
+      --panel-bg: #111113;
+      --panel-bg-elevated: #161618;
+      --panel-border: rgba(255, 255, 255, 0.06);
+      --panel-border-hover: rgba(255, 255, 255, 0.10);
+      --surface: #1a1a1c;
+      --surface-hover: #1e1e21;
+      --surface-active: #222225;
+      --accent: #ff5d22;
+      --accent-hover: #ff7042;
+      --accent-muted: rgba(255, 93, 34, 0.12);
+      --accent-subtle: rgba(255, 93, 34, 0.06);
+      --text-primary: #ececee;
+      --text-secondary: #8b8b8e;
+      --text-tertiary: #56565a;
+      --text-on-accent: #ffffff;
+      --canvas-bg: #0a0a0b;
+
+      /* ── Spacing (8px grid) ── */
+      --sp-1: 4px;
+      --sp-2: 8px;
+      --sp-3: 12px;
+      --sp-4: 16px;
+      --sp-5: 20px;
+      --sp-6: 24px;
+
+      /* ── Radii ── */
+      --r-sm: 4px;
+      --r-md: 6px;
+      --r-lg: 8px;
+      --r-xl: 10px;
+      --r-pill: 100px;
+
+      /* ── Transitions ── */
+      --t-fast: 120ms ease;
+      --t-normal: 180ms ease;
+      --t-smooth: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+
+      /* ── Shadows ── */
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+      --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.4);
+      --shadow-glow: 0 0 0 1px var(--accent), 0 0 12px rgba(255, 93, 34, 0.15);
+    }
+
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: "Inter", system-ui, sans-serif;
@@ -53,238 +98,372 @@
 
     /* ── Panel ── */
     .panel {
-      width: 330px;
+      width: 340px;
       height: 100vh;
       overflow-y: auto;
-      border-left: 1px solid #1a1a1a;
-      background: #111112;
+      border-left: 1px solid var(--panel-border);
+      background: var(--panel-bg);
       flex-shrink: 0;
+      -webkit-font-smoothing: antialiased;
+      scrollbar-gutter: stable;
+      scrollbar-width: thin;
+      scrollbar-color: transparent transparent;
     }
-    .panel::-webkit-scrollbar { width: 4px; }
+    .panel:hover { scrollbar-color: rgba(255,255,255,0.08) transparent; }
+    .panel::-webkit-scrollbar { width: 5px; }
     .panel::-webkit-scrollbar-track { background: transparent; }
-    .panel::-webkit-scrollbar-thumb { background: #262626; border-radius: 2px; }
+    .panel::-webkit-scrollbar-thumb { background: transparent; border-radius: var(--r-pill); transition: background 300ms; }
+    .panel:hover::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); }
+    .panel::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.14); }
 
     .panel__header {
-      padding: 20px 20px 16px;
-      border-bottom: 1px solid #1a1a1a;
+      padding: var(--sp-5) var(--sp-5) var(--sp-4);
+      border-bottom: 1px solid var(--panel-border);
+      position: relative;
+    }
+    .panel__header::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: var(--sp-5);
+      right: var(--sp-5);
+      height: 1px;
+      background: linear-gradient(90deg, var(--accent) 0%, transparent 100%);
+      opacity: 0.3;
     }
     .panel__title {
       font-family: "JetBrains Mono", monospace;
-      font-size: 11px;
+      font-size: 12px;
       text-transform: uppercase;
-      letter-spacing: 0.14em;
-      color: #ff5d22;
-      margin-bottom: 4px;
+      letter-spacing: 0.12em;
+      color: var(--accent);
+      margin-bottom: 2px;
+      font-weight: 700;
     }
     .panel__subtitle {
-      font-size: 12px;
-      color: #525252;
+      font-size: 11px;
+      color: var(--text-tertiary);
+      letter-spacing: 0.02em;
     }
 
     .section {
-      padding: 16px 20px;
-      border-bottom: 1px solid #1a1a1a;
+      border-bottom: 1px solid var(--panel-border);
+    }
+    .section__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      padding: var(--sp-3) var(--sp-5);
+      background: none;
+      border: none;
+      cursor: pointer;
+      -webkit-appearance: none;
+      font: inherit;
     }
     .section__label {
       font-family: "JetBrains Mono", monospace;
       font-size: 10px;
       text-transform: uppercase;
-      letter-spacing: 0.14em;
-      color: #525252;
-      margin-bottom: 14px;
+      letter-spacing: 0.12em;
+      color: var(--text-tertiary);
+      font-weight: 500;
+      user-select: none;
+    }
+    .section__chevron {
+      color: var(--text-tertiary);
+      transition: transform var(--t-smooth);
+      flex-shrink: 0;
+    }
+    .section.collapsed .section__chevron { transform: rotate(-90deg); }
+    .section__body {
+      padding: 0 var(--sp-5) var(--sp-4);
+      max-height: 800px;
+      overflow: hidden;
+      transition: max-height 250ms cubic-bezier(0.4,0,0.2,1),
+                  padding 250ms cubic-bezier(0.4,0,0.2,1),
+                  opacity 200ms ease;
+      opacity: 1;
+    }
+    .section.collapsed .section__body {
+      max-height: 0;
+      padding-top: 0;
+      padding-bottom: 0;
+      opacity: 0;
     }
 
     /* ── Controls ── */
-    .ctrl { margin-bottom: 14px; }
+    .ctrl { margin-bottom: var(--sp-3); }
     .ctrl:last-child { margin-bottom: 0; }
     .ctrl__top {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 6px;
+      margin-bottom: 5px;
     }
-    .ctrl__name { font-size: 12px; color: #a3a3a3; }
+    .ctrl__name {
+      font-size: 11px;
+      color: var(--text-secondary);
+      font-weight: 500;
+      letter-spacing: 0.01em;
+    }
     .ctrl__val {
       font-family: "JetBrains Mono", monospace;
-      font-size: 11px;
-      color: #525252;
-      min-width: 40px;
+      font-size: 10px;
+      color: var(--text-tertiary);
+      min-width: 36px;
       text-align: right;
+      background: var(--surface);
+      padding: 2px 6px;
+      border-radius: var(--r-sm);
     }
 
     /* Text */
     .ctrl__text, .ctrl__textarea {
       width: 100%;
-      background: #0a0a0b;
-      border: 1px solid #262626;
-      color: #f5f5f7;
+      background: var(--surface);
+      border: 1px solid transparent;
+      color: var(--text-primary);
       font-family: "Inter", system-ui, sans-serif;
-      font-size: 14px;
-      padding: 10px 12px;
+      font-size: 13px;
+      padding: 8px var(--sp-3);
+      border-radius: var(--r-md);
       outline: none;
-      transition: border-color 120ms;
+      transition: border-color var(--t-normal), background var(--t-normal), box-shadow var(--t-normal);
+    }
+    .ctrl__text:hover, .ctrl__textarea:hover { border-color: var(--panel-border-hover); }
+    .ctrl__text:focus, .ctrl__textarea:focus {
+      border-color: var(--accent);
+      background: var(--canvas-bg);
+      box-shadow: 0 0 0 2px rgba(255, 93, 34, 0.1);
     }
     .ctrl__textarea {
       resize: vertical;
-      min-height: 60px;
+      min-height: 56px;
       line-height: 1.5;
     }
-    .ctrl__text:focus, .ctrl__textarea:focus { border-color: #ff5d22; }
 
     /* Select */
     .ctrl__select {
       width: 100%;
-      background: #0a0a0b;
-      border: 1px solid #262626;
-      color: #f5f5f7;
+      background: var(--surface);
+      border: 1px solid transparent;
+      color: var(--text-primary);
       font-family: "Inter", system-ui, sans-serif;
-      font-size: 13px;
-      padding: 8px 10px;
+      font-size: 12px;
+      padding: 7px var(--sp-3);
+      padding-right: 28px;
+      border-radius: var(--r-md);
       outline: none;
       cursor: pointer;
       -webkit-appearance: none;
       appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23525252' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238b8b8e' stroke-width='1.3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
       background-repeat: no-repeat;
       background-position: right 10px center;
+      transition: border-color var(--t-normal), background var(--t-normal), box-shadow var(--t-normal);
     }
-    .ctrl__select:focus { border-color: #ff5d22; }
+    .ctrl__select:hover { border-color: var(--panel-border-hover); background-color: var(--surface-hover); }
+    .ctrl__select:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(255, 93, 34, 0.1); }
 
     /* Slider */
     .ctrl__slider {
       -webkit-appearance: none;
       appearance: none;
       width: 100%;
-      height: 4px;
-      background: #262626;
-      border-radius: 2px;
+      height: 3px;
+      background: var(--surface);
+      border-radius: var(--r-pill);
       outline: none;
       cursor: pointer;
+    }
+    .ctrl__slider::-webkit-slider-runnable-track {
+      height: 3px;
+      border-radius: var(--r-pill);
     }
     .ctrl__slider::-webkit-slider-thumb {
       -webkit-appearance: none;
-      width: 14px; height: 14px;
+      width: 12px; height: 12px;
       border-radius: 50%;
-      background: #f5f5f7;
-      border: 2px solid #0a0a0b;
+      background: var(--text-primary);
+      border: 2px solid var(--panel-bg);
       cursor: pointer;
+      margin-top: -4.5px;
+      box-shadow: var(--shadow-sm);
+      transition: box-shadow var(--t-normal), transform var(--t-normal), background var(--t-normal);
     }
-    .ctrl__slider::-webkit-slider-thumb:hover { background: #ff5d22; }
+    .ctrl__slider::-webkit-slider-thumb:hover {
+      background: var(--accent);
+      transform: scale(1.15);
+      box-shadow: 0 0 0 3px rgba(255, 93, 34, 0.15), var(--shadow-sm);
+    }
+    .ctrl__slider:active::-webkit-slider-thumb {
+      transform: scale(1.05);
+      box-shadow: 0 0 0 4px rgba(255, 93, 34, 0.2), var(--shadow-sm);
+    }
+    .ctrl__slider::-moz-range-track {
+      height: 3px;
+      border-radius: var(--r-pill);
+      background: var(--surface);
+    }
+    .ctrl__slider::-moz-range-progress {
+      height: 3px;
+      border-radius: var(--r-pill);
+      background: var(--accent);
+    }
     .ctrl__slider::-moz-range-thumb {
-      width: 14px; height: 14px;
+      width: 12px; height: 12px;
       border-radius: 50%;
-      background: #f5f5f7;
-      border: 2px solid #0a0a0b;
+      background: var(--text-primary);
+      border: 2px solid var(--panel-bg);
+      cursor: pointer;
+      box-shadow: var(--shadow-sm);
     }
+    .ctrl__slider::-moz-range-thumb:hover { background: var(--accent); }
 
     /* Color */
-    .ctrl__color-row { display: flex; align-items: center; gap: 10px; }
+    .ctrl__color-row { display: flex; align-items: center; gap: var(--sp-2); }
     .ctrl__color {
       -webkit-appearance: none;
-      width: 32px; height: 32px;
-      border: 1px solid #262626;
-      border-radius: 4px;
+      width: 28px; height: 28px;
+      border: 2px solid var(--surface);
+      border-radius: var(--r-lg);
       cursor: pointer;
       background: none;
       padding: 0;
+      flex-shrink: 0;
+      transition: border-color var(--t-normal), box-shadow var(--t-normal);
     }
-    .ctrl__color::-webkit-color-swatch-wrapper { padding: 2px; }
-    .ctrl__color::-webkit-color-swatch { border: none; border-radius: 2px; }
+    .ctrl__color:hover { border-color: var(--panel-border-hover); box-shadow: 0 0 8px rgba(255,255,255,0.05); }
+    .ctrl__color::-webkit-color-swatch-wrapper { padding: 1px; }
+    .ctrl__color::-webkit-color-swatch { border: none; border-radius: calc(var(--r-lg) - 3px); }
     .ctrl__hex {
       font-family: "JetBrains Mono", monospace;
-      font-size: 12px;
-      color: #a3a3a3;
-      background: #0a0a0b;
-      border: 1px solid #262626;
-      padding: 6px 8px;
-      width: 90px;
+      font-size: 11px;
+      color: var(--text-secondary);
+      background: var(--surface);
+      border: 1px solid transparent;
+      border-radius: var(--r-sm);
+      padding: 5px 8px;
+      width: 82px;
       outline: none;
+      transition: border-color var(--t-normal), box-shadow var(--t-normal);
     }
-    .ctrl__hex:focus { border-color: #ff5d22; }
+    .ctrl__hex:hover { border-color: var(--panel-border-hover); }
+    .ctrl__hex:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(255, 93, 34, 0.1); }
     .ctrl__opacity-row {
       display: flex;
       align-items: center;
-      gap: 10px;
-      margin-top: 8px;
+      gap: var(--sp-2);
+      margin-top: var(--sp-2);
     }
     .ctrl__opacity-row .ctrl__slider { flex: 1; }
 
-    /* Toggle row */
-    .ctrl__toggle-row {
+    /* Segmented control (toggle row) */
+    .ctrl__toggle-row, .ctrl__render-row {
       display: flex;
-      gap: 4px;
+      gap: 2px;
+      background: var(--surface);
+      border-radius: var(--r-md);
+      padding: 2px;
+      position: relative;
+    }
+    .ctrl__toggle-indicator {
+      position: absolute;
+      top: 2px; left: 2px;
+      height: calc(100% - 4px);
+      background: var(--accent-muted);
+      border-radius: calc(var(--r-md) - 1px);
+      transition: transform var(--t-smooth), width var(--t-smooth);
+      z-index: 0;
+      pointer-events: none;
+      border: 1px solid rgba(255, 93, 34, 0.18);
     }
     .ctrl__toggle-btn {
       flex: 1;
-      padding: 7px 0;
-      background: #0a0a0b;
-      border: 1px solid #262626;
-      color: #525252;
+      padding: 6px 0;
+      background: transparent;
+      border: none;
+      color: var(--text-tertiary);
       font-family: "JetBrains Mono", monospace;
       font-size: 10px;
       text-transform: uppercase;
       letter-spacing: 0.06em;
       cursor: pointer;
       text-align: center;
-      transition: all 120ms;
+      transition: color var(--t-normal);
+      position: relative;
+      z-index: 1;
+      border-radius: calc(var(--r-md) - 1px);
     }
-    .ctrl__toggle-btn.active {
-      background: rgba(255, 93, 34, 0.1);
-      border-color: #ff5d22;
-      color: #ff5d22;
-    }
+    .ctrl__toggle-btn:hover { color: var(--text-secondary); }
+    .ctrl__toggle-btn.active { color: var(--accent); background: transparent; }
 
-    /* Render mode toggle row (wraps to 2 rows of 3) */
-    .ctrl__render-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 4px;
-    }
-    .ctrl__render-row .ctrl__toggle-btn {
-      flex: 1 1 30%;
-      min-width: 0;
-    }
+    /* Shape selector: icon-only buttons */
+    .ctrl__shape-row .ctrl__toggle-btn { padding: 7px 0; }
+    .ctrl__shape-row .ctrl__toggle-btn svg { display: block; margin: 0 auto; }
+
+    /* Render mode: wrap to 2 rows of 3 */
+    .ctrl__render-row { flex-wrap: wrap; }
+    .ctrl__render-row .ctrl__toggle-btn { flex: 1 1 30%; min-width: 0; }
 
     /* Button row */
-    .ctrl__btn-row { display: flex; gap: 6px; }
+    .ctrl__btn-row { display: flex; gap: var(--sp-2); }
     .ctrl__btn {
       flex: 1;
-      padding: 8px 0;
-      background: #0a0a0b;
-      border: 1px solid #262626;
-      color: #a3a3a3;
+      padding: 7px 0;
+      background: var(--surface);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--r-md);
+      color: var(--text-secondary);
       font-family: "JetBrains Mono", monospace;
       font-size: 10px;
       text-transform: uppercase;
       letter-spacing: 0.06em;
       cursor: pointer;
       text-align: center;
-      transition: all 120ms;
+      transition: all var(--t-normal);
     }
-    .ctrl__btn:hover { border-color: #ff5d22; color: #ff5d22; }
+    .ctrl__btn:hover { border-color: var(--panel-border-hover); background: var(--surface-hover); color: var(--text-primary); }
+    .ctrl__btn:active { background: var(--surface-active); transform: scale(0.98); }
     .ctrl__btn--primary {
-      background: #ff5d22;
-      border-color: #ff5d22;
-      color: #fff;
+      background: linear-gradient(180deg, #ff6a33 0%, #ff5d22 100%);
+      border-color: rgba(255, 93, 34, 0.3);
+      color: var(--text-on-accent);
+      font-weight: 500;
+      box-shadow: 0 1px 4px rgba(255, 93, 34, 0.2);
     }
-    .ctrl__btn--primary:hover { background: #e5521e; }
+    .ctrl__btn--primary:hover {
+      background: linear-gradient(180deg, #ff7a45 0%, #ff6a33 100%);
+      border-color: rgba(255, 93, 34, 0.4);
+      color: var(--text-on-accent);
+      box-shadow: 0 2px 8px rgba(255, 93, 34, 0.3);
+    }
+    .ctrl__btn--primary:active {
+      background: linear-gradient(180deg, #e5521e 0%, #d4481a 100%);
+      box-shadow: 0 1px 2px rgba(255, 93, 34, 0.2);
+    }
 
     /* Presets */
-    .presets { display: flex; flex-wrap: wrap; gap: 6px; }
+    .presets { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
     .preset {
-      width: 40px; height: 40px;
-      border: 1px solid #262626;
-      border-radius: 4px;
+      width: 44px; height: 44px;
+      border: 1.5px solid var(--panel-border);
+      border-radius: var(--r-lg);
       cursor: pointer;
       position: relative;
       overflow: hidden;
-      transition: border-color 120ms;
+      transition: border-color var(--t-normal), transform var(--t-normal), box-shadow var(--t-normal);
     }
-    .preset:hover { border-color: #ff5d22; }
-    .preset.active { border-color: #ff5d22; border-width: 2px; }
+    .preset:hover { border-color: var(--panel-border-hover); transform: scale(1.06); box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
+    .preset.active {
+      border-color: var(--accent);
+      border-width: 1.5px;
+      box-shadow: 0 0 0 2px rgba(255, 93, 34, 0.15), 0 0 12px rgba(255, 93, 34, 0.08);
+    }
     .preset__dots {
       position: absolute;
-      inset: 4px;
+      inset: 5px;
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       grid-template-rows: repeat(4, 1fr);
@@ -304,19 +483,31 @@
       position: fixed;
       bottom: 24px;
       left: 50%;
-      transform: translateX(-50%);
-      background: #262626;
-      color: #f5f5f7;
+      transform: translateX(-50%) translateY(8px);
+      background: var(--surface-active);
+      color: var(--text-primary);
       font-family: "JetBrains Mono", monospace;
       font-size: 11px;
-      padding: 10px 20px;
-      border: 1px solid #333;
+      padding: 8px 16px;
+      border: 1px solid var(--panel-border);
+      border-radius: var(--r-lg);
       opacity: 0;
-      transition: opacity 200ms;
+      transition: opacity 200ms, transform 200ms;
       pointer-events: none;
       z-index: 100;
+      box-shadow: var(--shadow-md);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
     }
-    .toast.show { opacity: 1; }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* Focus rings */
+    .panel *:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 2px var(--panel-bg), 0 0 0 4px var(--accent) !important;
+      border-radius: var(--r-md);
+    }
+    .panel *:focus:not(:focus-visible) { outline: none; }
 
     /* ── Mobile Gate ── */
     .mobile-gate {
@@ -399,238 +590,293 @@
     </div>
 
     <!-- Render Mode -->
-    <div class="section">
-      <div class="section__label">Render Mode</div>
-      <div class="ctrl">
-        <div class="ctrl__render-row">
-          <button class="ctrl__toggle-btn active" data-render="dot">Dot Grid</button>
-          <button class="ctrl__toggle-btn" data-render="block">Block</button>
-          <button class="ctrl__toggle-btn" data-render="line">Line Art</button>
+    <div class="section" data-section>
+      <button class="section__header" aria-expanded="true">
+        <span class="section__label">Render Mode</span>
+        <svg class="section__chevron" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="section__body">
+        <div class="ctrl">
+          <div class="ctrl__render-row">
+            <button class="ctrl__toggle-btn active" data-render="dot">Dot Grid</button>
+            <button class="ctrl__toggle-btn" data-render="block">Block</button>
+            <button class="ctrl__toggle-btn" data-render="line">Line Art</button>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- Presets -->
-    <div class="section">
-      <div class="section__label">Presets</div>
-      <div class="presets" id="presets"></div>
+    <div class="section" data-section>
+      <button class="section__header" aria-expanded="true">
+        <span class="section__label">Presets</span>
+        <svg class="section__chevron" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="section__body">
+        <div class="presets" id="presets"></div>
+      </div>
     </div>
 
     <!-- Text -->
-    <div class="section">
-      <div class="section__label">Text</div>
-      <div class="ctrl">
-        <textarea class="ctrl__textarea" id="textInput" rows="2" placeholder="Type anything... (new line for multi-line)">ship</textarea>
+    <div class="section" data-section>
+      <button class="section__header" aria-expanded="true">
+        <span class="section__label">Text</span>
+        <svg class="section__chevron" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="section__body">
+        <div class="ctrl">
+          <textarea class="ctrl__textarea" id="textInput" rows="2" placeholder="Type anything... (new line for multi-line)">ship</textarea>
+        </div>
       </div>
     </div>
 
     <!-- Animation -->
-    <div class="section">
-      <div class="section__label">Animation</div>
-
-      <!-- Mode toggle -->
-      <div class="ctrl">
-        <div class="ctrl__top"><span class="ctrl__name">Mode</span></div>
-        <div class="ctrl__toggle-row">
-          <button class="ctrl__toggle-btn active" data-mode="static">Static</button>
-          <button class="ctrl__toggle-btn" data-mode="animate">Animate</button>
-          <button class="ctrl__toggle-btn" data-mode="cycle">Cycle</button>
+    <div class="section" data-section>
+      <button class="section__header" aria-expanded="true">
+        <span class="section__label">Animation</span>
+        <svg class="section__chevron" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="section__body">
+        <!-- Mode toggle -->
+        <div class="ctrl">
+          <div class="ctrl__top"><span class="ctrl__name">Mode</span></div>
+          <div class="ctrl__toggle-row">
+            <button class="ctrl__toggle-btn active" data-mode="static">Static</button>
+            <button class="ctrl__toggle-btn" data-mode="animate">Animate</button>
+            <button class="ctrl__toggle-btn" data-mode="cycle">Cycle</button>
+          </div>
         </div>
-      </div>
 
-      <!-- Load-In Style (shown when mode=animate, dot grid only) -->
-      <div class="ctrl hidden" id="loadInCtrl">
-        <div class="ctrl__top"><span class="ctrl__name">Load-In Style</span></div>
-        <select class="ctrl__select" id="loadInStyle">
-          <option value="scatter">Scatter &rarr; Form</option>
-          <option value="rain">Rain Down</option>
-          <option value="typewriter">Typewriter</option>
-          <option value="rowscan">Row Scan</option>
-          <option value="colscan">Column Scan</option>
-          <option value="centerburst">Center Burst</option>
-          <option value="fadein">Fade In</option>
-          <option value="randomfill">Random Fill</option>
-          <option value="wave">Wave</option>
-          <option value="spiral">Spiral In</option>
-        </select>
-      </div>
-
-      <!-- Transition Style (shown when mode=cycle, dot grid only) -->
-      <div class="ctrl hidden" id="transitionCtrl">
-        <div class="ctrl__top"><span class="ctrl__name">Transition Style</span></div>
-        <select class="ctrl__select" id="transitionStyle">
-          <option value="crossfade">Crossfade</option>
-          <option value="scramble">Scramble</option>
-          <option value="slide">Slide Left</option>
-          <option value="dissolve">Dissolve &rarr; Reform</option>
-          <option value="pixelflip">Pixel Flip</option>
-        </select>
-      </div>
-
-      <!-- Cycle Word (shown when mode=cycle) -->
-      <div class="ctrl hidden" id="cycleWordCtrl">
-        <div class="ctrl__top"><span class="ctrl__name">Cycle Word</span></div>
-        <input class="ctrl__text" id="cycleWord" type="text" value="build" placeholder="Second word..." />
-      </div>
-
-      <!-- Hold Time (shown when mode=cycle) -->
-      <div class="ctrl hidden" id="holdCtrl">
-        <div class="ctrl__top">
-          <span class="ctrl__name">Hold Time</span>
-          <span class="ctrl__val" id="holdVal">2500ms</span>
+        <!-- Load-In Style (shown when mode=animate, dot grid only) -->
+        <div class="ctrl hidden" id="loadInCtrl">
+          <div class="ctrl__top"><span class="ctrl__name">Load-In Style</span></div>
+          <select class="ctrl__select" id="loadInStyle">
+            <option value="scatter">Scatter &rarr; Form</option>
+            <option value="rain">Rain Down</option>
+            <option value="typewriter">Typewriter</option>
+            <option value="rowscan">Row Scan</option>
+            <option value="colscan">Column Scan</option>
+            <option value="centerburst">Center Burst</option>
+            <option value="fadein">Fade In</option>
+            <option value="randomfill">Random Fill</option>
+            <option value="wave">Wave</option>
+            <option value="spiral">Spiral In</option>
+          </select>
         </div>
-        <input class="ctrl__slider" id="holdSlider" type="range" min="500" max="5000" step="100" value="2500" />
-      </div>
 
-      <!-- Idle Animation (dot grid only) -->
-      <div class="ctrl" id="idleCtrl">
-        <div class="ctrl__top"><span class="ctrl__name">Idle Effect</span></div>
-        <select class="ctrl__select" id="idleAnimation">
-          <option value="none">None</option>
-          <option value="pulse">Pulse</option>
-          <option value="shimmer">Shimmer</option>
-          <option value="flicker">Flicker</option>
-        </select>
-      </div>
-
-      <!-- Speed slider (shown when mode=animate or cycle, dot grid only) -->
-      <div class="ctrl hidden" id="speedCtrl">
-        <div class="ctrl__top">
-          <span class="ctrl__name">Animation Speed</span>
-          <span class="ctrl__val" id="speedVal">60</span>
+        <!-- Transition Style (shown when mode=cycle, dot grid only) -->
+        <div class="ctrl hidden" id="transitionCtrl">
+          <div class="ctrl__top"><span class="ctrl__name">Transition Style</span></div>
+          <select class="ctrl__select" id="transitionStyle">
+            <option value="crossfade">Crossfade</option>
+            <option value="scramble">Scramble</option>
+            <option value="slide">Slide Left</option>
+            <option value="dissolve">Dissolve &rarr; Reform</option>
+            <option value="pixelflip">Pixel Flip</option>
+          </select>
         </div>
-        <input class="ctrl__slider" id="speedSlider" type="range" min="10" max="120" step="5" value="60" />
-      </div>
 
-      <!-- Play / Reset buttons -->
-      <div class="ctrl" id="animBtns" style="margin-top: 8px;">
-        <div class="ctrl__btn-row">
-          <button class="ctrl__btn" id="playBtn">Play</button>
-          <button class="ctrl__btn" id="resetBtn">Reset</button>
+        <!-- Cycle Word (shown when mode=cycle) -->
+        <div class="ctrl hidden" id="cycleWordCtrl">
+          <div class="ctrl__top"><span class="ctrl__name">Cycle Word</span></div>
+          <input class="ctrl__text" id="cycleWord" type="text" value="build" placeholder="Second word..." />
+        </div>
+
+        <!-- Hold Time (shown when mode=cycle) -->
+        <div class="ctrl hidden" id="holdCtrl">
+          <div class="ctrl__top">
+            <span class="ctrl__name">Hold Time</span>
+            <span class="ctrl__val" id="holdVal">2500ms</span>
+          </div>
+          <input class="ctrl__slider" id="holdSlider" type="range" min="500" max="5000" step="100" value="2500" />
+        </div>
+
+        <!-- Idle Animation (dot grid only) -->
+        <div class="ctrl" id="idleCtrl">
+          <div class="ctrl__top"><span class="ctrl__name">Idle Effect</span></div>
+          <select class="ctrl__select" id="idleAnimation">
+            <option value="none">None</option>
+            <option value="pulse">Pulse</option>
+            <option value="shimmer">Shimmer</option>
+            <option value="flicker">Flicker</option>
+          </select>
+        </div>
+
+        <!-- Speed slider (shown when mode=animate or cycle, dot grid only) -->
+        <div class="ctrl hidden" id="speedCtrl">
+          <div class="ctrl__top">
+            <span class="ctrl__name">Animation Speed</span>
+            <span class="ctrl__val" id="speedVal">60</span>
+          </div>
+          <input class="ctrl__slider" id="speedSlider" type="range" min="10" max="120" step="5" value="60" />
+        </div>
+
+        <!-- Play / Reset buttons -->
+        <div class="ctrl" id="animBtns" style="margin-top: 8px;">
+          <div class="ctrl__btn-row">
+            <button class="ctrl__btn" id="playBtn">Play</button>
+            <button class="ctrl__btn" id="resetBtn">Reset</button>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- Font (dot grid only) -->
-    <div class="section" id="fontSection">
-      <div class="section__label">Font</div>
-      <div class="ctrl">
-        <div class="ctrl__top"><span class="ctrl__name">Family</span></div>
-        <select class="ctrl__select" id="fontFamily">
-          <option value='"Space Grotesk"' selected>Space Grotesk</option>
-          <option value='"Inter"'>Inter</option>
-          <option value='"JetBrains Mono"'>JetBrains Mono</option>
-          <option value='"Chakra Petch"'>Chakra Petch</option>
-          <option value='"Outfit"'>Outfit</option>
-          <option value='"Syne"'>Syne</option>
-        </select>
-      </div>
-      <div class="ctrl">
-        <div class="ctrl__top">
-          <span class="ctrl__name">Weight</span>
-          <span class="ctrl__val" id="weightVal">700</span>
+    <div class="section" id="fontSection" data-section>
+      <button class="section__header" aria-expanded="true">
+        <span class="section__label">Font</span>
+        <svg class="section__chevron" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="section__body">
+        <div class="ctrl">
+          <div class="ctrl__top"><span class="ctrl__name">Family</span></div>
+          <select class="ctrl__select" id="fontFamily">
+            <option value='"Space Grotesk"' selected>Space Grotesk</option>
+            <option value='"Inter"'>Inter</option>
+            <option value='"JetBrains Mono"'>JetBrains Mono</option>
+            <option value='"Chakra Petch"'>Chakra Petch</option>
+            <option value='"Outfit"'>Outfit</option>
+            <option value='"Syne"'>Syne</option>
+          </select>
         </div>
-        <input class="ctrl__slider" id="weightSlider" type="range" min="400" max="900" step="100" value="700" />
-      </div>
-      <div class="ctrl">
-        <div class="ctrl__top">
-          <span class="ctrl__name">Size</span>
-          <span class="ctrl__val" id="fontSizeVal">64</span>
+        <div class="ctrl">
+          <div class="ctrl__top">
+            <span class="ctrl__name">Weight</span>
+            <span class="ctrl__val" id="weightVal">700</span>
+          </div>
+          <input class="ctrl__slider" id="weightSlider" type="range" min="400" max="900" step="100" value="700" />
         </div>
-        <input class="ctrl__slider" id="fontSizeSlider" type="range" min="24" max="160" step="1" value="64" />
+        <div class="ctrl">
+          <div class="ctrl__top">
+            <span class="ctrl__name">Size</span>
+            <span class="ctrl__val" id="fontSizeVal">64</span>
+          </div>
+          <input class="ctrl__slider" id="fontSizeSlider" type="range" min="24" max="160" step="1" value="64" />
+        </div>
       </div>
     </div>
 
     <!-- ASCII Size (block/line only) -->
-    <div class="section hidden" id="asciiSizeSection">
-      <div class="section__label">Display</div>
-      <div class="ctrl">
-        <div class="ctrl__top">
-          <span class="ctrl__name">Text Size</span>
-          <span class="ctrl__val" id="asciiSizeVal">24</span>
+    <div class="section hidden" id="asciiSizeSection" data-section>
+      <button class="section__header" aria-expanded="true">
+        <span class="section__label">Display</span>
+        <svg class="section__chevron" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="section__body">
+        <div class="ctrl">
+          <div class="ctrl__top">
+            <span class="ctrl__name">Text Size</span>
+            <span class="ctrl__val" id="asciiSizeVal">24</span>
+          </div>
+          <input class="ctrl__slider" id="asciiSizeSlider" type="range" min="8" max="64" step="1" value="24" />
         </div>
-        <input class="ctrl__slider" id="asciiSizeSlider" type="range" min="8" max="64" step="1" value="24" />
       </div>
     </div>
 
     <!-- Grid (dot grid only) -->
-    <div class="section" id="gridSection">
-      <div class="section__label">Grid</div>
-      <div class="ctrl">
-        <div class="ctrl__top">
-          <span class="ctrl__name">Dot Spacing</span>
-          <span class="ctrl__val" id="spacingVal">5</span>
+    <div class="section" id="gridSection" data-section>
+      <button class="section__header" aria-expanded="true">
+        <span class="section__label">Grid</span>
+        <svg class="section__chevron" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="section__body">
+        <div class="ctrl">
+          <div class="ctrl__top">
+            <span class="ctrl__name">Dot Spacing</span>
+            <span class="ctrl__val" id="spacingVal">5</span>
+          </div>
+          <input class="ctrl__slider" id="spacingSlider" type="range" min="3" max="14" step="1" value="5" />
         </div>
-        <input class="ctrl__slider" id="spacingSlider" type="range" min="3" max="14" step="1" value="5" />
-      </div>
-      <div class="ctrl">
-        <div class="ctrl__top">
-          <span class="ctrl__name">Dot Radius</span>
-          <span class="ctrl__val" id="radiusVal">0.36</span>
+        <div class="ctrl">
+          <div class="ctrl__top">
+            <span class="ctrl__name">Dot Radius</span>
+            <span class="ctrl__val" id="radiusVal">0.36</span>
+          </div>
+          <input class="ctrl__slider" id="radiusSlider" type="range" min="0.10" max="0.50" step="0.01" value="0.36" />
         </div>
-        <input class="ctrl__slider" id="radiusSlider" type="range" min="0.10" max="0.50" step="0.01" value="0.36" />
-      </div>
-      <div class="ctrl">
-        <div class="ctrl__top"><span class="ctrl__name">Alignment</span></div>
-        <div class="ctrl__toggle-row">
-          <button class="ctrl__toggle-btn active" data-align="left">Left</button>
-          <button class="ctrl__toggle-btn" data-align="center">Center</button>
-          <button class="ctrl__toggle-btn" data-align="right">Right</button>
+        <div class="ctrl">
+          <div class="ctrl__top"><span class="ctrl__name">Dot Shape</span></div>
+          <div class="ctrl__toggle-row ctrl__shape-row">
+            <button class="ctrl__toggle-btn active" data-dot-shape="circle" title="Circle"><svg width="14" height="14" viewBox="0 0 14 14"><circle cx="7" cy="7" r="5" fill="currentColor"/></svg></button>
+            <button class="ctrl__toggle-btn" data-dot-shape="square" title="Square"><svg width="14" height="14" viewBox="0 0 14 14"><rect x="2" y="2" width="10" height="10" fill="currentColor"/></svg></button>
+            <button class="ctrl__toggle-btn" data-dot-shape="diamond" title="Diamond"><svg width="14" height="14" viewBox="0 0 14 14"><polygon points="7,1 13,7 7,13 1,7" fill="currentColor"/></svg></button>
+            <button class="ctrl__toggle-btn" data-dot-shape="triangle" title="Triangle"><svg width="14" height="14" viewBox="0 0 14 14"><polygon points="7,1 13,13 1,13" fill="currentColor"/></svg></button>
+            <button class="ctrl__toggle-btn" data-dot-shape="star" title="Star"><svg width="14" height="14" viewBox="0 0 14 14"><polygon points="7,0.5 8.8,5 13.5,5.2 9.8,8.2 11,13 7,10.5 3,13 4.2,8.2 0.5,5.2 5.2,5" fill="currentColor"/></svg></button>
+            <button class="ctrl__toggle-btn" data-dot-shape="cross" title="Cross"><svg width="14" height="14" viewBox="0 0 14 14"><polygon points="5,1 9,1 9,5 13,5 13,9 9,9 9,13 5,13 5,9 1,9 1,5 5,5" fill="currentColor"/></svg></button>
+          </div>
         </div>
-      </div>
-      <div class="ctrl">
-        <div class="ctrl__top">
-          <span class="ctrl__name">Line Gap</span>
-          <span class="ctrl__val" id="lineGapVal">0.20</span>
+        <div class="ctrl">
+          <div class="ctrl__top"><span class="ctrl__name">Alignment</span></div>
+          <div class="ctrl__toggle-row">
+            <button class="ctrl__toggle-btn active" data-align="left">Left</button>
+            <button class="ctrl__toggle-btn" data-align="center">Center</button>
+            <button class="ctrl__toggle-btn" data-align="right">Right</button>
+          </div>
         </div>
-        <input class="ctrl__slider" id="lineGapSlider" type="range" min="0" max="0.6" step="0.02" value="0.20" />
+        <div class="ctrl">
+          <div class="ctrl__top">
+            <span class="ctrl__name">Line Gap</span>
+            <span class="ctrl__val" id="lineGapVal">0.20</span>
+          </div>
+          <input class="ctrl__slider" id="lineGapSlider" type="range" min="0" max="0.6" step="0.02" value="0.20" />
+        </div>
       </div>
     </div>
 
     <!-- Colors -->
-    <div class="section">
-      <div class="section__label">Colors</div>
-      <div class="ctrl">
-        <div class="ctrl__top"><span class="ctrl__name">Active Dots</span></div>
-        <div class="ctrl__color-row">
-          <input class="ctrl__color" id="activeColor" type="color" value="#ff5d22" />
-          <input class="ctrl__hex" id="activeHex" type="text" value="#ff5d22" />
+    <div class="section" data-section>
+      <button class="section__header" aria-expanded="true">
+        <span class="section__label">Colors</span>
+        <svg class="section__chevron" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="section__body">
+        <div class="ctrl">
+          <div class="ctrl__top"><span class="ctrl__name">Active Dots</span></div>
+          <div class="ctrl__color-row">
+            <input class="ctrl__color" id="activeColor" type="color" value="#ff5d22" />
+            <input class="ctrl__hex" id="activeHex" type="text" value="#ff5d22" />
+          </div>
         </div>
-      </div>
-      <div class="ctrl" id="inactiveColorCtrl">
-        <div class="ctrl__top"><span class="ctrl__name">Grid Dots</span></div>
-        <div class="ctrl__color-row">
-          <input class="ctrl__color" id="inactiveColor" type="color" value="#ff5d22" />
-          <input class="ctrl__hex" id="inactiveHex" type="text" value="#ff5d22" />
+        <div class="ctrl" id="inactiveColorCtrl">
+          <div class="ctrl__top"><span class="ctrl__name">Grid Dots</span></div>
+          <div class="ctrl__color-row">
+            <input class="ctrl__color" id="inactiveColor" type="color" value="#ff5d22" />
+            <input class="ctrl__hex" id="inactiveHex" type="text" value="#ff5d22" />
+          </div>
+          <div class="ctrl__opacity-row">
+            <span class="ctrl__name" style="font-size: 11px; white-space: nowrap;">Opacity</span>
+            <input class="ctrl__slider" id="inactiveOpacity" type="range" min="0" max="0.5" step="0.01" value="0.15" />
+            <span class="ctrl__val" id="opacityVal">0.15</span>
+          </div>
         </div>
-        <div class="ctrl__opacity-row">
-          <span class="ctrl__name" style="font-size: 11px; white-space: nowrap;">Opacity</span>
-          <input class="ctrl__slider" id="inactiveOpacity" type="range" min="0" max="0.5" step="0.01" value="0.15" />
-          <span class="ctrl__val" id="opacityVal">0.15</span>
-        </div>
-      </div>
-      <div class="ctrl">
-        <div class="ctrl__top"><span class="ctrl__name">Background</span></div>
-        <div class="ctrl__color-row">
-          <input class="ctrl__color" id="bgColor" type="color" value="#0a0a0b" />
-          <input class="ctrl__hex" id="bgHex" type="text" value="#0a0a0b" />
+        <div class="ctrl">
+          <div class="ctrl__top"><span class="ctrl__name">Background</span></div>
+          <div class="ctrl__color-row">
+            <input class="ctrl__color" id="bgColor" type="color" value="#0a0a0b" />
+            <input class="ctrl__hex" id="bgHex" type="text" value="#0a0a0b" />
+          </div>
         </div>
       </div>
     </div>
 
     <!-- Export -->
-    <div class="section">
-      <div class="section__label">Export</div>
-      <div class="ctrl">
-        <div class="ctrl__btn-row">
-          <button class="ctrl__btn ctrl__btn--primary" id="exportConfig">Copy Config</button>
-          <button class="ctrl__btn" id="exportAttrs">Copy Attrs</button>
+    <div class="section" data-section>
+      <button class="section__header" aria-expanded="true">
+        <span class="section__label">Export</span>
+        <svg class="section__chevron" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="section__body">
+        <div class="ctrl">
+          <div class="ctrl__btn-row">
+            <button class="ctrl__btn ctrl__btn--primary" id="exportConfig">Copy Config</button>
+            <button class="ctrl__btn" id="exportAttrs">Copy Attrs</button>
+          </div>
         </div>
-      </div>
-      <div class="ctrl">
-        <div class="ctrl__btn-row">
-          <button class="ctrl__btn" id="exportPng">Download PNG</button>
-          <button class="ctrl__btn" id="exportCSS">Copy CSS</button>
+        <div class="ctrl">
+          <div class="ctrl__btn-row">
+            <button class="ctrl__btn" id="exportPng">Download PNG</button>
+            <button class="ctrl__btn" id="exportCSS">Copy CSS</button>
+          </div>
         </div>
       </div>
     </div>
@@ -670,6 +916,7 @@
       fontSize: 64,
       dotSpacing: 5,
       dotRadiusRatio: 0.36,
+      dotShape: 'circle',
       align: 'left',
       lineGap: 0.20,
       activeColor: '#ff5d22',
@@ -994,6 +1241,56 @@
     }
 
     // ════════════════════════════════════════════════
+    // Draw a single dot in the current shape
+    // ════════════════════════════════════════════════
+    function drawDot(ctx, cx, cy, rad) {
+      var shape = S.dotShape;
+      switch (shape) {
+        case 'square':
+          ctx.fillRect(cx - rad, cy - rad, rad * 2, rad * 2);
+          return;
+        case 'diamond':
+          ctx.beginPath();
+          ctx.moveTo(cx, cy - rad);
+          ctx.lineTo(cx + rad, cy);
+          ctx.lineTo(cx, cy + rad);
+          ctx.lineTo(cx - rad, cy);
+          ctx.closePath();
+          ctx.fill();
+          return;
+        case 'triangle':
+          ctx.beginPath();
+          ctx.moveTo(cx, cy - rad);
+          ctx.lineTo(cx + rad, cy + rad);
+          ctx.lineTo(cx - rad, cy + rad);
+          ctx.closePath();
+          ctx.fill();
+          return;
+        case 'star':
+          ctx.beginPath();
+          for (var i = 0; i < 5; i++) {
+            var outerAngle = (i * 4 * Math.PI / 5) - Math.PI / 2;
+            var innerAngle = outerAngle + 2 * Math.PI / 5;
+            if (i === 0) ctx.moveTo(cx + rad * Math.cos(outerAngle), cy + rad * Math.sin(outerAngle));
+            else         ctx.lineTo(cx + rad * Math.cos(outerAngle), cy + rad * Math.sin(outerAngle));
+            ctx.lineTo(cx + rad * 0.4 * Math.cos(innerAngle), cy + rad * 0.4 * Math.sin(innerAngle));
+          }
+          ctx.closePath();
+          ctx.fill();
+          return;
+        case 'cross':
+          var arm = rad * 0.35;
+          ctx.fillRect(cx - arm, cy - rad, arm * 2, rad * 2);
+          ctx.fillRect(cx - rad, cy - arm, rad * 2, arm * 2);
+          return;
+        default: // circle
+          ctx.beginPath();
+          ctx.arc(cx, cy, rad, 0, Math.PI * 2);
+          ctx.fill();
+      }
+    }
+
+    // ════════════════════════════════════════════════
     // Grid rasterization (for dot grid mode)
     // ════════════════════════════════════════════════
     function rasterizeLine(text, w, h, fontSize, xOffset) {
@@ -1124,9 +1421,7 @@
           for (var c = 0; c < layout.cols; c++) {
             ctx.fillStyle = inColor;
             ctx.globalAlpha = 1;
-            ctx.beginPath();
-            ctx.arc(c * DS + DS / 2, (yBase + r) * DS + DS / 2, DR, 0, Math.PI * 2);
-            ctx.fill();
+            drawDot(ctx, c * DS + DS / 2, (yBase + r) * DS + DS / 2, DR);
           }
         }
       }
@@ -1141,9 +1436,7 @@
         if (d.opacity < 0.005) continue;
         ctx.fillStyle = S.activeColor;
         ctx.globalAlpha = clamp(d.opacity, 0, 1);
-        ctx.beginPath();
-        ctx.arc(d.x, d.y, DR, 0, Math.PI * 2);
-        ctx.fill();
+        drawDot(ctx, d.x, d.y, DR);
       }
       ctx.globalAlpha = 1;
     }
@@ -1164,15 +1457,11 @@
             var cy = (yBase + r) * DS + DS / 2;
             ctx.fillStyle = inColor;
             ctx.globalAlpha = 1;
-            ctx.beginPath();
-            ctx.arc(cx, cy, DR, 0, Math.PI * 2);
-            ctx.fill();
+            drawDot(ctx, cx, cy, DR);
             if (grid[idx]) {
               ctx.fillStyle = S.activeColor;
               ctx.globalAlpha = 1;
-              ctx.beginPath();
-              ctx.arc(cx, cy, DR, 0, Math.PI * 2);
-              ctx.fill();
+              drawDot(ctx, cx, cy, DR);
             }
           }
         }
@@ -1627,9 +1916,7 @@
 
             ctx.fillStyle = inColor;
             ctx.globalAlpha = 1;
-            ctx.beginPath();
-            ctx.arc(cx, cy, DR, 0, Math.PI * 2);
-            ctx.fill();
+            drawDot(ctx, cx, cy, DR);
 
             var wasOn = fromGrid[idx];
             var willOn = toGrid[idx];
@@ -1641,9 +1928,7 @@
             if (opacity > 0.01) {
               ctx.fillStyle = S.activeColor;
               ctx.globalAlpha = opacity;
-              ctx.beginPath();
-              ctx.arc(cx, cy, DR, 0, Math.PI * 2);
-              ctx.fill();
+              drawDot(ctx, cx, cy, DR);
             }
           }
         }
@@ -1693,9 +1978,7 @@
           for (var c = 0; c < cols; c++) {
             ctx.fillStyle = inColor;
             ctx.globalAlpha = 1;
-            ctx.beginPath();
-            ctx.arc(c * DS + DS / 2, r * DS + DS / 2, DR, 0, Math.PI * 2);
-            ctx.fill();
+            drawDot(ctx, c * DS + DS / 2, r * DS + DS / 2, DR);
           }
         }
 
@@ -1742,9 +2025,7 @@
           for (var c = 0; c < cols; c++) {
             ctx.fillStyle = inColor;
             ctx.globalAlpha = 1;
-            ctx.beginPath();
-            ctx.arc(c * DS + DS / 2, r * DS + DS / 2, DR, 0, Math.PI * 2);
-            ctx.fill();
+            drawDot(ctx, c * DS + DS / 2, r * DS + DS / 2, DR);
           }
         }
 
@@ -1764,9 +2045,7 @@
               if (fx > -DR && fx < w + DR) {
                 ctx.fillStyle = S.activeColor;
                 ctx.globalAlpha = fromOpacity;
-                ctx.beginPath();
-                ctx.arc(fx, cy, DR, 0, Math.PI * 2);
-                ctx.fill();
+                drawDot(ctx, fx, cy, DR);
               }
             }
 
@@ -1775,9 +2054,7 @@
               if (tx > -DR && tx < w + DR) {
                 ctx.fillStyle = S.activeColor;
                 ctx.globalAlpha = toOpacity;
-                ctx.beginPath();
-                ctx.arc(tx, cy, DR, 0, Math.PI * 2);
-                ctx.fill();
+                drawDot(ctx, tx, cy, DR);
               }
             }
           }
@@ -1833,9 +2110,7 @@
           for (var c = 0; c < cols; c++) {
             ctx.fillStyle = inColor;
             ctx.globalAlpha = 1;
-            ctx.beginPath();
-            ctx.arc(c * DS + DS / 2, r * DS + DS / 2, DR, 0, Math.PI * 2);
-            ctx.fill();
+            drawDot(ctx, c * DS + DS / 2, r * DS + DS / 2, DR);
           }
         }
 
@@ -1849,9 +2124,7 @@
             if (opacity > 0.01) {
               ctx.fillStyle = S.activeColor;
               ctx.globalAlpha = opacity;
-              ctx.beginPath();
-              ctx.arc(x, y, DR, 0, Math.PI * 2);
-              ctx.fill();
+              drawDot(ctx, x, y, DR);
             }
           }
         }
@@ -1866,9 +2139,7 @@
             if (opacity > 0.01) {
               ctx.fillStyle = S.activeColor;
               ctx.globalAlpha = opacity;
-              ctx.beginPath();
-              ctx.arc(x, y, DR, 0, Math.PI * 2);
-              ctx.fill();
+              drawDot(ctx, x, y, DR);
             }
           }
         }
@@ -1910,18 +2181,14 @@
           for (var c = 0; c < cols; c++) {
             ctx.fillStyle = inColor;
             ctx.globalAlpha = 1;
-            ctx.beginPath();
-            ctx.arc(c * DS + DS / 2, r * DS + DS / 2, DR, 0, Math.PI * 2);
-            ctx.fill();
+            drawDot(ctx, c * DS + DS / 2, r * DS + DS / 2, DR);
           }
         }
 
         for (var i = 0; i < shared.length; i++) {
           ctx.fillStyle = S.activeColor;
           ctx.globalAlpha = 1;
-          ctx.beginPath();
-          ctx.arc(shared[i].cx, shared[i].cy, DR, 0, Math.PI * 2);
-          ctx.fill();
+          drawDot(ctx, shared[i].cx, shared[i].cy, DR);
         }
 
         for (var i = 0; i < goingOff.length; i++) {
@@ -1929,9 +2196,7 @@
           if (t < d.flipT) {
             ctx.fillStyle = S.activeColor;
             ctx.globalAlpha = 1;
-            ctx.beginPath();
-            ctx.arc(d.cx, d.cy, DR, 0, Math.PI * 2);
-            ctx.fill();
+            drawDot(ctx, d.cx, d.cy, DR);
           }
         }
 
@@ -1940,9 +2205,7 @@
           if (t >= d.flipT) {
             ctx.fillStyle = S.activeColor;
             ctx.globalAlpha = 1;
-            ctx.beginPath();
-            ctx.arc(d.cx, d.cy, DR, 0, Math.PI * 2);
-            ctx.fill();
+            drawDot(ctx, d.cx, d.cy, DR);
           }
         }
 
@@ -2068,15 +2331,11 @@
             var cy = r * DS + DS / 2;
             ctx.fillStyle = inColor;
             ctx.globalAlpha = 1;
-            ctx.beginPath();
-            ctx.arc(cx, cy, DR, 0, Math.PI * 2);
-            ctx.fill();
+            drawDot(ctx, cx, cy, DR);
             if (grid[r * cols + c]) {
               ctx.fillStyle = S.activeColor;
               ctx.globalAlpha = 1;
-              ctx.beginPath();
-              ctx.arc(cx, cy, DR, 0, Math.PI * 2);
-              ctx.fill();
+              drawDot(ctx, cx, cy, DR);
             }
           }
         }
@@ -2384,6 +2643,16 @@
     bindSlider('radiusSlider', 'radiusVal', 'dotRadiusRatio', function(v) { return v.toFixed(2); }, parseFloat);
     bindSlider('lineGapSlider', 'lineGapVal', 'lineGap', function(v) { return v.toFixed(2); }, parseFloat);
 
+    // ── Dot Shape ──
+    document.querySelectorAll('[data-dot-shape]').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('[data-dot-shape]').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        S.dotShape = btn.dataset.dotShape;
+        render();
+      });
+    });
+
     // ── Alignment ──
     document.querySelectorAll('[data-align]').forEach(function(btn) {
       btn.addEventListener('click', function() {
@@ -2438,6 +2707,7 @@
         fontSize: S.fontSize,
         dotSpacing: S.dotSpacing,
         dotRadiusRatio: S.dotRadiusRatio,
+        dotShape: S.dotShape,
         align: S.align,
         lineGap: S.lineGap,
         activeColor: S.activeColor,
@@ -2463,6 +2733,7 @@
       attrs += '\ndata-active-color="' + S.activeColor + '"';
       if (S.renderMode === 'dot') {
         attrs += '\ndata-inactive-color="' + inactiveRgba() + '"';
+        if (S.dotShape !== 'circle') attrs += '\ndata-dot-shape="' + S.dotShape + '"';
         if (S.idleAnimation !== 'none') attrs += '\ndata-idle="' + S.idleAnimation + '"';
       }
       if (S.mode === 'cycle') attrs += '\ndata-hold="' + S.holdMs + '"';
@@ -2536,12 +2807,77 @@
       navigator.clipboard.writeText(css).then(function() { showToast('CSS copied'); });
     });
 
+    // ── Collapsible sections ──
+    document.querySelectorAll('[data-section]').forEach(function(sec) {
+      var header = sec.querySelector('.section__header');
+      if (!header) return;
+      header.addEventListener('click', function() {
+        sec.classList.toggle('collapsed');
+        header.setAttribute('aria-expanded', String(!sec.classList.contains('collapsed')));
+      });
+    });
+
+    // ── Segmented control sliding indicators ──
+    function initSegmentedControl(container) {
+      var indicator = document.createElement('div');
+      indicator.className = 'ctrl__toggle-indicator';
+      container.style.position = 'relative';
+      container.insertBefore(indicator, container.firstChild);
+
+      function updateIndicator() {
+        var activeBtn = container.querySelector('.ctrl__toggle-btn.active');
+        if (!activeBtn) { indicator.style.opacity = '0'; return; }
+        indicator.style.opacity = '1';
+        indicator.style.width = activeBtn.offsetWidth + 'px';
+        indicator.style.transform = 'translate(' + (activeBtn.offsetLeft - 2) + 'px, ' + (activeBtn.offsetTop - 2) + 'px)';
+      }
+
+      var observer = new MutationObserver(updateIndicator);
+      container.querySelectorAll('.ctrl__toggle-btn').forEach(function(btn) {
+        observer.observe(btn, { attributes: true, attributeFilter: ['class'] });
+      });
+
+      requestAnimationFrame(function() {
+        indicator.style.transition = 'none';
+        updateIndicator();
+        requestAnimationFrame(function() { indicator.style.transition = ''; });
+      });
+    }
+    document.querySelectorAll('.ctrl__toggle-row, .ctrl__render-row').forEach(initSegmentedControl);
+
+    // ── Slider fill track (WebKit) ──
+    function updateSliderFill(slider) {
+      var min = parseFloat(slider.min);
+      var max = parseFloat(slider.max);
+      var val = parseFloat(slider.value);
+      var pct = ((val - min) / (max - min)) * 100;
+      slider.style.background = 'linear-gradient(to right, var(--accent) 0%, var(--accent) ' + pct + '%, var(--surface) ' + pct + '%, var(--surface) 100%)';
+      slider.style.borderRadius = 'var(--r-pill)';
+    }
+    document.querySelectorAll('.ctrl__slider').forEach(function(slider) {
+      updateSliderFill(slider);
+      slider.addEventListener('input', function() { updateSliderFill(slider); });
+    });
+
     // ── Init ──
     document.fonts.ready.then(function() {
       updatePanelVisibility();
       render();
+      // Re-fill sliders after init in case values changed
+      document.querySelectorAll('.ctrl__slider').forEach(updateSliderFill);
     });
-    window.addEventListener('resize', render);
+    window.addEventListener('resize', function() {
+      render();
+      // Re-position segmented indicators on resize
+      document.querySelectorAll('.ctrl__toggle-row, .ctrl__render-row').forEach(function(c) {
+        var ind = c.querySelector('.ctrl__toggle-indicator');
+        var btn = c.querySelector('.ctrl__toggle-btn.active');
+        if (ind && btn) {
+          ind.style.width = btn.offsetWidth + 'px';
+          ind.style.transform = 'translate(' + (btn.offsetLeft - 2) + 'px, ' + (btn.offsetTop - 2) + 'px)';
+        }
+      });
+    });
 
   })();
   </script>

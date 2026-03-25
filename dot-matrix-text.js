@@ -40,7 +40,8 @@
     hold:             2500,
     transitionFrames: 14,
     animationFrames:  60,
-    trigger:          'viewport' // "viewport" | "immediate" | "manual"
+    trigger:          'viewport', // "viewport" | "immediate" | "manual"
+    dotShape:         'circle'    // "circle" | "square" | "diamond" | "triangle" | "star" | "cross"
   };
 
   // ---------------------------------------------------------------------------
@@ -88,6 +89,53 @@
 
   /** Ease-out cubic */
   function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+
+  /** Draw a single dot in the given shape. */
+  function drawDot(ctx, cx, cy, rad, shape) {
+    switch (shape) {
+      case 'square':
+        ctx.fillRect(cx - rad, cy - rad, rad * 2, rad * 2);
+        return;
+      case 'diamond':
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - rad);
+        ctx.lineTo(cx + rad, cy);
+        ctx.lineTo(cx, cy + rad);
+        ctx.lineTo(cx - rad, cy);
+        ctx.closePath();
+        ctx.fill();
+        return;
+      case 'triangle':
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - rad);
+        ctx.lineTo(cx + rad, cy + rad);
+        ctx.lineTo(cx - rad, cy + rad);
+        ctx.closePath();
+        ctx.fill();
+        return;
+      case 'star':
+        ctx.beginPath();
+        for (var i = 0; i < 5; i++) {
+          var outerAngle = (i * 4 * Math.PI / 5) - Math.PI / 2;
+          var innerAngle = outerAngle + 2 * Math.PI / 5;
+          if (i === 0) ctx.moveTo(cx + rad * Math.cos(outerAngle), cy + rad * Math.sin(outerAngle));
+          else         ctx.lineTo(cx + rad * Math.cos(outerAngle), cy + rad * Math.sin(outerAngle));
+          ctx.lineTo(cx + rad * 0.4 * Math.cos(innerAngle), cy + rad * 0.4 * Math.sin(innerAngle));
+        }
+        ctx.closePath();
+        ctx.fill();
+        return;
+      case 'cross':
+        var arm = rad * 0.35;
+        ctx.fillRect(cx - arm, cy - rad, arm * 2, rad * 2);
+        ctx.fillRect(cx - rad, cy - arm, rad * 2, arm * 2);
+        return;
+      default: // circle
+        ctx.beginPath();
+        ctx.arc(cx, cy, rad, 0, Math.PI * 2);
+        ctx.fill();
+    }
+  }
 
   /** Read computed font properties from an element (or its parent). */
   function readFont(el) {
@@ -190,6 +238,7 @@
     this.transitionFrames = parseInt(attr(el, 'transition-frames', opts, defaults.transitionFrames), 10);
     this.animationFrames  = parseInt(attr(el, 'animation-frames',  opts, defaults.animationFrames), 10);
     this.trigger          = attr(el, 'trigger',            opts, defaults.trigger);
+    this.dotShape         = attr(el, 'dot-shape',           opts, defaults.dotShape);
   }
 
   /** Create the canvas element and attach it. */
@@ -331,7 +380,7 @@
   };
 
   StaticInstance.prototype._drawGrid = function () {
-    var ctx = this.ctx, sp = this.dotSpacing, rad = this.dotRadius;
+    var ctx = this.ctx, sp = this.dotSpacing, rad = this.dotRadius, shape = this.dotShape;
     ctx.clearRect(0, 0, this.logicalW, this.logicalH);
     for (var r = 0; r < this.rows; r++) {
       for (var c = 0; c < this.cols; c++) {
@@ -339,16 +388,14 @@
         var cy = r * sp + sp / 2;
         ctx.fillStyle   = this.inactiveColor;
         ctx.globalAlpha = 1;
-        ctx.beginPath();
-        ctx.arc(cx, cy, rad, 0, Math.PI * 2);
-        ctx.fill();
+        drawDot(ctx, cx, cy, rad, shape);
       }
     }
   };
 
   StaticInstance.prototype._drawFinal = function () {
     this._drawGrid();
-    var ctx = this.ctx, sp = this.dotSpacing, rad = this.dotRadius;
+    var ctx = this.ctx, sp = this.dotSpacing, rad = this.dotRadius, shape = this.dotShape;
     for (var r = 0; r < this.rows; r++) {
       for (var c = 0; c < this.cols; c++) {
         if (this.allDots[r * this.cols + c]) {
@@ -356,9 +403,7 @@
           var cy = r * sp + sp / 2;
           ctx.fillStyle   = this.activeColor;
           ctx.globalAlpha = 1;
-          ctx.beginPath();
-          ctx.arc(cx, cy, rad, 0, Math.PI * 2);
-          ctx.fill();
+          drawDot(ctx, cx, cy, rad, shape);
         }
       }
     }
@@ -370,7 +415,7 @@
     var self = this;
     var frame = 0;
     var total = this.animationFrames;
-    var sp = this.dotSpacing, rad = this.dotRadius;
+    var sp = this.dotSpacing, rad = this.dotRadius, shape = this.dotShape;
 
     function step() {
       if (self.destroyed) return;
@@ -390,9 +435,7 @@
 
         self.ctx.fillStyle   = self.activeColor;
         self.ctx.globalAlpha = Math.min(1, eased * 1.5);
-        self.ctx.beginPath();
-        self.ctx.arc(cx, cy, rad, 0, Math.PI * 2);
-        self.ctx.fill();
+        drawDot(self.ctx, cx, cy, rad, shape);
       }
       self.ctx.globalAlpha = 1;
 
@@ -484,7 +527,7 @@
   };
 
   CycleInstance.prototype._drawWord = function (grid) {
-    var ctx = this.ctx, sp = this.dotSpacing, rad = this.dotRadius;
+    var ctx = this.ctx, sp = this.dotSpacing, rad = this.dotRadius, shape = this.dotShape;
     var cols = this.cols, rows = this.rows;
     ctx.clearRect(0, 0, this.logicalW, this.logicalH);
 
@@ -497,17 +540,13 @@
         // Background dot (always visible)
         ctx.fillStyle   = this.inactiveColor;
         ctx.globalAlpha = 1;
-        ctx.beginPath();
-        ctx.arc(cx, cy, rad, 0, Math.PI * 2);
-        ctx.fill();
+        drawDot(ctx, cx, cy, rad, shape);
 
         // Active dot on top
         if (grid[idx]) {
           ctx.fillStyle   = this.activeColor;
           ctx.globalAlpha = 1;
-          ctx.beginPath();
-          ctx.arc(cx, cy, rad, 0, Math.PI * 2);
-          ctx.fill();
+          drawDot(ctx, cx, cy, rad, shape);
         }
       }
     }
@@ -538,7 +577,7 @@
     var frame = 0;
     var total = this.transitionFrames;
     var cols  = this.cols, rows = this.rows;
-    var sp = this.dotSpacing, rad = this.dotRadius;
+    var sp = this.dotSpacing, rad = this.dotRadius, shape = this.dotShape;
     var numDots = cols * rows;
 
     // Per-dot stagger delays
@@ -569,17 +608,13 @@
           // Inactive background dot
           ctx.fillStyle   = self.inactiveColor;
           ctx.globalAlpha = 1;
-          ctx.beginPath();
-          ctx.arc(cx, cy, rad, 0, Math.PI * 2);
-          ctx.fill();
+          drawDot(ctx, cx, cy, rad, shape);
 
           // Active dot
           if (opacity > 0.01) {
             ctx.fillStyle   = self.activeColor;
             ctx.globalAlpha = opacity;
-            ctx.beginPath();
-            ctx.arc(cx, cy, rad, 0, Math.PI * 2);
-            ctx.fill();
+            drawDot(ctx, cx, cy, rad, shape);
           }
           ctx.globalAlpha = 1;
         }
@@ -836,7 +871,7 @@
   HeadlineInstance.prototype._draw = function (wordGrid, transFromGrid, transToGrid, delays, progress) {
     var ctx  = this.ctx;
     var cols = this.cols, rows = this.rows;
-    var sp   = this.dotSpacing, rad = this.dotRadius;
+    var sp   = this.dotSpacing, rad = this.dotRadius, shape = this.dotShape;
     var w    = this.logicalW, h = this.logicalH;
 
     ctx.clearRect(0, 0, w, h);
@@ -855,9 +890,7 @@
         if (isStatic) {
           ctx.fillStyle   = this.staticColor;
           ctx.globalAlpha = 1;
-          ctx.beginPath();
-          ctx.arc(cx, cy, rad, 0, Math.PI * 2);
-          ctx.fill();
+          drawDot(ctx, cx, cy, rad, shape);
         }
 
         // Cycling word dots (orange/activeColor)
@@ -873,16 +906,12 @@
           if (opacity > 0.01) {
             ctx.fillStyle   = this.activeColor;
             ctx.globalAlpha = opacity;
-            ctx.beginPath();
-            ctx.arc(cx, cy, rad, 0, Math.PI * 2);
-            ctx.fill();
+            drawDot(ctx, cx, cy, rad, shape);
           }
         } else if (wordGrid && wordGrid[idx]) {
           ctx.fillStyle   = this.activeColor;
           ctx.globalAlpha = 1;
-          ctx.beginPath();
-          ctx.arc(cx, cy, rad, 0, Math.PI * 2);
-          ctx.fill();
+          drawDot(ctx, cx, cy, rad, shape);
         }
 
         ctx.globalAlpha = 1;
