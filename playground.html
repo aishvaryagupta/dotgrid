@@ -911,6 +911,7 @@
         <option value="slide">Slide Left</option>
         <option value="dissolve">Dissolve &rarr; Reform</option>
         <option value="pixelflip">Pixel Flip</option>
+        <option value="glitch">Glitch</option>
       </select>
     </div>
     <div class="ctrl hidden" id="cycleWordCtrl">
@@ -2437,6 +2438,97 @@
       animRaf = requestAnimationFrame(step);
     }
 
+    // 6. Glitch
+    function transGlitch(layout, fromGrid, toGrid, cols, rows, transFrames, onDone) {
+      var DS = layout.DS, DR = layout.DR;
+      var w = cols * DS, h = rows * DS;
+      var inColor = inactiveRgba();
+      var total = cols * rows;
+
+      // Per-dot random threshold for staggered swap (clustered for wave feel)
+      var dotThresholds = new Float32Array(total);
+      for (var i = 0; i < total; i++) {
+        dotThresholds[i] = Math.random() * 0.7 + Math.random() * 0.3;
+      }
+
+      // Per-row horizontal displacement (glitch bands)
+      var rowOffsets = new Float32Array(rows);
+      var bandStart = Math.floor(Math.random() * rows * 0.5);
+      var bandCount = 2 + Math.floor(Math.random() * 4);
+      for (var r = 0; r < rows; r++) {
+        if (r >= bandStart && r < bandStart + bandCount) {
+          rowOffsets[r] = (Math.random() - 0.5) * DS * 5;
+        } else if (Math.random() < 0.06) {
+          rowOffsets[r] = (Math.random() - 0.5) * DS * 7;
+        }
+      }
+
+      // Flicker dots: ~6% briefly vanish or flash bright
+      var flickerSet = {};
+      var flickerCount = Math.floor(total * 0.06);
+      for (var f = 0; f < flickerCount; f++) {
+        flickerSet[Math.floor(Math.random() * total)] = Math.random();
+      }
+
+      var frame = 0;
+      function step() {
+        frame++;
+        var t = frame / transFrames;
+        // Displacement intensity: peaks mid-transition then snaps back
+        var displaceT = Math.sin(t * Math.PI);
+        ctx.clearRect(0, 0, w, h);
+
+        for (var r = 0; r < rows; r++) {
+          var rowOff = rowOffsets[r] * displaceT;
+
+          for (var c = 0; c < cols; c++) {
+            var idx = r * cols + c;
+            var baseCx = c * DS + DS / 2;
+            var cy = r * DS + DS / 2;
+            var cx = baseCx + rowOff;
+
+            // Determine which grid to read from based on threshold
+            var useNew = t > dotThresholds[idx];
+            var isOn = useNew ? toGrid[idx] : fromGrid[idx];
+
+            // Flicker logic
+            var flickerPhase = flickerSet[idx];
+            var skip = false;
+            var brightFlash = false;
+            if (flickerPhase !== undefined) {
+              var wave = Math.sin((t + flickerPhase) * Math.PI * 7);
+              if (wave < -0.3) skip = true;
+              else if (wave > 0.7 && isOn) brightFlash = true;
+            }
+
+            if (skip) continue;
+
+            // Draw inactive dot at displaced position
+            ctx.fillStyle = inColor;
+            ctx.globalAlpha = 1;
+            drawDot(ctx, cx, cy, DR);
+
+            // Draw active dot
+            if (isOn) {
+              ctx.fillStyle = S.activeColor;
+              ctx.globalAlpha = brightFlash ? 1 : 1;
+              if (brightFlash) {
+                // Bright flash: draw slightly larger
+                drawDot(ctx, cx, cy, DR * 1.3);
+              } else {
+                drawDot(ctx, cx, cy, DR);
+              }
+            }
+          }
+        }
+
+        ctx.globalAlpha = 1;
+        if (frame < transFrames) animRaf = requestAnimationFrame(step);
+        else onDone();
+      }
+      animRaf = requestAnimationFrame(step);
+    }
+
     // Dispatch transition by style name
     function dispatchTransition(style, layout, fromGrid, toGrid, cols, rows, transFrames, onDone) {
       switch (style) {
@@ -2445,6 +2537,7 @@
         case 'slide':     return transSlide(layout, fromGrid, toGrid, cols, rows, transFrames, onDone);
         case 'dissolve':  return transDissolve(layout, fromGrid, toGrid, cols, rows, transFrames, onDone);
         case 'pixelflip': return transPixelFlip(layout, fromGrid, toGrid, cols, rows, transFrames, onDone);
+        case 'glitch':    return transGlitch(layout, fromGrid, toGrid, cols, rows, transFrames, onDone);
         default:          return transCrossfade(layout, fromGrid, toGrid, cols, rows, transFrames, onDone);
       }
     }
