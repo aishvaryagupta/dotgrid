@@ -27,6 +27,8 @@
       --text-tertiary: #56565a;
       --text-on-accent: #ffffff;
       --canvas-bg: #0a0a0b;
+      --toolbar-bg: rgba(17, 17, 19, 0.85);
+      --toolbar-shadow: 0 4px 24px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.03);
 
       /* ── Spacing (8px grid) ── */
       --sp-1: 4px;
@@ -47,6 +49,8 @@
       --t-fast: 120ms ease;
       --t-normal: 180ms ease;
       --t-smooth: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+      --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+      --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
 
       /* ── Shadows ── */
       --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
@@ -61,12 +65,12 @@
       color: #f5f5f7;
       height: 100vh;
       overflow: hidden;
-      display: flex;
     }
 
     /* ── Preview ── */
     .preview {
-      flex: 1;
+      width: 100%;
+      height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -423,10 +427,10 @@
       letter-spacing: 0.06em;
       cursor: pointer;
       text-align: center;
-      transition: all var(--t-normal);
+      transition: background 180ms ease, border-color 180ms ease, color 180ms ease, transform 100ms var(--ease-out);
     }
     .ctrl__btn:hover { border-color: var(--panel-border-hover); background: var(--surface-hover); color: var(--text-primary); }
-    .ctrl__btn:active { background: var(--surface-active); transform: scale(0.98); }
+    .ctrl__btn:active { background: var(--surface-active); transform: scale(0.96); }
     .ctrl__btn--primary {
       background: var(--accent);
       border-color: rgba(var(--accent-r), var(--accent-g), var(--accent-b),0.3);
@@ -455,9 +459,11 @@
       cursor: pointer;
       position: relative;
       overflow: hidden;
-      transition: border-color var(--t-normal), transform var(--t-normal), box-shadow var(--t-normal);
+      transition: border-color 120ms var(--ease-out), transform 120ms var(--ease-out), box-shadow 120ms var(--ease-out);
     }
-    .preset:hover { border-color: var(--panel-border-hover); transform: scale(1.06); box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
+    @media (hover: hover) and (pointer: fine) {
+      .preset:hover { border-color: var(--panel-border-hover); transform: scale(1.06); box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
+    }
     .preset.active {
       border-color: var(--accent);
       border-width: 1.5px;
@@ -477,13 +483,130 @@
       height: 100%;
     }
 
+    /* ── Bottom Toolbar ── */
+    .toolbar {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      padding: 6px;
+      background: var(--toolbar-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--r-pill);
+      z-index: 100;
+      box-shadow: var(--toolbar-shadow);
+      transition: transform 180ms var(--ease-out), opacity 180ms var(--ease-out);
+    }
+    .toolbar__btn {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      border-radius: 50%;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: background 150ms var(--ease-out), color 150ms var(--ease-out), transform 100ms var(--ease-out);
+      position: relative;
+    }
+    @media (hover: hover) and (pointer: fine) {
+      .toolbar__btn:hover {
+        background: var(--surface);
+        color: var(--text-primary);
+      }
+    }
+    .toolbar__btn:active {
+      transform: scale(0.92);
+    }
+    .toolbar__btn.active {
+      background: var(--accent-muted);
+      color: var(--accent);
+    }
+    .toolbar__btn svg { width: 18px; height: 18px; }
+    .toolbar__sep {
+      width: 1px;
+      height: 24px;
+      background: var(--panel-border);
+      margin: 0 4px;
+      flex-shrink: 0;
+    }
+    .toolbar__btn[data-tooltip]::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%) scale(0.97);
+      padding: 4px 10px;
+      background: var(--surface-active);
+      color: var(--text-primary);
+      font-family: "Inter", system-ui, sans-serif;
+      font-size: 11px;
+      border-radius: var(--r-sm);
+      white-space: nowrap;
+      pointer-events: none;
+      box-shadow: var(--shadow-md);
+      opacity: 0;
+      transition: opacity 125ms var(--ease-out), transform 125ms var(--ease-out);
+    }
+    @media (hover: hover) and (pointer: fine) {
+      .toolbar__btn[data-tooltip]:hover::after {
+        opacity: 1;
+        transform: translateX(-50%) scale(1);
+      }
+    }
+
+    /* ── Popovers ── */
+    .popover {
+      position: fixed;
+      bottom: 76px;
+      left: 50%;
+      transform: translateX(-50%) scale(0.96) translateY(4px);
+      transform-origin: bottom center;
+      width: 320px;
+      max-height: 60vh;
+      overflow-y: auto;
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--r-xl);
+      box-shadow: var(--popover-shadow, 0 8px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.03));
+      padding: var(--sp-4) var(--sp-4) var(--sp-3);
+      z-index: 99;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 100ms ease, transform 100ms ease;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.08) transparent;
+    }
+    .popover.open {
+      opacity: 1;
+      transform: translateX(-50%) scale(1) translateY(0);
+      pointer-events: auto;
+      transition: opacity 180ms var(--ease-out), transform 180ms var(--ease-out);
+    }
+    .popover__title {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--text-tertiary);
+      margin-bottom: var(--sp-3);
+      font-weight: 500;
+    }
+
     /* Hidden */
     .hidden { display: none !important; }
 
     /* Toast */
     .toast {
       position: fixed;
-      bottom: 24px;
+      bottom: 84px;
       left: 50%;
       transform: translateX(-50%) translateY(8px);
       background: var(--surface-active);
@@ -494,7 +617,7 @@
       border: 1px solid var(--panel-border);
       border-radius: var(--r-lg);
       opacity: 0;
-      transition: opacity 200ms, transform 200ms;
+      transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out);
       pointer-events: none;
       z-index: 100;
       box-shadow: var(--shadow-md);
@@ -584,300 +707,262 @@
     <pre class="ascii-preview hidden" id="asciiPre"></pre>
   </div>
 
-  <!-- Panel -->
-  <div class="panel">
-    <div class="panel__header">
-      <div class="panel__title">Dot Matrix</div>
-      <div class="panel__subtitle">Playground</div>
-      <div class="ctrl__render-row" style="margin-top: var(--sp-3);">
+  <!-- Popovers -->
+  <div class="popover" id="popover-text">
+    <div class="popover__title">Text &amp; Mode</div>
+    <div class="ctrl">
+      <textarea class="ctrl__textarea" id="textInput" rows="2" placeholder="Type anything... (new line for multi-line)">ship</textarea>
+    </div>
+    <div class="ctrl" style="margin-top: var(--sp-3);">
+      <div class="ctrl__top"><span class="ctrl__name">Render Mode</span></div>
+      <div class="ctrl__render-row">
         <button class="ctrl__toggle-btn active" data-render="dot">Dot Grid</button>
         <button class="ctrl__toggle-btn" data-render="block">Block</button>
         <button class="ctrl__toggle-btn" data-render="line">Line Art</button>
       </div>
     </div>
+  </div>
 
-    <!-- Text -->
-    <div class="section" data-section>
-      <button class="section__header" aria-expanded="true">
-        <span class="section__label">Text</span>
-        <svg class="section__chevron" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <div class="section__body">
-        <div class="ctrl">
-          <textarea class="ctrl__textarea" id="textInput" rows="2" placeholder="Type anything... (new line for multi-line)">ship</textarea>
+  <div class="popover" id="popover-theme">
+    <div class="popover__title">Theme</div>
+    <div class="ctrl__toggle-row" id="bgToggle"></div>
+    <div class="presets" id="presets"></div>
+  </div>
+
+  <div class="popover" id="popover-type">
+    <div class="popover__title">Typography</div>
+    <div id="fontControls">
+      <div class="ctrl">
+        <div class="ctrl__top"><span class="ctrl__name">Family</span></div>
+        <select class="ctrl__select" id="fontFamily">
+          <option value='"Space Grotesk"' selected>Space Grotesk</option>
+          <option value='"Inter"'>Inter</option>
+          <option value='"JetBrains Mono"'>JetBrains Mono</option>
+          <option value='"Chakra Petch"'>Chakra Petch</option>
+          <option value='"Outfit"'>Outfit</option>
+          <option value='"Syne"'>Syne</option>
+        </select>
+      </div>
+      <div class="ctrl">
+        <div class="ctrl__top">
+          <span class="ctrl__name">Weight</span>
+          <span class="ctrl__val" id="weightVal">700</span>
         </div>
+        <input class="ctrl__slider" id="weightSlider" type="range" min="400" max="900" step="100" value="700" />
+      </div>
+      <div class="ctrl">
+        <div class="ctrl__top">
+          <span class="ctrl__name">Size</span>
+          <span class="ctrl__val" id="fontSizeVal">72</span>
+        </div>
+        <input class="ctrl__slider" id="fontSizeSlider" type="range" min="24" max="160" step="1" value="72" />
       </div>
     </div>
-
-    <!-- Presets -->
-    <div class="section" data-section>
-      <button class="section__header" aria-expanded="true">
-        <span class="section__label">Presets</span>
-        <svg class="section__chevron" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <div class="section__body">
-        <div class="ctrl__toggle-row" id="bgToggle"></div>
-        <div class="presets" id="presets"></div>
+    <div id="displayControls" class="hidden">
+      <div class="ctrl">
+        <div class="ctrl__top">
+          <span class="ctrl__name">Text Size</span>
+          <span class="ctrl__val" id="asciiSizeVal">24</span>
+        </div>
+        <input class="ctrl__slider" id="asciiSizeSlider" type="range" min="8" max="64" step="1" value="24" />
       </div>
     </div>
+  </div>
 
-    <!-- Typography (merged Font + Display) -->
-    <div class="section" id="typographySection" data-section>
-      <button class="section__header" aria-expanded="true">
-        <span class="section__label">Typography</span>
-        <svg class="section__chevron" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <div class="section__body">
-        <!-- Font controls (dot grid) -->
-        <div id="fontControls">
-          <div class="ctrl">
-            <div class="ctrl__top"><span class="ctrl__name">Family</span></div>
-            <select class="ctrl__select" id="fontFamily">
-              <option value='"Space Grotesk"' selected>Space Grotesk</option>
-              <option value='"Inter"'>Inter</option>
-              <option value='"JetBrains Mono"'>JetBrains Mono</option>
-              <option value='"Chakra Petch"'>Chakra Petch</option>
-              <option value='"Outfit"'>Outfit</option>
-              <option value='"Syne"'>Syne</option>
-            </select>
-          </div>
-          <div class="ctrl">
-            <div class="ctrl__top">
-              <span class="ctrl__name">Weight</span>
-              <span class="ctrl__val" id="weightVal">700</span>
-            </div>
-            <input class="ctrl__slider" id="weightSlider" type="range" min="400" max="900" step="100" value="700" />
-          </div>
-          <div class="ctrl">
-            <div class="ctrl__top">
-              <span class="ctrl__name">Size</span>
-              <span class="ctrl__val" id="fontSizeVal">72</span>
-            </div>
-            <input class="ctrl__slider" id="fontSizeSlider" type="range" min="24" max="160" step="1" value="72" />
-          </div>
-        </div>
-        <!-- Display controls (block/line art) -->
-        <div id="displayControls" class="hidden">
-          <div class="ctrl">
-            <div class="ctrl__top">
-              <span class="ctrl__name">Text Size</span>
-              <span class="ctrl__val" id="asciiSizeVal">24</span>
-            </div>
-            <input class="ctrl__slider" id="asciiSizeSlider" type="range" min="8" max="64" step="1" value="24" />
-          </div>
-        </div>
+  <div class="popover" id="popover-grid">
+    <div class="popover__title">Grid</div>
+    <div class="ctrl">
+      <div class="ctrl__top">
+        <span class="ctrl__name">Dot Spacing</span>
+        <span class="ctrl__val" id="spacingVal">5</span>
+      </div>
+      <input class="ctrl__slider" id="spacingSlider" type="range" min="3" max="14" step="1" value="5" />
+    </div>
+    <div class="ctrl">
+      <div class="ctrl__top">
+        <span class="ctrl__name">Dot Radius</span>
+        <span class="ctrl__val" id="radiusVal">0.38</span>
+      </div>
+      <input class="ctrl__slider" id="radiusSlider" type="range" min="0.10" max="0.50" step="0.01" value="0.38" />
+    </div>
+    <div class="ctrl">
+      <div class="ctrl__top"><span class="ctrl__name">Dot Shape</span></div>
+      <div class="ctrl__toggle-row ctrl__shape-row">
+        <button class="ctrl__toggle-btn active" data-dot-shape="circle" title="Circle"><svg width="14" height="14" viewBox="0 0 14 14"><circle cx="7" cy="7" r="5" fill="currentColor"/></svg></button>
+        <button class="ctrl__toggle-btn" data-dot-shape="square" title="Square"><svg width="14" height="14" viewBox="0 0 14 14"><rect x="2" y="2" width="10" height="10" fill="currentColor"/></svg></button>
+        <button class="ctrl__toggle-btn" data-dot-shape="diamond" title="Diamond"><svg width="14" height="14" viewBox="0 0 14 14"><polygon points="7,1 13,7 7,13 1,7" fill="currentColor"/></svg></button>
+        <button class="ctrl__toggle-btn" data-dot-shape="triangle" title="Triangle"><svg width="14" height="14" viewBox="0 0 14 14"><polygon points="7,1 13,13 1,13" fill="currentColor"/></svg></button>
+        <button class="ctrl__toggle-btn" data-dot-shape="star" title="Star"><svg width="14" height="14" viewBox="0 0 14 14"><polygon points="7,0.5 8.8,5 13.5,5.2 9.8,8.2 11,13 7,10.5 3,13 4.2,8.2 0.5,5.2 5.2,5" fill="currentColor"/></svg></button>
+        <button class="ctrl__toggle-btn" data-dot-shape="cross" title="Cross"><svg width="14" height="14" viewBox="0 0 14 14"><polygon points="5,1 9,1 9,5 13,5 13,9 9,9 9,13 5,13 5,9 1,9 1,5 5,5" fill="currentColor"/></svg></button>
       </div>
     </div>
-
-    <!-- Grid (dot grid only) -->
-    <div class="section" id="gridSection" data-section>
-      <button class="section__header" aria-expanded="true">
-        <span class="section__label">Grid</span>
-        <svg class="section__chevron" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <div class="section__body">
-        <div class="ctrl">
-          <div class="ctrl__top">
-            <span class="ctrl__name">Dot Spacing</span>
-            <span class="ctrl__val" id="spacingVal">5</span>
-          </div>
-          <input class="ctrl__slider" id="spacingSlider" type="range" min="3" max="14" step="1" value="5" />
-        </div>
-        <div class="ctrl">
-          <div class="ctrl__top">
-            <span class="ctrl__name">Dot Radius</span>
-            <span class="ctrl__val" id="radiusVal">0.38</span>
-          </div>
-          <input class="ctrl__slider" id="radiusSlider" type="range" min="0.10" max="0.50" step="0.01" value="0.38" />
-        </div>
-        <div class="ctrl">
-          <div class="ctrl__top"><span class="ctrl__name">Dot Shape</span></div>
-          <div class="ctrl__toggle-row ctrl__shape-row">
-            <button class="ctrl__toggle-btn active" data-dot-shape="circle" title="Circle"><svg width="14" height="14" viewBox="0 0 14 14"><circle cx="7" cy="7" r="5" fill="currentColor"/></svg></button>
-            <button class="ctrl__toggle-btn" data-dot-shape="square" title="Square"><svg width="14" height="14" viewBox="0 0 14 14"><rect x="2" y="2" width="10" height="10" fill="currentColor"/></svg></button>
-            <button class="ctrl__toggle-btn" data-dot-shape="diamond" title="Diamond"><svg width="14" height="14" viewBox="0 0 14 14"><polygon points="7,1 13,7 7,13 1,7" fill="currentColor"/></svg></button>
-            <button class="ctrl__toggle-btn" data-dot-shape="triangle" title="Triangle"><svg width="14" height="14" viewBox="0 0 14 14"><polygon points="7,1 13,13 1,13" fill="currentColor"/></svg></button>
-            <button class="ctrl__toggle-btn" data-dot-shape="star" title="Star"><svg width="14" height="14" viewBox="0 0 14 14"><polygon points="7,0.5 8.8,5 13.5,5.2 9.8,8.2 11,13 7,10.5 3,13 4.2,8.2 0.5,5.2 5.2,5" fill="currentColor"/></svg></button>
-            <button class="ctrl__toggle-btn" data-dot-shape="cross" title="Cross"><svg width="14" height="14" viewBox="0 0 14 14"><polygon points="5,1 9,1 9,5 13,5 13,9 9,9 9,13 5,13 5,9 1,9 1,5 5,5" fill="currentColor"/></svg></button>
-          </div>
-        </div>
-        <div class="ctrl">
-          <div class="ctrl__top"><span class="ctrl__name">Alignment</span></div>
-          <div class="ctrl__toggle-row">
-            <button class="ctrl__toggle-btn" data-align="left">Left</button>
-            <button class="ctrl__toggle-btn active" data-align="center">Center</button>
-            <button class="ctrl__toggle-btn" data-align="right">Right</button>
-          </div>
-        </div>
-        <div class="ctrl">
-          <div class="ctrl__top">
-            <span class="ctrl__name">Line Gap</span>
-            <span class="ctrl__val" id="lineGapVal">0.25</span>
-          </div>
-          <input class="ctrl__slider" id="lineGapSlider" type="range" min="0" max="0.6" step="0.02" value="0.25" />
-        </div>
+    <div class="ctrl">
+      <div class="ctrl__top"><span class="ctrl__name">Alignment</span></div>
+      <div class="ctrl__toggle-row">
+        <button class="ctrl__toggle-btn" data-align="left">Left</button>
+        <button class="ctrl__toggle-btn active" data-align="center">Center</button>
+        <button class="ctrl__toggle-btn" data-align="right">Right</button>
       </div>
     </div>
+    <div class="ctrl">
+      <div class="ctrl__top">
+        <span class="ctrl__name">Line Gap</span>
+        <span class="ctrl__val" id="lineGapVal">0.25</span>
+      </div>
+      <input class="ctrl__slider" id="lineGapSlider" type="range" min="0" max="0.6" step="0.02" value="0.25" />
+    </div>
+  </div>
 
-    <!-- Colors -->
-    <div class="section" data-section>
-      <button class="section__header" aria-expanded="true">
-        <span class="section__label">Colors</span>
-        <svg class="section__chevron" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <div class="section__body">
-        <div class="ctrl">
-          <div class="ctrl__top"><span class="ctrl__name">Active Dots</span></div>
-          <div class="ctrl__color-row">
-            <input class="ctrl__color" id="activeColor" type="color" value="#ff5d22" />
-            <input class="ctrl__hex" id="activeHex" type="text" value="#ff5d22" />
-          </div>
-        </div>
-        <div class="ctrl" id="inactiveColorCtrl">
-          <div class="ctrl__top"><span class="ctrl__name">Grid Dots</span></div>
-          <div class="ctrl__color-row">
-            <input class="ctrl__color" id="inactiveColor" type="color" value="#ff5d22" />
-            <input class="ctrl__hex" id="inactiveHex" type="text" value="#ff5d22" />
-          </div>
-          <div class="ctrl__opacity-row">
-            <span class="ctrl__name" style="font-size: 11px; white-space: nowrap;">Opacity</span>
-            <input class="ctrl__slider" id="inactiveOpacity" type="range" min="0" max="0.5" step="0.01" value="0.15" />
-            <span class="ctrl__val" id="opacityVal">0.15</span>
-          </div>
-        </div>
-        <div class="ctrl">
-          <div class="ctrl__top"><span class="ctrl__name">Background</span></div>
-          <div class="ctrl__color-row">
-            <input class="ctrl__color" id="bgColor" type="color" value="#0a0a0b" />
-            <input class="ctrl__hex" id="bgHex" type="text" value="#0a0a0b" />
-          </div>
-        </div>
+  <div class="popover" id="popover-color">
+    <div class="popover__title">Colors</div>
+    <div class="ctrl">
+      <div class="ctrl__top"><span class="ctrl__name">Active Dots</span></div>
+      <div class="ctrl__color-row">
+        <input class="ctrl__color" id="activeColor" type="color" value="#ff5d22" />
+        <input class="ctrl__hex" id="activeHex" type="text" value="#ff5d22" />
       </div>
     </div>
-
-    <!-- Animation -->
-    <div class="section" data-section>
-      <button class="section__header" aria-expanded="true">
-        <span class="section__label">Animation</span>
-        <svg class="section__chevron" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <div class="section__body">
-        <!-- Mode toggle -->
-        <div class="ctrl">
-          <div class="ctrl__top"><span class="ctrl__name">Mode</span></div>
-          <div class="ctrl__toggle-row">
-            <button class="ctrl__toggle-btn active" data-mode="static">Static</button>
-            <button class="ctrl__toggle-btn" data-mode="animate">Animate</button>
-            <button class="ctrl__toggle-btn" data-mode="cycle">Cycle</button>
-          </div>
-        </div>
-
-        <!-- Load-In Style (shown when mode=animate, dot grid only) -->
-        <div class="ctrl hidden" id="loadInCtrl">
-          <div class="ctrl__top"><span class="ctrl__name">Load-In Style</span></div>
-          <select class="ctrl__select" id="loadInStyle">
-            <option value="scatter">Scatter &rarr; Form</option>
-            <option value="rain">Rain Down</option>
-            <option value="typewriter">Typewriter</option>
-            <option value="rowscan">Row Scan</option>
-            <option value="colscan">Column Scan</option>
-            <option value="centerburst">Center Burst</option>
-            <option value="fadein">Fade In</option>
-            <option value="randomfill">Random Fill</option>
-            <option value="wave">Wave</option>
-            <option value="spiral">Spiral In</option>
-          </select>
-        </div>
-
-        <!-- Transition Style (shown when mode=cycle, dot grid only) -->
-        <div class="ctrl hidden" id="transitionCtrl">
-          <div class="ctrl__top"><span class="ctrl__name">Transition Style</span></div>
-          <select class="ctrl__select" id="transitionStyle">
-            <option value="crossfade">Crossfade</option>
-            <option value="scramble">Scramble</option>
-            <option value="slide">Slide Left</option>
-            <option value="dissolve">Dissolve &rarr; Reform</option>
-            <option value="pixelflip">Pixel Flip</option>
-          </select>
-        </div>
-
-        <!-- Cycle Word (shown when mode=cycle) -->
-        <div class="ctrl hidden" id="cycleWordCtrl">
-          <div class="ctrl__top"><span class="ctrl__name">Cycle Word</span></div>
-          <input class="ctrl__text" id="cycleWord" type="text" value="build" placeholder="Second word..." />
-        </div>
-
-        <!-- Hold Time (shown when mode=cycle) -->
-        <div class="ctrl hidden" id="holdCtrl">
-          <div class="ctrl__top">
-            <span class="ctrl__name">Hold Time</span>
-            <span class="ctrl__val" id="holdVal">2500ms</span>
-          </div>
-          <input class="ctrl__slider" id="holdSlider" type="range" min="500" max="5000" step="100" value="2500" />
-        </div>
-
-        <!-- Idle Animation (dot grid only) -->
-        <div class="ctrl" id="idleCtrl">
-          <div class="ctrl__top"><span class="ctrl__name">Idle Effect</span></div>
-          <select class="ctrl__select" id="idleAnimation">
-            <option value="none">None</option>
-            <option value="pulse">Pulse</option>
-            <option value="shimmer">Shimmer</option>
-            <option value="flicker">Flicker</option>
-          </select>
-        </div>
-
-        <!-- Speed slider (shown when mode=animate or cycle, dot grid only) -->
-        <div class="ctrl hidden" id="speedCtrl">
-          <div class="ctrl__top">
-            <span class="ctrl__name">Animation Speed</span>
-            <span class="ctrl__val" id="speedVal">60</span>
-          </div>
-          <input class="ctrl__slider" id="speedSlider" type="range" min="10" max="120" step="5" value="60" />
-        </div>
-
-        <!-- Play / Reset buttons -->
-        <div class="ctrl" id="animBtns" style="margin-top: 8px;">
-          <div class="ctrl__btn-row">
-            <button class="ctrl__btn" id="playBtn">Play</button>
-            <button class="ctrl__btn" id="resetBtn">Reset</button>
-          </div>
-        </div>
+    <div class="ctrl" id="inactiveColorCtrl">
+      <div class="ctrl__top"><span class="ctrl__name">Grid Dots</span></div>
+      <div class="ctrl__color-row">
+        <input class="ctrl__color" id="inactiveColor" type="color" value="#ff5d22" />
+        <input class="ctrl__hex" id="inactiveHex" type="text" value="#ff5d22" />
+      </div>
+      <div class="ctrl__opacity-row">
+        <span class="ctrl__name" style="font-size: 11px; white-space: nowrap;">Opacity</span>
+        <input class="ctrl__slider" id="inactiveOpacity" type="range" min="0" max="0.5" step="0.01" value="0.15" />
+        <span class="ctrl__val" id="opacityVal">0.15</span>
       </div>
     </div>
-
-    <!-- Export -->
-    <div class="section" data-section>
-      <button class="section__header" aria-expanded="true">
-        <span class="section__label">Export</span>
-        <svg class="section__chevron" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <div class="section__body">
-        <div class="ctrl">
-          <div class="ctrl__btn-row">
-            <button class="ctrl__btn ctrl__btn--primary" id="exportHtml">Copy HTML</button>
-            <button class="ctrl__btn" id="exportPng">Download PNG</button>
-          </div>
-        </div>
-        <div class="ctrl">
-          <div class="ctrl__btn-row">
-            <button class="ctrl__btn" id="exportJs">Copy JS</button>
-            <button class="ctrl__btn" id="exportSave">Save Config</button>
-          </div>
-        </div>
-        <div class="ctrl">
-          <div class="ctrl__btn-row">
-            <button class="ctrl__btn" id="exportLoad">Load Config</button>
-          </div>
-          <input type="file" id="configFileInput" accept=".json" style="display: none;" />
-        </div>
+    <div class="ctrl">
+      <div class="ctrl__top"><span class="ctrl__name">Background</span></div>
+      <div class="ctrl__color-row">
+        <input class="ctrl__color" id="bgColor" type="color" value="#0a0a0b" />
+        <input class="ctrl__hex" id="bgHex" type="text" value="#0a0a0b" />
       </div>
     </div>
+  </div>
 
-    <!-- Reset All -->
-    <div style="padding: 0 var(--sp-5) var(--sp-5);">
-      <button class="ctrl__btn" id="resetAllBtn" style="width: 100%; margin-top: var(--sp-2); opacity: 0.6;">Reset All</button>
+  <div class="popover" id="popover-anim">
+    <div class="popover__title">Animation</div>
+    <div class="ctrl">
+      <div class="ctrl__top"><span class="ctrl__name">Mode</span></div>
+      <div class="ctrl__toggle-row">
+        <button class="ctrl__toggle-btn active" data-mode="static">Static</button>
+        <button class="ctrl__toggle-btn" data-mode="animate">Animate</button>
+        <button class="ctrl__toggle-btn" data-mode="cycle">Cycle</button>
+      </div>
     </div>
+    <div class="ctrl hidden" id="loadInCtrl">
+      <div class="ctrl__top"><span class="ctrl__name">Load-In Style</span></div>
+      <select class="ctrl__select" id="loadInStyle">
+        <option value="scatter">Scatter &rarr; Form</option>
+        <option value="rain">Rain Down</option>
+        <option value="typewriter">Typewriter</option>
+        <option value="rowscan">Row Scan</option>
+        <option value="colscan">Column Scan</option>
+        <option value="centerburst">Center Burst</option>
+        <option value="fadein">Fade In</option>
+        <option value="randomfill">Random Fill</option>
+        <option value="wave">Wave</option>
+        <option value="spiral">Spiral In</option>
+      </select>
+    </div>
+    <div class="ctrl hidden" id="transitionCtrl">
+      <div class="ctrl__top"><span class="ctrl__name">Transition Style</span></div>
+      <select class="ctrl__select" id="transitionStyle">
+        <option value="crossfade">Crossfade</option>
+        <option value="scramble">Scramble</option>
+        <option value="slide">Slide Left</option>
+        <option value="dissolve">Dissolve &rarr; Reform</option>
+        <option value="pixelflip">Pixel Flip</option>
+      </select>
+    </div>
+    <div class="ctrl hidden" id="cycleWordCtrl">
+      <div class="ctrl__top"><span class="ctrl__name">Cycle Word</span></div>
+      <input class="ctrl__text" id="cycleWord" type="text" value="build" placeholder="Second word..." />
+    </div>
+    <div class="ctrl hidden" id="holdCtrl">
+      <div class="ctrl__top">
+        <span class="ctrl__name">Hold Time</span>
+        <span class="ctrl__val" id="holdVal">2500ms</span>
+      </div>
+      <input class="ctrl__slider" id="holdSlider" type="range" min="500" max="5000" step="100" value="2500" />
+    </div>
+    <div class="ctrl" id="idleCtrl">
+      <div class="ctrl__top"><span class="ctrl__name">Idle Effect</span></div>
+      <select class="ctrl__select" id="idleAnimation">
+        <option value="none">None</option>
+        <option value="pulse">Pulse</option>
+        <option value="shimmer">Shimmer</option>
+        <option value="flicker">Flicker</option>
+      </select>
+    </div>
+    <div class="ctrl hidden" id="speedCtrl">
+      <div class="ctrl__top">
+        <span class="ctrl__name">Animation Speed</span>
+        <span class="ctrl__val" id="speedVal">60</span>
+      </div>
+      <input class="ctrl__slider" id="speedSlider" type="range" min="10" max="120" step="5" value="60" />
+    </div>
+    <div class="ctrl" id="animBtns" style="margin-top: 8px;">
+      <div class="ctrl__btn-row">
+        <button class="ctrl__btn" id="playBtn">Play</button>
+        <button class="ctrl__btn" id="resetBtn">Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="popover" id="popover-export">
+    <div class="popover__title">Export</div>
+    <div class="ctrl">
+      <div class="ctrl__btn-row">
+        <button class="ctrl__btn ctrl__btn--primary" id="exportHtml">Copy HTML</button>
+        <button class="ctrl__btn" id="exportPng">Download PNG</button>
+      </div>
+    </div>
+    <div class="ctrl">
+      <div class="ctrl__btn-row">
+        <button class="ctrl__btn" id="exportJs">Copy JS</button>
+        <button class="ctrl__btn" id="exportSave">Save Config</button>
+      </div>
+    </div>
+    <div class="ctrl">
+      <div class="ctrl__btn-row">
+        <button class="ctrl__btn" id="exportLoad">Load Config</button>
+      </div>
+      <input type="file" id="configFileInput" accept=".json" style="display: none;" />
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar" id="toolbar">
+    <button class="toolbar__btn" data-popover="text" data-tooltip="Text">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7V4h16v3"/><line x1="12" y1="4" x2="12" y2="20"/><line x1="8" y1="20" x2="16" y2="20"/></svg>
+    </button>
+    <button class="toolbar__btn" data-popover="theme" data-tooltip="Theme">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+    </button>
+    <button class="toolbar__btn" data-popover="type" data-tooltip="Typography">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20h16"/><path d="M6 4l6 16"/><path d="M18 4l-6 16"/><path d="M8 12h8"/></svg>
+    </button>
+    <button class="toolbar__btn" data-popover="grid" data-tooltip="Grid" id="gridToolbarBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+    </button>
+    <div class="toolbar__sep"></div>
+    <button class="toolbar__btn" data-popover="color" data-tooltip="Colors">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="13.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="10.5" r="2.5"/><circle cx="8.5" cy="7.5" r="2.5"/><circle cx="6.5" cy="12" r="2.5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.9 0 1.7-.7 1.7-1.5 0-.4-.2-.7-.4-1-.2-.3-.3-.6-.3-1 0-.8.7-1.5 1.5-1.5H16c3.3 0 6-2.7 6-6 0-5.5-4.5-9-10-9z"/></svg>
+    </button>
+    <button class="toolbar__btn" data-popover="anim" data-tooltip="Animation">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="5,3 19,12 5,21"/></svg>
+    </button>
+    <div class="toolbar__sep"></div>
+    <button class="toolbar__btn" data-popover="export" data-tooltip="Export">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    </button>
+    <button class="toolbar__btn" data-tooltip="Reset All" id="resetAllBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="1,4 1,10 7,10"/><path d="M3.51 15a9 9 0 105.64-11.36L1 10"/></svg>
+    </button>
   </div>
 
   <div class="toast" id="toast">Copied</div>
@@ -994,6 +1079,9 @@
         root.setProperty('--text-secondary', '#52525b');
         root.setProperty('--text-tertiary', '#a1a1aa');
         root.setProperty('--text-on-accent', '#ffffff');
+        root.setProperty('--toolbar-bg', 'rgba(240, 240, 242, 0.90)');
+        root.setProperty('--toolbar-shadow', '0 2px 12px rgba(0,0,0,0.04), 0 0 0 1px rgba(0,0,0,0.03)');
+        root.setProperty('--popover-shadow', '0 4px 20px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04)');
       } else {
         root.setProperty('--panel-bg', '#111113');
         root.setProperty('--panel-bg-elevated', '#161618');
@@ -1006,6 +1094,9 @@
         root.setProperty('--text-secondary', '#8b8b8e');
         root.setProperty('--text-tertiary', '#56565a');
         root.setProperty('--text-on-accent', '#ffffff');
+        root.setProperty('--toolbar-bg', 'rgba(17, 17, 19, 0.85)');
+        root.setProperty('--toolbar-shadow', '0 4px 24px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.03)');
+        root.setProperty('--popover-shadow', '0 8px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.03)');
       }
     }
 
@@ -2591,8 +2682,11 @@
       document.getElementById('fontControls').classList.toggle('hidden', !isDot);
       document.getElementById('displayControls').classList.toggle('hidden', isDot);
 
-      // Grid section: only for dot grid
-      document.getElementById('gridSection').classList.toggle('hidden', !isDot);
+      // Grid toolbar button + popover: only for dot grid
+      var gridBtn = document.getElementById('gridToolbarBtn');
+      if (gridBtn) gridBtn.style.display = isDot ? '' : 'none';
+      // Close grid popover if switching away from dot
+      if (!isDot && activePopover === 'grid') closePopover();
 
       // Grid Dots color: only for dot grid
       document.getElementById('inactiveColorCtrl').classList.toggle('hidden', !isDot);
@@ -3034,14 +3128,72 @@
       e.target.value = ''; // reset so same file can be loaded again
     });
 
-    // ── Collapsible sections ──
-    document.querySelectorAll('[data-section]').forEach(function(sec) {
-      var header = sec.querySelector('.section__header');
-      if (!header) return;
-      header.addEventListener('click', function() {
-        sec.classList.toggle('collapsed');
-        header.setAttribute('aria-expanded', String(!sec.classList.contains('collapsed')));
+    // ── Popover toggle logic ──
+    var activePopover = null;
+    function openPopover(id) {
+      closePopover();
+      var pop = document.getElementById('popover-' + id);
+      if (!pop) return;
+      pop.classList.add('open');
+      activePopover = id;
+      // Highlight toolbar button
+      document.querySelectorAll('.toolbar__btn[data-popover]').forEach(function(b) {
+        b.classList.toggle('active', b.dataset.popover === id);
       });
+    }
+    function closePopover() {
+      if (activePopover) {
+        var pop = document.getElementById('popover-' + activePopover);
+        if (pop) pop.classList.remove('open');
+      }
+      activePopover = null;
+      document.querySelectorAll('.toolbar__btn').forEach(function(b) {
+        b.classList.remove('active');
+      });
+    }
+    // Wire toolbar buttons
+    document.querySelectorAll('.toolbar__btn[data-popover]').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (activePopover === btn.dataset.popover) {
+          closePopover();
+        } else {
+          openPopover(btn.dataset.popover);
+        }
+      });
+    });
+    // Click outside to close
+    document.addEventListener('click', function(e) {
+      if (!activePopover) return;
+      var pop = document.getElementById('popover-' + activePopover);
+      var toolbar = document.getElementById('toolbar');
+      if (pop && !pop.contains(e.target) && !toolbar.contains(e.target)) {
+        closePopover();
+      }
+    });
+    // Stop popover clicks from closing
+    document.querySelectorAll('.popover').forEach(function(pop) {
+      pop.addEventListener('click', function(e) { e.stopPropagation(); });
+    });
+
+    // Cmd+\ to toggle toolbar visibility
+    var toolbarHidden = false;
+    document.addEventListener('keydown', function(e) {
+      if ((e.metaKey || e.ctrlKey) && e.key === '\\') {
+        e.preventDefault();
+        toolbarHidden = !toolbarHidden;
+        var toolbar = document.getElementById('toolbar');
+        if (toolbarHidden) {
+          closePopover();
+          toolbar.style.transform = 'translateX(-50%) translateY(20px)';
+          toolbar.style.opacity = '0';
+          toolbar.style.pointerEvents = 'none';
+        } else {
+          toolbar.style.transform = 'translateX(-50%) translateY(0)';
+          toolbar.style.opacity = '1';
+          toolbar.style.pointerEvents = 'auto';
+        }
+      }
     });
 
     // ── Segmented control sliding indicators ──
