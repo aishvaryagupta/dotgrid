@@ -36,6 +36,10 @@
       color: var(--text);
       -webkit-font-smoothing: antialiased;
     }
+    body > *:not(#bgGrid) {
+      position: relative;
+      z-index: 1;
+    }
 
     /* ── Nav ── */
     .nav {
@@ -134,6 +138,8 @@
       font-family: "Space Grotesk", system-ui, sans-serif;
       font-size: clamp(2.5rem, 6vw, 4.5rem);
       font-weight: 700;
+      text-align: center;
+      width: 100%;
       line-height: 1.15;
     }
     .hero__sub {
@@ -205,7 +211,7 @@
       gap: 24px;
     }
     .demo-card {
-      background: var(--surface);
+      background: var(--bg);
       border: 1px solid var(--border);
       border-radius: 12px;
       overflow: hidden;
@@ -366,7 +372,7 @@
       gap: 20px;
     }
     .feature-card {
-      background: var(--surface);
+      background: var(--bg);
       border: 1px solid var(--border);
       border-radius: 12px;
       padding: 28px 24px;
@@ -522,6 +528,85 @@
   </style>
 </head>
 <body>
+
+  <!-- ── Ambient Dot Grid Background ── -->
+  <canvas id="bgGrid" style="position:fixed;inset:0;z-index:0;pointer-events:none;"></canvas>
+  <script>
+  (function() {
+    var c = document.getElementById('bgGrid');
+    var ctx = c.getContext('2d');
+    var dpr = window.devicePixelRatio || 1;
+    var spacing = 5;
+    var cols, rows, dots;
+    var globalAlpha = 1;
+
+    var baseGrid = document.createElement('canvas');
+    var baseCtx = baseGrid.getContext('2d');
+    var dotRadius = spacing * 0.36;
+
+    function buildBaseGrid() {
+      baseGrid.width = window.innerWidth * dpr;
+      baseGrid.height = window.innerHeight * dpr;
+      baseCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      baseCtx.fillStyle = 'rgba(255, 93, 34, 0.06)';
+      for (var r = 0; r < rows; r++) {
+        for (var col = 0; col < cols; col++) {
+          baseCtx.beginPath();
+          baseCtx.arc(col * spacing + spacing / 2, r * spacing + spacing / 2, dotRadius, 0, Math.PI * 2);
+          baseCtx.fill();
+        }
+      }
+    }
+
+    function resize() {
+      c.width = window.innerWidth * dpr;
+      c.height = window.innerHeight * dpr;
+      c.style.width = window.innerWidth + 'px';
+      c.style.height = window.innerHeight + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      cols = Math.ceil(window.innerWidth / spacing) + 1;
+      rows = Math.ceil(window.innerHeight / spacing) + 1;
+      dots = [];
+      for (var i = 0; i < cols * rows; i++) dots.push(0);
+      buildBaseGrid();
+    }
+
+    // Scroll-based fade: visible at hero (top) and footer (bottom), fades in the middle
+    function updateScrollFade() {
+      var scrollY = window.scrollY || window.pageYOffset;
+      var docHeight = document.documentElement.scrollHeight;
+      var viewH = window.innerHeight;
+      var scrollMax = docHeight - viewH;
+      if (scrollMax <= 0) { globalAlpha = 1; return; }
+
+      var t = scrollY / scrollMax; // 0 = top, 1 = bottom
+      // Fade curve: 1 at top, drops to 0 in middle (~0.2-0.7), rises back to 1 at bottom
+      if (t < 0.15) {
+        globalAlpha = 1; // full at hero
+      } else if (t < 0.3) {
+        globalAlpha = 1 - ((t - 0.15) / 0.15); // fade out
+      } else if (t < 0.7) {
+        globalAlpha = 0; // hidden in middle
+      } else if (t < 0.85) {
+        globalAlpha = (t - 0.7) / 0.15; // fade in toward footer
+      } else {
+        globalAlpha = 1; // full at footer
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+      ctx.drawImage(baseGrid, 0, 0, window.innerWidth, window.innerHeight);
+      requestAnimationFrame(draw);
+    }
+
+    resize();
+    updateScrollFade();
+    window.addEventListener('resize', resize);
+    window.addEventListener('scroll', updateScrollFade, { passive: true });
+    draw();
+  })();
+  </script>
 
   <!-- ── Nav ── -->
   <nav class="nav">

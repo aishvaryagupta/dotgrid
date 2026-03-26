@@ -511,11 +511,13 @@
 
     this._sizeCanvas(this.logicalW, this.logicalH);
 
-    // Build grids for each word
+    // Build grids for each word (center-aligned within the canvas)
     var yOffset = (this.logicalH - fontSize) / 2;
     this.grids = {};
     this.words.forEach(function (w) {
-      var img = rasterize(w, font, self.logicalW, self.logicalH, 0, yOffset);
+      var wordWidth = measureText(w, font);
+      var xOffset = (self.logicalW - wordWidth) / 2;
+      var img = rasterize(w, font, self.logicalW, self.logicalH, xOffset, yOffset);
       self.grids[w] = imageDataToGrid(img, self.cols, self.rows, self.dotSpacing, self.logicalW);
     });
 
