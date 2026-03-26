@@ -600,6 +600,54 @@
       font-weight: 500;
     }
 
+    /* ── Layout Toggle ── */
+    .layout-toggle {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      padding: 3px;
+      background: var(--toolbar-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--r-lg);
+      z-index: 101;
+    }
+    .layout-toggle__btn {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      border-radius: calc(var(--r-lg) - 2px);
+      color: var(--text-tertiary);
+      cursor: pointer;
+      transition: background 150ms var(--ease-out), color 150ms var(--ease-out);
+    }
+    .layout-toggle__btn:hover { color: var(--text-primary); }
+    .layout-toggle__btn.active {
+      background: var(--accent-muted);
+      color: var(--accent);
+    }
+    .layout-toggle__btn svg { width: 16px; height: 16px; }
+
+    /* ── Layout: Sidebar Mode ── */
+    body.layout-sidebar { display: flex; }
+    body.layout-sidebar .preview { flex: 1; width: auto; }
+    body.layout-sidebar #sidebar { display: block; }
+    body.layout-sidebar .toolbar,
+    body.layout-sidebar .popover { display: none !important; }
+    body.layout-sidebar .layout-toggle { right: 356px; }
+    body.layout-sidebar .layout-toggle__btn.active { background: var(--accent-muted); color: var(--accent); }
+
+    /* ── Layout: Toolbar Mode (default) ── */
+    body.layout-toolbar #sidebar { display: none; }
+
     /* Hidden */
     .hidden { display: none !important; }
 
@@ -635,68 +683,18 @@
     .panel *:focus:not(:focus-visible) { outline: none; }
 
     /* ── Mobile Gate ── */
-    .mobile-gate {
-      display: none;
-      position: fixed;
-      inset: 0;
-      z-index: 9999;
-      background: #0a0a0b;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 32px;
-      gap: 20px;
-    }
-    .mobile-gate__icon {
-      font-size: 48px;
-      margin-bottom: 8px;
-    }
-    .mobile-gate__title {
-      font-family: "Space Grotesk", system-ui, sans-serif;
-      font-size: 1.5rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-    }
-    .mobile-gate__desc {
-      font-size: 0.95rem;
-      color: rgba(245, 245, 247, 0.5);
-      max-width: 320px;
-      line-height: 1.6;
-    }
-    .mobile-gate__btn {
-      display: inline-block;
-      margin-top: 12px;
-      padding: 14px 28px;
-      background: #ff5d22;
-      color: #fff;
-      font-family: inherit;
-      font-size: 15px;
-      font-weight: 600;
-      border: none;
-      border-radius: 8px;
-      text-decoration: none;
-      transition: background 150ms;
-    }
-    .mobile-gate__btn:hover { background: #e04e17; }
+    /* Mobile: hide layout toggle, keep toolbar compact */
     @media (max-width: 768px) {
-      .mobile-gate { display: flex; }
+      .layout-toggle { display: none; }
+      .toolbar { bottom: 12px; padding: 4px; }
+      .toolbar__btn { width: 36px; height: 36px; }
+      .toolbar__btn svg { width: 16px; height: 16px; }
+      .popover { width: calc(100vw - 24px); left: 12px; transform: scale(0.96) translateY(4px); transform-origin: bottom center; }
+      .popover.open { transform: scale(1) translateY(0); }
     }
   </style>
 </head>
 <body>
-
-  <!-- Mobile Gate -->
-  <div class="mobile-gate">
-    <div class="mobile-gate__icon">
-      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ff5d22" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
-      </svg>
-    </div>
-    <h2 class="mobile-gate__title">Best on desktop</h2>
-    <p class="mobile-gate__desc">The playground is built for larger screens with a side panel and canvas preview. Open this page on a desktop or laptop for the full experience.</p>
-    <a href="/" class="mobile-gate__btn">Back to Home</a>
-  </div>
 
   <!-- Preview -->
   <div class="preview">
@@ -707,70 +705,103 @@
     <pre class="ascii-preview hidden" id="asciiPre"></pre>
   </div>
 
+  <!-- Sidebar Shell (empty sections, filled by switchLayout) -->
+  <div class="panel" id="sidebar">
+    <div class="panel__header">
+      <div class="panel__title">Dot Matrix</div>
+      <div class="panel__subtitle">Playground</div>
+    </div>
+    <div class="section" data-section data-target="text"><button class="section__header" aria-expanded="true"><span class="section__label">Text</span><svg class="section__chevron" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="section__body"></div></div>
+    <div class="section" data-section data-target="theme"><button class="section__header" aria-expanded="true"><span class="section__label">Presets</span><svg class="section__chevron" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="section__body"></div></div>
+    <div class="section" data-section data-target="type"><button class="section__header" aria-expanded="true"><span class="section__label">Typography</span><svg class="section__chevron" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="section__body"></div></div>
+    <div class="section" id="gridSection" data-section data-target="grid"><button class="section__header" aria-expanded="true"><span class="section__label">Grid</span><svg class="section__chevron" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="section__body"></div></div>
+    <div class="section" data-section data-target="color"><button class="section__header" aria-expanded="true"><span class="section__label">Colors</span><svg class="section__chevron" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="section__body"></div></div>
+    <div class="section" data-section data-target="anim"><button class="section__header" aria-expanded="true"><span class="section__label">Animation</span><svg class="section__chevron" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="section__body"></div></div>
+    <div class="section" data-section data-target="export"><button class="section__header" aria-expanded="true"><span class="section__label">Export</span><svg class="section__chevron" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 3.5L5 6.5L7.5 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="section__body"></div></div>
+    <div style="padding: 0 var(--sp-5) var(--sp-5);"><button class="ctrl__btn" id="sidebarResetAll" style="width:100%; margin-top:var(--sp-2); opacity:0.6;">Reset All</button></div>
+  </div>
+
+  <!-- Layout Toggle -->
+  <div class="layout-toggle" id="layoutToggle">
+    <button class="layout-toggle__btn" id="layoutBtnSidebar" data-layout="sidebar" title="Sidebar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="14" y1="3" x2="14" y2="21"/></svg>
+    </button>
+    <button class="layout-toggle__btn active" id="layoutBtnToolbar" data-layout="toolbar" title="Toolbar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="16" x2="21" y2="16"/></svg>
+    </button>
+  </div>
+
   <!-- Popovers -->
   <div class="popover" id="popover-text">
     <div class="popover__title">Text &amp; Mode</div>
-    <div class="ctrl">
-      <textarea class="ctrl__textarea" id="textInput" rows="2" placeholder="Type anything... (new line for multi-line)">ship</textarea>
-    </div>
-    <div class="ctrl" style="margin-top: var(--sp-3);">
-      <div class="ctrl__top"><span class="ctrl__name">Render Mode</span></div>
-      <div class="ctrl__render-row">
-        <button class="ctrl__toggle-btn active" data-render="dot">Dot Grid</button>
-        <button class="ctrl__toggle-btn" data-render="block">Block</button>
-        <button class="ctrl__toggle-btn" data-render="line">Line Art</button>
+    <div data-controls="text">
+      <div class="ctrl">
+        <textarea class="ctrl__textarea" id="textInput" rows="2" placeholder="Type anything... (new line for multi-line)">ship</textarea>
+      </div>
+      <div class="ctrl" style="margin-top: var(--sp-3);">
+        <div class="ctrl__top"><span class="ctrl__name">Render Mode</span></div>
+        <div class="ctrl__render-row">
+          <button class="ctrl__toggle-btn active" data-render="dot">Dot Grid</button>
+          <button class="ctrl__toggle-btn" data-render="block">Block</button>
+          <button class="ctrl__toggle-btn" data-render="line">Line Art</button>
+        </div>
       </div>
     </div>
   </div>
 
   <div class="popover" id="popover-theme">
     <div class="popover__title">Theme</div>
-    <div class="ctrl__toggle-row" id="bgToggle"></div>
-    <div class="presets" id="presets"></div>
+    <div data-controls="theme">
+      <div class="ctrl__toggle-row" id="bgToggle"></div>
+      <div class="presets" id="presets"></div>
+    </div>
   </div>
 
   <div class="popover" id="popover-type">
     <div class="popover__title">Typography</div>
-    <div id="fontControls">
-      <div class="ctrl">
-        <div class="ctrl__top"><span class="ctrl__name">Family</span></div>
-        <select class="ctrl__select" id="fontFamily">
-          <option value='"Space Grotesk"' selected>Space Grotesk</option>
-          <option value='"Inter"'>Inter</option>
-          <option value='"JetBrains Mono"'>JetBrains Mono</option>
-          <option value='"Chakra Petch"'>Chakra Petch</option>
-          <option value='"Outfit"'>Outfit</option>
-          <option value='"Syne"'>Syne</option>
-        </select>
-      </div>
-      <div class="ctrl">
-        <div class="ctrl__top">
-          <span class="ctrl__name">Weight</span>
-          <span class="ctrl__val" id="weightVal">700</span>
+    <div data-controls="type">
+      <div id="fontControls">
+        <div class="ctrl">
+          <div class="ctrl__top"><span class="ctrl__name">Family</span></div>
+          <select class="ctrl__select" id="fontFamily">
+            <option value='"Space Grotesk"' selected>Space Grotesk</option>
+            <option value='"Inter"'>Inter</option>
+            <option value='"JetBrains Mono"'>JetBrains Mono</option>
+            <option value='"Chakra Petch"'>Chakra Petch</option>
+            <option value='"Outfit"'>Outfit</option>
+            <option value='"Syne"'>Syne</option>
+          </select>
         </div>
-        <input class="ctrl__slider" id="weightSlider" type="range" min="400" max="900" step="100" value="700" />
-      </div>
-      <div class="ctrl">
-        <div class="ctrl__top">
-          <span class="ctrl__name">Size</span>
-          <span class="ctrl__val" id="fontSizeVal">72</span>
+        <div class="ctrl">
+          <div class="ctrl__top">
+            <span class="ctrl__name">Weight</span>
+            <span class="ctrl__val" id="weightVal">700</span>
+          </div>
+          <input class="ctrl__slider" id="weightSlider" type="range" min="400" max="900" step="100" value="700" />
         </div>
-        <input class="ctrl__slider" id="fontSizeSlider" type="range" min="24" max="160" step="1" value="72" />
-      </div>
-    </div>
-    <div id="displayControls" class="hidden">
-      <div class="ctrl">
-        <div class="ctrl__top">
-          <span class="ctrl__name">Text Size</span>
-          <span class="ctrl__val" id="asciiSizeVal">24</span>
+        <div class="ctrl">
+          <div class="ctrl__top">
+            <span class="ctrl__name">Size</span>
+            <span class="ctrl__val" id="fontSizeVal">72</span>
+          </div>
+          <input class="ctrl__slider" id="fontSizeSlider" type="range" min="24" max="160" step="1" value="72" />
         </div>
-        <input class="ctrl__slider" id="asciiSizeSlider" type="range" min="8" max="64" step="1" value="24" />
+      </div>
+      <div id="displayControls" class="hidden">
+        <div class="ctrl">
+          <div class="ctrl__top">
+            <span class="ctrl__name">Text Size</span>
+            <span class="ctrl__val" id="asciiSizeVal">24</span>
+          </div>
+          <input class="ctrl__slider" id="asciiSizeSlider" type="range" min="8" max="64" step="1" value="24" />
+        </div>
       </div>
     </div>
   </div>
 
   <div class="popover" id="popover-grid">
     <div class="popover__title">Grid</div>
+    <div data-controls="grid">
     <div class="ctrl">
       <div class="ctrl__top">
         <span class="ctrl__name">Dot Spacing</span>
@@ -811,10 +842,12 @@
       </div>
       <input class="ctrl__slider" id="lineGapSlider" type="range" min="0" max="0.6" step="0.02" value="0.25" />
     </div>
+    </div>
   </div>
 
   <div class="popover" id="popover-color">
     <div class="popover__title">Colors</div>
+    <div data-controls="color">
     <div class="ctrl">
       <div class="ctrl__top"><span class="ctrl__name">Active Dots</span></div>
       <div class="ctrl__color-row">
@@ -841,10 +874,12 @@
         <input class="ctrl__hex" id="bgHex" type="text" value="#0a0a0b" />
       </div>
     </div>
+    </div>
   </div>
 
   <div class="popover" id="popover-anim">
     <div class="popover__title">Animation</div>
+    <div data-controls="anim">
     <div class="ctrl">
       <div class="ctrl__top"><span class="ctrl__name">Mode</span></div>
       <div class="ctrl__toggle-row">
@@ -911,10 +946,12 @@
         <button class="ctrl__btn" id="resetBtn">Reset</button>
       </div>
     </div>
+    </div>
   </div>
 
   <div class="popover" id="popover-export">
     <div class="popover__title">Export</div>
+    <div data-controls="export">
     <div class="ctrl">
       <div class="ctrl__btn-row">
         <button class="ctrl__btn ctrl__btn--primary" id="exportHtml">Copy HTML</button>
@@ -932,6 +969,7 @@
         <button class="ctrl__btn" id="exportLoad">Load Config</button>
       </div>
       <input type="file" id="configFileInput" accept=".json" style="display: none;" />
+    </div>
     </div>
   </div>
 
@@ -2685,6 +2723,8 @@
       // Grid toolbar button + popover: only for dot grid
       var gridBtn = document.getElementById('gridToolbarBtn');
       if (gridBtn) gridBtn.style.display = isDot ? '' : 'none';
+      var gridSec = document.getElementById('gridSection');
+      if (gridSec) gridSec.style.display = isDot ? '' : 'none';
       // Close grid popover if switching away from dot
       if (!isDot && activePopover === 'grid') closePopover();
 
@@ -3177,27 +3217,41 @@
     });
 
     // Cmd+\ to toggle toolbar visibility
-    var toolbarHidden = false;
+    var chromeHidden = false;
     document.addEventListener('keydown', function(e) {
       if ((e.metaKey || e.ctrlKey) && e.key === '\\') {
         e.preventDefault();
-        toolbarHidden = !toolbarHidden;
-        var toolbar = document.getElementById('toolbar');
-        if (toolbarHidden) {
-          closePopover();
-          toolbar.style.transform = 'translateX(-50%) translateY(20px)';
-          toolbar.style.opacity = '0';
-          toolbar.style.pointerEvents = 'none';
+        chromeHidden = !chromeHidden;
+        var isSidebar = document.body.classList.contains('layout-sidebar');
+        if (isSidebar) {
+          var sidebar = document.getElementById('sidebar');
+          sidebar.style.display = chromeHidden ? 'none' : '';
         } else {
-          toolbar.style.transform = 'translateX(-50%) translateY(0)';
-          toolbar.style.opacity = '1';
-          toolbar.style.pointerEvents = 'auto';
+          var toolbar = document.getElementById('toolbar');
+          if (chromeHidden) {
+            closePopover();
+            toolbar.style.transform = 'translateX(-50%) translateY(20px)';
+            toolbar.style.opacity = '0';
+            toolbar.style.pointerEvents = 'none';
+          } else {
+            toolbar.style.transform = 'translateX(-50%) translateY(0)';
+            toolbar.style.opacity = '1';
+            toolbar.style.pointerEvents = 'auto';
+          }
         }
+        // Hide/show toggle button and re-render
+        document.getElementById('layoutToggle').style.display = chromeHidden ? 'none' : '';
+        render();
       }
     });
 
     // ── Segmented control sliding indicators ──
     function initSegmentedControl(container) {
+      // Idempotent: remove old indicator and observer
+      var existing = container.querySelector('.ctrl__toggle-indicator');
+      if (existing) existing.remove();
+      if (container._segObserver) container._segObserver.disconnect();
+
       var indicator = document.createElement('div');
       indicator.className = 'ctrl__toggle-indicator';
       container.style.position = 'relative';
@@ -3212,6 +3266,7 @@
       }
 
       var observer = new MutationObserver(updateIndicator);
+      container._segObserver = observer;
       container.querySelectorAll('.ctrl__toggle-btn').forEach(function(btn) {
         observer.observe(btn, { attributes: true, attributeFilter: ['class'] });
       });
@@ -3272,11 +3327,10 @@
       document.querySelectorAll('.ctrl__toggle-row, .ctrl__render-row').forEach(initSegmentedControl);
     }
 
-    document.getElementById('resetAllBtn').addEventListener('click', function() {
+    function resetAll() {
       Object.keys(DEFAULTS).forEach(function(k) { S[k] = DEFAULTS[k]; });
       currentBgMode = 0;
       currentColorPreset = 0;
-      // Reset bg toggle
       bgToggleEl.querySelectorAll('.ctrl__toggle-btn').forEach(function(b, i) {
         b.classList.toggle('active', i === 0);
       });
@@ -3286,19 +3340,119 @@
       syncUIFromState();
       updatePanelVisibility();
       render();
+    }
+    document.getElementById('resetAllBtn').addEventListener('click', resetAll);
+    document.getElementById('sidebarResetAll').addEventListener('click', resetAll);
+
+    // ── Section collapse (for sidebar) ──
+    document.querySelectorAll('[data-section]').forEach(function(sec) {
+      var header = sec.querySelector('.section__header');
+      if (!header) return;
+      header.addEventListener('click', function() {
+        sec.classList.toggle('collapsed');
+        header.setAttribute('aria-expanded', String(!sec.classList.contains('collapsed')));
+      });
+    });
+
+    // ── Layout switcher ──
+    function reinitControls() {
+      document.querySelectorAll('.ctrl__toggle-row, .ctrl__render-row').forEach(initSegmentedControl);
+      document.querySelectorAll('.ctrl__slider').forEach(updateSliderFill);
+    }
+
+    function switchLayout(target) {
+      var current = document.body.classList.contains('layout-sidebar') ? 'sidebar' : 'toolbar';
+      if (target === current) return;
+
+      // Close popover if switching away from toolbar
+      if (current === 'toolbar') closePopover();
+
+      // Move each control group to its target container
+      document.querySelectorAll('[data-controls]').forEach(function(group) {
+        var name = group.dataset.controls;
+        var dest;
+        if (target === 'sidebar') {
+          var section = document.querySelector('.section[data-target="' + name + '"]');
+          dest = section ? section.querySelector('.section__body') : null;
+        } else {
+          dest = document.getElementById('popover-' + name);
+        }
+        if (dest) dest.appendChild(group);
+      });
+
+      // Toggle body class
+      document.body.classList.remove('layout-sidebar', 'layout-toolbar');
+      document.body.classList.add('layout-' + target);
+
+      // Update toggle buttons
+      document.getElementById('layoutBtnSidebar').classList.toggle('active', target === 'sidebar');
+      document.getElementById('layoutBtnToolbar').classList.toggle('active', target === 'toolbar');
+
+      // Re-init controls after DOM move
+      requestAnimationFrame(reinitControls);
+
+      // Persist and re-render
+      updatePanelVisibility();
+      render();
+    }
+
+    // ── Layout: auto-responsive + manual override ──
+    var LAYOUT_BREAKPOINT = 1200;
+    var userOverride = false; // true once user manually clicks a layout button
+
+    function autoLayout() {
+      return window.innerWidth > LAYOUT_BREAKPOINT ? 'sidebar' : 'toolbar';
+    }
+
+    function currentLayout() {
+      return document.body.classList.contains('layout-sidebar') ? 'sidebar' : 'toolbar';
+    }
+
+    // Manual toggle — sets override and persists
+    document.querySelectorAll('.layout-toggle__btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        userOverride = true;
+        try { localStorage.setItem('dotgrid-layout', btn.dataset.layout); } catch(e) {}
+        switchLayout(btn.dataset.layout);
+      });
     });
 
     // ── Init ──
+    // Check localStorage for manual override, otherwise auto-detect
+    var savedLayout = null;
+    try { savedLayout = localStorage.getItem('dotgrid-layout'); } catch(e) {}
+    var initialLayout;
+    if (savedLayout) {
+      initialLayout = savedLayout;
+      userOverride = true;
+    } else {
+      initialLayout = autoLayout();
+    }
+    document.body.classList.add('layout-' + initialLayout);
+    document.getElementById('layoutBtnSidebar').classList.toggle('active', initialLayout === 'sidebar');
+    document.getElementById('layoutBtnToolbar').classList.toggle('active', initialLayout === 'toolbar');
+    if (initialLayout === 'sidebar') {
+      document.querySelectorAll('[data-controls]').forEach(function(group) {
+        var name = group.dataset.controls;
+        var section = document.querySelector('.section[data-target="' + name + '"]');
+        var dest = section ? section.querySelector('.section__body') : null;
+        if (dest) dest.appendChild(group);
+      });
+    }
+
     setAccentColor(S.activeColor);
     document.fonts.ready.then(function() {
       updatePanelVisibility();
       render();
-      // Re-fill sliders after init in case values changed
       document.querySelectorAll('.ctrl__slider').forEach(updateSliderFill);
     });
     window.addEventListener('resize', function() {
+      // Auto-switch layout on resize if user hasn't manually overridden
+      if (!userOverride) {
+        var ideal = autoLayout();
+        if (ideal !== currentLayout()) switchLayout(ideal);
+      }
       render();
-      // Re-position segmented indicators on resize
       document.querySelectorAll('.ctrl__toggle-row, .ctrl__render-row').forEach(function(c) {
         var ind = c.querySelector('.ctrl__toggle-indicator');
         var btn = c.querySelector('.ctrl__toggle-btn.active');
