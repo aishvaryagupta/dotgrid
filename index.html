@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DotGrid — Animated Dot Matrix Text for the Web</title>
-  <meta name="description" content="Zero-dependency JavaScript library for rendering animated dot-matrix text on canvas. Static, cycling, and headline modes. Drop in a script tag and go." />
+  <meta name="description" content="Zero-dependency JavaScript library for animated dot-matrix text on canvas. Three animation modes, three render styles, 10+ animation effects, and a visual playground. One script tag." />
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -36,7 +36,7 @@
       color: var(--text);
       -webkit-font-smoothing: antialiased;
     }
-    body > *:not(#bgGrid) {
+    body > *:not(#bgGrid):not(.nav) {
       position: relative;
       z-index: 1;
     }
@@ -48,13 +48,21 @@
       left: 0;
       right: 0;
       z-index: 100;
-      display: flex;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
       align-items: center;
-      justify-content: space-between;
       padding: 16px 32px;
-      background: rgba(10, 10, 11, 0.85);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border);
+      background: transparent;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      border-bottom: 1px solid transparent;
+      transition: background 0.3s, border-color 0.3s, backdrop-filter 0.3s, -webkit-backdrop-filter 0.3s;
+    }
+    .nav--scrolled {
+      background: rgba(10, 10, 11, 0.6);
+      backdrop-filter: blur(16px) saturate(1.4);
+      -webkit-backdrop-filter: blur(16px) saturate(1.4);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     }
     .nav__logo {
       font-family: "JetBrains Mono", monospace;
@@ -63,7 +71,7 @@
       color: var(--orange);
       text-decoration: none;
       letter-spacing: 0.04em;
-      flex-shrink: 0;
+      justify-self: start;
     }
     .nav__toggle {
       display: none;
@@ -71,7 +79,6 @@
       border: none;
       cursor: pointer;
       padding: 4px;
-      flex-shrink: 0;
     }
     .nav__toggle span {
       display: block;
@@ -84,6 +91,7 @@
     .nav__links {
       display: flex;
       align-items: center;
+      justify-content: center;
       gap: 28px;
       list-style: none;
     }
@@ -100,8 +108,10 @@
       color: var(--text) !important;
       background: var(--orange);
       padding: 8px 18px;
-      border-radius: 6px;
+      border-radius: 0;
       transition: background 150ms;
+      text-decoration: none;
+      justify-self: end;
     }
     .nav__cta:hover { background: var(--orange-hover); }
 
@@ -123,7 +133,7 @@
       color: var(--orange);
       border: 1px solid rgba(255, 93, 34, 0.3);
       padding: 6px 16px;
-      border-radius: 100px;
+      border-radius: 0;
       margin-bottom: 32px;
     }
     .hero__headline {
@@ -164,7 +174,7 @@
       font-family: inherit;
       font-size: 15px;
       font-weight: 600;
-      border-radius: 8px;
+      border-radius: 0;
       text-decoration: none;
       cursor: pointer;
       transition: all 150ms;
@@ -322,7 +332,7 @@
       background: none;
       border: 1px solid var(--border);
       padding: 4px 12px;
-      border-radius: 4px;
+      border-radius: 0;
       cursor: pointer;
       transition: all 150ms;
     }
@@ -392,6 +402,61 @@
       line-height: 1.6;
     }
 
+    /* ── Playground Showcase ── */
+    .playground-showcase {
+      padding: 80px 24px 100px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .playground-showcase__label {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--orange);
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    .playground-showcase__title {
+      font-family: "Space Grotesk", system-ui, sans-serif;
+      font-size: clamp(1.75rem, 4vw, 2.5rem);
+      font-weight: 700;
+      text-align: center;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+    }
+    .playground-showcase__sub {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 1rem;
+      margin-bottom: 48px;
+    }
+    .showcase__grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    .showcase-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 20px;
+    }
+    .showcase-card__icon {
+      color: var(--orange);
+      margin-bottom: 14px;
+    }
+    .showcase-card__title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .showcase-card__desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
     /* ── CTA ── */
     .final-cta {
       padding: 100px 24px;
@@ -412,14 +477,39 @@
     }
 
     /* ── Footer ── */
-    .footer {
-      padding: 24px 32px;
-      border-top: 1px solid var(--border);
+    .footer-wrap {
+      position: relative;
+      overflow: hidden;
+    }
+    .footer-watermark {
+      position: absolute;
+      inset: 0;
       display: flex;
       align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 0;
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0%, transparent 35%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,1) 70%);
+      mask-image: linear-gradient(to bottom, transparent 0%, transparent 35%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,1) 70%);
+    }
+    .footer-watermark canvas {
+      display: block;
+    }
+    .final-cta {
+      position: relative;
+      z-index: 1;
+      border-top: 1px solid var(--border);
+    }
+    .footer {
+      position: relative;
+      z-index: 1;
+      padding: 32px 32px 24px;
+      display: flex;
+      align-items: flex-end;
       justify-content: space-between;
       font-size: 12px;
       color: var(--text-dim);
+      min-height: 360px;
     }
     .footer a {
       color: var(--text-dim);
@@ -430,8 +520,9 @@
 
     /* ── Responsive ── */
     @media (max-width: 768px) {
-      .nav { padding: 14px 20px; }
+      .nav { padding: 14px 20px; display: flex; flex-wrap: wrap; justify-content: space-between; }
       .nav__toggle { display: block; }
+      .nav__cta { order: 1; }
       .nav__links {
         display: none;
         position: absolute;
@@ -454,12 +545,6 @@
         border-bottom: 1px solid var(--border);
       }
       .nav__links li:last-child a { border-bottom: none; }
-      .nav__links .nav__cta {
-        display: block;
-        text-align: center;
-        margin-top: 8px;
-        padding: 12px 18px;
-      }
 
       .hero { padding: 100px 20px 60px; min-height: auto; min-height: 100svh; }
       .hero__badge { font-size: 10px; padding: 5px 12px; margin-bottom: 24px; }
@@ -506,10 +591,16 @@
       .features__grid { grid-template-columns: 1fr; gap: 12px; }
       .feature-card { padding: 20px; }
 
+      .playground-showcase { padding: 60px 16px 40px; }
+      .playground-showcase__title { margin-bottom: 8px; }
+      .playground-showcase__sub { margin-bottom: 32px; }
+      .showcase__grid { grid-template-columns: 1fr; gap: 12px; }
+      .showcase-card { padding: 20px; }
+
       .final-cta { padding: 60px 20px; }
       .final-cta .btn { width: 100%; justify-content: center; }
 
-      .footer { flex-direction: column; gap: 8px; text-align: center; padding: 20px; }
+      .footer { flex-direction: column; gap: 8px; text-align: center; padding: 32px 20px 20px; min-height: 200px; }
     }
 
     @media (max-width: 480px) {
@@ -524,6 +615,10 @@
       .feature-card__icon { font-size: 18px; margin-bottom: 10px; }
       .feature-card__title { font-size: 13px; }
       .feature-card__desc { font-size: 12px; }
+      .showcase__grid { grid-template-columns: 1fr 1fr; }
+      .showcase-card { padding: 16px; }
+      .showcase-card__title { font-size: 13px; }
+      .showcase-card__desc { font-size: 12px; }
     }
   </style>
 </head>
@@ -618,8 +713,9 @@
       <li><a href="#demos">Demos</a></li>
       <li><a href="#code">Code</a></li>
       <li><a href="#features">Features</a></li>
-      <li><a href="playground.html" class="nav__cta">Playground</a></li>
+      <li><a href="#playground">Playground</a></li>
     </ul>
+    <a href="playground.html" class="nav__cta">Try It</a>
   </nav>
 
   <!-- ── Hero ── -->
@@ -673,7 +769,7 @@
         </div>
         <div class="demo-card__info">
           <span class="demo-card__mode">Cycle</span>
-          <span class="demo-card__desc">Inline canvas that crossfades between words</span>
+          <span class="demo-card__desc">Inline canvas with 5 transition styles — crossfade, scramble, slide, dissolve, pixel flip</span>
         </div>
       </div>
 
@@ -692,7 +788,7 @@
         </div>
         <div class="demo-card__info">
           <span class="demo-card__mode">Static</span>
-          <span class="demo-card__desc">Scatter-to-form animation triggered on scroll</span>
+          <span class="demo-card__desc">10 load-in animations — scatter, rain, typewriter, wave, spiral, and more</span>
         </div>
       </div>
 
@@ -711,7 +807,7 @@
         </div>
         <div class="demo-card__info">
           <span class="demo-card__mode">Headline</span>
-          <span class="demo-card__desc">Full multi-line canvas with static + cycling segments</span>
+          <span class="demo-card__desc">Multi-line canvas mixing static text with cycling segments and idle effects</span>
         </div>
       </div>
     </div>
@@ -780,7 +876,7 @@ instance.destroy();</pre>
       <div class="feature-card">
         <div class="feature-card__icon">0kb</div>
         <h3 class="feature-card__title">Zero Dependencies</h3>
-        <p class="feature-card__desc">Pure vanilla JavaScript. No React, no build step, no node_modules. One 33KB script tag.</p>
+        <p class="feature-card__desc">Pure vanilla JavaScript. No React, no build step, no node_modules. One 35KB script tag.</p>
       </div>
 
       <div class="feature-card">
@@ -790,47 +886,121 @@ instance.destroy();</pre>
       </div>
 
       <div class="feature-card">
-        <div class="feature-card__icon">&amp;</div>
-        <h3 class="feature-card__title">3 Modes</h3>
-        <p class="feature-card__desc">Static (scroll-triggered), Cycle (word rotation), and Headline (multi-line with mixed segments).</p>
+        <div class="feature-card__icon">3&times;3</div>
+        <h3 class="feature-card__title">3 Modes, 3 Render Styles</h3>
+        <p class="feature-card__desc">Static, Cycle, and Headline animation modes. Render as dot grid, ASCII block, or line art.</p>
       </div>
 
       <div class="feature-card">
         <div class="feature-card__icon">60fps</div>
         <h3 class="feature-card__title">Canvas Rendered</h3>
-        <p class="feature-card__desc">Hardware-accelerated canvas rendering. Smooth animations at 60fps with no DOM thrashing.</p>
+        <p class="feature-card__desc">Hardware-accelerated canvas at 60fps. 6 dot shapes, adjustable spacing, radius, and alignment.</p>
       </div>
 
       <div class="feature-card">
-        <div class="feature-card__icon">Aa</div>
-        <h3 class="feature-card__title">Any Font</h3>
-        <p class="feature-card__desc">Uses your page's computed font styles. Works with Google Fonts, system fonts, or custom typefaces.</p>
+        <div class="feature-card__icon">&loz;</div>
+        <h3 class="feature-card__title">Rich Animation Library</h3>
+        <p class="feature-card__desc">10 load-in styles, 5 transition effects, 3 idle animations. Scatter, rain, typewriter, wave, spiral, and more.</p>
       </div>
 
       <div class="feature-card">
-        <div class="feature-card__icon">UMD</div>
-        <h3 class="feature-card__title">Universal Module</h3>
-        <p class="feature-card__desc">Works everywhere. Script tag, CommonJS, AMD. Drop it into any project without config.</p>
+        <div class="feature-card__icon">&half;</div>
+        <h3 class="feature-card__title">Themes &amp; Presets</h3>
+        <p class="feature-card__desc">Dark and light modes with 20 color presets. Full control over dot, grid, and background colors.</p>
       </div>
     </div>
   </section>
 
-  <!-- ── Final CTA ── -->
-  <section class="final-cta">
-    <h2 class="final-cta__title">Ready to build?</h2>
-    <p class="final-cta__sub">Open the playground and design your animation visually.</p>
-    <a href="playground.html" class="btn btn--primary">Open Playground</a>
+  <!-- ── Playground Showcase ── -->
+  <section class="playground-showcase" id="playground">
+    <div class="playground-showcase__label">Interactive Playground</div>
+    <h2 class="playground-showcase__title">Design visually, export instantly</h2>
+    <p class="playground-showcase__sub">Tweak every parameter in real time. When it looks right, grab the code.</p>
+
+    <div class="showcase__grid">
+      <div class="showcase-card">
+        <div class="showcase-card__icon">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="11" y="2" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="11" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="11" y="11" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/></svg>
+        </div>
+        <h3 class="showcase-card__title">Render Modes</h3>
+        <p class="showcase-card__desc">Switch between dot grid, ASCII block, and line art rendering in one click.</p>
+      </div>
+
+      <div class="showcase-card">
+        <div class="showcase-card__icon">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M10 3v2M10 15v2M3 10h2M15 10h2M5.05 5.05l1.41 1.41M13.54 13.54l1.41 1.41M5.05 14.95l1.41-1.41M13.54 6.46l1.41-1.41" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+        <h3 class="showcase-card__title">6 Dot Shapes</h3>
+        <p class="showcase-card__desc">Circle, square, diamond, triangle, star, and cross. Each changes the grid's character.</p>
+      </div>
+
+      <div class="showcase-card">
+        <div class="showcase-card__icon">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 10h14M10 3v14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5"/></svg>
+        </div>
+        <h3 class="showcase-card__title">20 Color Presets</h3>
+        <p class="showcase-card__desc">10 dark and 10 light theme presets. One click to restyle the entire canvas.</p>
+      </div>
+
+      <div class="showcase-card">
+        <div class="showcase-card__icon">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 7h12M4 10h8M4 13h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><rect x="2" y="3" width="16" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/></svg>
+        </div>
+        <h3 class="showcase-card__title">Export Anything</h3>
+        <p class="showcase-card__desc">Copy HTML, copy JS, download PNG, or save/load your full config as JSON.</p>
+      </div>
+
+      <div class="showcase-card">
+        <div class="showcase-card__icon">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 16V8l4-4h8v12a2 2 0 01-2 2H6a2 2 0 01-2-2z" stroke="currentColor" stroke-width="1.5"/><path d="M4 8h4V4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 12h4M8 14.5h2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+        <h3 class="showcase-card__title">Full Typography</h3>
+        <p class="showcase-card__desc">6 font families, weight from 400-900, size from 24-160px. Fine-tune every detail.</p>
+      </div>
+
+      <div class="showcase-card">
+        <div class="showcase-card__icon">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3" y="12" width="14" height="5" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M6 14.5h1M9 14.5h2M13 14.5h1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><rect x="5" y="3" width="10" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/></svg>
+        </div>
+        <h3 class="showcase-card__title">Responsive Toolbar</h3>
+        <p class="showcase-card__desc">Auto-switches between sidebar and floating toolbar. Works on desktop, tablet, and mobile.</p>
+      </div>
+    </div>
+
   </section>
 
-  <!-- ── Footer ── -->
-  <footer class="footer">
-    <span>DotGrid &mdash; Animated dot-matrix text for the web</span>
-    <a href="playground.html">Playground</a>
-  </footer>
+  <!-- ── Final CTA + Footer (shared watermark) ── -->
+  <div class="footer-wrap">
+    <div class="footer-watermark">
+      <canvas id="footerDotGrid"></canvas>
+    </div>
+    <section class="final-cta">
+      <h2 class="final-cta__title">Ready to build?</h2>
+      <p class="final-cta__sub">One script tag. Infinite combinations. Start creating.</p>
+      <a href="playground.html" class="btn btn--primary">Open Playground</a>
+    </section>
+    <footer class="footer">
+      <span>DotGrid &mdash; Animated dot-matrix text for the web</span>
+      <a href="playground.html">Playground</a>
+    </footer>
+  </div>
 
   <!-- Dot Matrix JS -->
   <script src="dot-matrix-text.js"></script>
   <script>
+    // Nav glassmorphism on scroll
+    (function() {
+      var nav = document.querySelector('.nav');
+      var scrolled = false;
+      window.addEventListener('scroll', function() {
+        var shouldScroll = window.scrollY > 20;
+        if (shouldScroll !== scrolled) {
+          scrolled = shouldScroll;
+          nav.classList.toggle('nav--scrolled', scrolled);
+        }
+      }, { passive: true });
+    })();
+
     function copyCode(btn) {
       var pre = btn.closest('.code-block').querySelector('pre');
       var text = pre.textContent;
@@ -839,6 +1009,266 @@ instance.destroy();</pre>
         setTimeout(function () { btn.textContent = 'Copy'; }, 1500);
       });
     }
+
+    // Footer dot-matrix watermark — glitch transition + shimmer
+    (function() {
+      var canvas = document.getElementById('footerDotGrid');
+      var ctx = canvas.getContext('2d');
+      var dpr = window.devicePixelRatio || 1;
+      var wrap = canvas.closest('.footer-wrap');
+      var spacing = 5;
+      var dotR = spacing * 0.38;
+      var text = 'DOTGRID';
+      var w = 0, h = 0, cols = 0, rows = 0, imgData = null;
+
+      // Glow
+      var glowDots = [];
+      var NUM_GLOW = 120;
+
+      // Shape state
+      var shapeIndex = 0;
+      var SHAPE_HOLD = 3500;
+      var SHAPE_TRANSITION = 800;
+      var shapeTimer = 0;
+      var transitioning = false;
+      var shapeMorph = 0;
+      var lastTime = 0;
+
+      // Glitch state — regenerated each transition
+      var dotThresholds = null;   // per-dot random threshold (0-1) for staggered swap
+      var glitchRows = null;      // per-row horizontal displacement
+      var flickerDots = null;     // set of dot indices that flicker during transition
+
+      // Shape draw functions
+      function drawCircle(r) {
+        ctx.beginPath();
+        ctx.arc(0, 0, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      function drawSquare(r) {
+        var s = r * 1.6;
+        ctx.fillRect(-s / 2, -s / 2, s, s);
+      }
+      function drawDiamond(r) {
+        var s = r * 1.3;
+        ctx.beginPath();
+        ctx.moveTo(0, -s); ctx.lineTo(s, 0); ctx.lineTo(0, s); ctx.lineTo(-s, 0);
+        ctx.closePath(); ctx.fill();
+      }
+      function drawTriangle(r) {
+        var s = r * 1.4;
+        ctx.beginPath();
+        ctx.moveTo(0, -s); ctx.lineTo(s, s * 0.7); ctx.lineTo(-s, s * 0.7);
+        ctx.closePath(); ctx.fill();
+      }
+      function drawStar(r) {
+        var spikes = 5, outer = r * 1.3, inner = r * 0.55;
+        ctx.beginPath();
+        for (var i = 0; i < spikes * 2; i++) {
+          var rad = (i * Math.PI / spikes) - Math.PI / 2;
+          var dist = i % 2 === 0 ? outer : inner;
+          if (i === 0) ctx.moveTo(Math.cos(rad) * dist, Math.sin(rad) * dist);
+          else ctx.lineTo(Math.cos(rad) * dist, Math.sin(rad) * dist);
+        }
+        ctx.closePath(); ctx.fill();
+      }
+      function drawCross(r) {
+        var arm = r * 1.4, thick = r * 0.65;
+        ctx.fillRect(-thick / 2, -arm, thick, arm * 2);
+        ctx.fillRect(-arm, -thick / 2, arm * 2, thick);
+      }
+
+      var shapes = [drawCircle, drawSquare, drawDiamond, drawTriangle, drawStar, drawCross];
+
+      function initGlowDots() {
+        glowDots = [];
+        var total = cols * rows;
+        for (var i = 0; i < NUM_GLOW; i++) {
+          glowDots.push({
+            index: Math.floor(Math.random() * total),
+            phase: Math.random() * Math.PI * 2,
+            speed: 1.5 + Math.random() * 2.5
+          });
+        }
+      }
+
+      function initGlitch() {
+        var total = cols * rows;
+        // Each dot gets a random threshold — dots swap to new shape when morph passes their threshold
+        dotThresholds = new Float32Array(total);
+        for (var i = 0; i < total; i++) {
+          // Cluster thresholds: bias toward a few "waves" using quantized randomness
+          dotThresholds[i] = Math.random() * 0.7 + Math.random() * 0.3;
+        }
+        // Per-row horizontal glitch displacement (only some rows, in bands)
+        glitchRows = new Float32Array(rows);
+        var bandStart = Math.floor(Math.random() * rows * 0.6);
+        var bandCount = 3 + Math.floor(Math.random() * 5);
+        for (var r = 0; r < rows; r++) {
+          if (r >= bandStart && r < bandStart + bandCount) {
+            glitchRows[r] = (Math.random() - 0.5) * spacing * 4;
+          } else if (Math.random() < 0.04) {
+            // Occasional stray displaced row
+            glitchRows[r] = (Math.random() - 0.5) * spacing * 6;
+          } else {
+            glitchRows[r] = 0;
+          }
+        }
+        // Flicker dots: ~5% of dots briefly vanish/flash during transition
+        flickerDots = {};
+        var flickerCount = Math.floor(total * 0.05);
+        for (var f = 0; f < flickerCount; f++) {
+          flickerDots[Math.floor(Math.random() * total)] = Math.random(); // phase
+        }
+      }
+
+      function resize() {
+        w = wrap.offsetWidth;
+        h = wrap.offsetHeight;
+        canvas.width = w * dpr;
+        canvas.height = h * dpr;
+        canvas.style.width = w + 'px';
+        canvas.style.height = h + 'px';
+        cols = Math.ceil(w / spacing) + 1;
+        rows = Math.ceil(h / spacing) + 1;
+
+        var fontSize = Math.min(w * 0.18, 240);
+        var offscreen = document.createElement('canvas');
+        offscreen.width = w;
+        offscreen.height = h;
+        var offCtx = offscreen.getContext('2d');
+        offCtx.font = '800 ' + fontSize + 'px "Space Grotesk", system-ui, sans-serif';
+        offCtx.textAlign = 'center';
+        offCtx.textBaseline = 'middle';
+        offCtx.fillStyle = '#fff';
+        offCtx.fillText(text, w / 2, h * 0.72);
+        imgData = offCtx.getImageData(0, 0, w, h).data;
+        initGlowDots();
+      }
+
+      function draw(timestamp) {
+        if (!lastTime) lastTime = timestamp;
+        var dt = timestamp - lastTime;
+        lastTime = timestamp;
+
+        // Shape cycling
+        shapeTimer += dt;
+        if (!transitioning && shapeTimer >= SHAPE_HOLD) {
+          transitioning = true;
+          shapeTimer = 0;
+          shapeMorph = 0;
+          initGlitch(); // new random glitch pattern each transition
+        }
+        if (transitioning) {
+          shapeMorph = Math.min(shapeTimer / SHAPE_TRANSITION, 1);
+          if (shapeMorph >= 1) {
+            transitioning = false;
+            shapeTimer = 0;
+            shapeIndex = (shapeIndex + 1) % shapes.length;
+            shapeMorph = 0;
+          }
+        }
+
+        var time = timestamp / 1000;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, w, h);
+
+        // Glow lookup
+        var glowMap = {};
+        for (var g = 0; g < glowDots.length; g++) {
+          var gd = glowDots[g];
+          var glow = (Math.sin(time * gd.speed + gd.phase) + 1) / 2;
+          glowMap[gd.index] = glow;
+          if (Math.random() < 0.0003) {
+            gd.index = Math.floor(Math.random() * cols * rows);
+          }
+        }
+
+        var currentShape = shapes[shapeIndex];
+        var nextShape = shapes[(shapeIndex + 1) % shapes.length];
+
+        // During transition: row displacement intensity (ramps up then down)
+        var displaceIntensity = 0;
+        if (transitioning) {
+          // Peak displacement in the middle of the transition
+          displaceIntensity = Math.sin(shapeMorph * Math.PI);
+        }
+
+        for (var r = 0; r < rows; r++) {
+          // Row-level horizontal glitch offset
+          var rowOffset = 0;
+          if (transitioning && glitchRows) {
+            rowOffset = glitchRows[r] * displaceIntensity;
+          }
+
+          for (var c = 0; c < cols; c++) {
+            var cx = c * spacing + spacing / 2 + rowOffset;
+            var cy = r * spacing + spacing / 2;
+
+            // Sample from original (non-displaced) position
+            var sampleX = Math.floor(c * spacing + spacing / 2);
+            var sampleY = Math.floor(cy);
+            if (sampleX >= w || sampleY >= h || sampleX < 0) continue;
+            var idx = (sampleY * w + sampleX) * 4;
+            var isActive = imgData[idx + 3] > 128;
+
+            var dotIdx = r * cols + c;
+            var glowVal = glowMap[dotIdx];
+            var baseAlpha = isActive ? 0.14 : 0.03;
+            var alpha = baseAlpha;
+
+            if (glowVal !== undefined && isActive) {
+              alpha = baseAlpha + glowVal * 0.35;
+            }
+
+            // Flicker: some dots briefly vanish or flash bright during transition
+            if (transitioning && flickerDots[dotIdx] !== undefined) {
+              var flickerPhase = flickerDots[dotIdx];
+              var flickerWave = Math.sin((shapeMorph + flickerPhase) * Math.PI * 6);
+              if (flickerWave < -0.3) {
+                // Skip drawing — dot vanishes
+                continue;
+              } else if (flickerWave > 0.7 && isActive) {
+                // Bright flash
+                alpha = Math.min(alpha + 0.3, 0.55);
+              }
+            }
+
+            // Pick shape: glitch swap based on per-dot threshold
+            var useNext = false;
+            if (transitioning && dotThresholds) {
+              useNext = shapeMorph > dotThresholds[dotIdx];
+            }
+
+            ctx.fillStyle = 'rgba(255, 93, 34, ' + alpha + ')';
+            ctx.save();
+            ctx.translate(cx, cy);
+
+            if (useNext) {
+              nextShape(dotR);
+            } else {
+              currentShape(dotR);
+            }
+
+            ctx.restore();
+          }
+        }
+
+        requestAnimationFrame(draw);
+      }
+
+      function start() {
+        resize();
+        requestAnimationFrame(draw);
+      }
+
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(start);
+      } else {
+        window.addEventListener('load', start);
+      }
+      window.addEventListener('resize', resize);
+    })();
   </script>
 
 </body>
