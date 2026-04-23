@@ -972,6 +972,701 @@
   };
 
   // ---------------------------------------------------------------------------
+  // PATTERN MODE
+  //
+  // Algorithmic dot-grid patterns (bricks, ripple, rain, waveforms, noise,
+  // radial, numerals). Inspired by the dot-matrix system on buildanything.so:
+  // each dot has a phase-offset `delay` driving a global 3-second triangle-wave
+  // pulse, which produces coordinated wave motion instead of random shimmer.
+  //
+  // Usage:
+  //   <div data-dot-matrix="pattern"
+  //        data-variant="bricks"
+  //        data-grid="background"></div>
+  //
+  // Variants are registered in `patternVariants` and can be extended at runtime
+  // via `DotMatrix.patterns.register(name, fn)`.
+  // ---------------------------------------------------------------------------
+
+  /** Seeded linear-congruential generator. Deterministic 0..1 stream per seed. */
+  function lcgRng(seed) {
+    var e = seed || 1;
+    return function () { return ((e = (16807 * e) % 0x7fffffff) - 1) / 0x7ffffffe; };
+  }
+
+  /** Discrete intensity ladder (0..4 → 0..1). */
+  var INTENSITY = { 0: 0, 1: 0.2, 2: 0.45, 3: 0.7, 4: 1 };
+
+  /** Build a Dot record for the variant output list. */
+  function makeDot(col, row, intensity, delay, grid) {
+    var opacity = INTENSITY[intensity] || 0;
+    return {
+      col: col,
+      row: row,
+      x: grid.padX + col * 10,          // laid out on a 10-unit grid
+      y: grid.padY + row * 10,
+      opacity: opacity,
+      minOpacity: Math.round(0.45 * opacity * 1e3) / 1e3,
+      delay: Math.round(delay * 1e3) / 1e3,
+      lift: 0
+    };
+  }
+
+  /** Asymmetric Gaussian-ish bump. */
+  function gaussBump(t, center, sigmaL, sigmaR) {
+    return Math.exp(-Math.pow(t - center, 2) / (t < center ? sigmaL : sigmaR));
+  }
+
+  /** Pre-roll an RNG into an array of `n` floats. */
+  function prerollNoise(seed, n) {
+    var rng = lcgRng(seed);
+    var a = new Array(n);
+    for (var i = 0; i < n; i++) a[i] = rng();
+    return a;
+  }
+
+  /** Phase-offset triangle-wave pulse: 0.12 ramp up, 0.18 ramp down, 0.70 rest. */
+  function pulseOpacity(dot, tSec) {
+    var phase = ((((tSec - dot.delay) % 3) + 3) % 3) / 3;
+    if (phase < 0.12) return dot.minOpacity + (dot.opacity - dot.minOpacity) * (phase / 0.12);
+    if (phase < 0.30) return dot.opacity + (dot.minOpacity - dot.opacity) * ((phase - 0.12) / 0.18);
+    return dot.minOpacity;
+  }
+
+  /** Same phase, returns the "lift" bounce (0..lift) at peak. */
+  function pulseLift(dot, tSec) {
+    if (!dot.lift) return 0;
+    var phase = ((((tSec - dot.delay) % 3) + 3) % 3) / 3;
+    if (phase < 0.12) return dot.lift * (phase / 0.12);
+    if (phase < 0.30) return dot.lift * (1 - (phase - 0.12) / 0.18);
+    return 0;
+  }
+
+  // ---- Grid presets ---------------------------------------------------------
+  var patternGrids = {
+    graphic:    { cols: 48,  rows: 30, padX: 1,   padY: 2.5 },
+    background: { cols: 128, rows: 60, padX: 2,   padY: 2   },
+    badge:      { cols: 19,  rows: 19, padX: 2,   padY: 2   },
+    card:       { cols: 35,  rows: 19, padX: 2,   padY: 2   }
+  };
+
+  // ---- Variant library ------------------------------------------------------
+  var patternVariants = {
+    /**
+     * bricks — brick-wall silhouette with height profile sin(x*π), every 5th column
+     * is a mortar gap. Each dot has a small `lift` so the peak pulse makes it bounce,
+     * and `delay` is col-dependent so waves travel along the top edge.
+     */
+    bricks: function (grid) {
+      var rng = lcgRng(101);
+      var noise = prerollNoise(101, grid.cols);
+      var dots = [];
+      var heights = [];
+      for (var c = 0; c < grid.cols; c++) {
+        var base = Math.floor(0.4 * grid.rows) +
+          Math.floor(Math.floor(0.27 * grid.rows) *
+            Math.sin((c / (grid.cols - 1)) * Math.PI));
+        heights[c] = Math.max(4, Math.min(grid.rows, base + Math.floor(5 * rng()) - 2));
+      }
+      for (var r = 0; r < grid.rows; r++) {
+        var invR = grid.rows - 1 - r;
+        var shift = r % 2 === 0 ? 0 : 3; // staggered brick offsets
+        for (var c2 = 0; c2 < grid.cols; c2++) {
+          if (r >= heights[c2] || (c2 + shift) % 5 >= 4) continue;
+          var h = r / Math.max(heights[c2] - 1, 1);
+          var level = h < 0.3 ? 4 : h < 0.55 ? 3 : h < 0.8 ? 2 : 1;
+          if (rng() > 0.95) level = Math.max(1, level - 1);
+          var delay = 3 * noise[c2] + 0.6 * (r / Math.max(heights[c2] - 1, 1));
+          var dot = makeDot(c2, invR, level, delay, grid);
+          dot.lift = 1;
+          dots.push(dot);
+        }
+      }
+      return dots;
+    },
+
+    /**
+     * ripple — concentric circles emanating from below-center. `delay ∝ distance`,
+     * so pulses radiate outward.
+     */
+    ripple: function (grid) {
+      var dots = [];
+      var cx = (grid.cols - 1) / 2;
+      var cy = grid.rows + Math.floor(0.15 * grid.rows);
+      var maxD = Math.sqrt(cx * cx + cy * cy);
+      for (var r = 0; r < grid.rows; r++) {
+        for (var c = 0; c < grid.cols; c++) {
+          var dx = c - cx, dy = r - cy;
+          var d = Math.sqrt(dx * dx + dy * dy) / maxD;
+          if (d > 0.9) continue;
+          var u = 1 - d;
+          var level = u > 0.75 ? 4 : u > 0.55 ? 3 : u > 0.35 ? 2 : u > 0.15 ? 1 : 0;
+          if (!level) continue;
+          dots.push(makeDot(c, r, level, 3 * d * 0.6, grid));
+        }
+      }
+      return dots;
+    },
+
+    /**
+     * rain — sparse vertical streaks. 40% of columns get a primary streak, a
+     * second pass adds short sparkle streaks on top.
+     */
+    rain: function (grid) {
+      var rng = lcgRng(801);
+      var dots = [];
+      for (var c = 0; c < grid.cols; c++) {
+        if (rng() > 0.4) continue;
+        var len    = 3 + Math.floor(rng() * (0.6 * grid.rows));
+        var start  = Math.floor(rng() * (grid.rows - len));
+        var offset = 3 * rng();
+        var span   = 0.8 + 1.5 * rng();
+        for (var i = 0; i < len; i++) {
+          var r = start + i;
+          if (r >= grid.rows) break;
+          var h = i / len;
+          var level = h < 0.1 ? 4 : h < 0.3 ? 3 : h < 0.6 ? 2 : 1;
+          dots.push(makeDot(c, r, level, offset + (i / len) * span, grid));
+        }
+      }
+      for (var c2 = 0; c2 < grid.cols; c2++) {
+        if (rng() > 0.2) continue;
+        var sLen = 2 + Math.floor(5 * rng());
+        var sStart = Math.floor(rng() * grid.rows);
+        var sOff   = 3 * rng();
+        for (var j = 0; j < sLen; j++) {
+          var rr = sStart + j;
+          if (rr >= grid.rows) break;
+          var lvl = j === 0 ? 3 : j === 1 ? 2 : 1;
+          dots.push(makeDot(c2, rr, lvl, sOff + 0.15 * j, grid));
+        }
+      }
+      return dots;
+    },
+
+    /**
+     * waveform-a — audio-waveform silhouette using summed sines. `m()` below fills
+     * a column from the bottom up to `h` rows, with the top 15% at peak intensity.
+     */
+    'waveform-a': function (grid) {
+      var rng = lcgRng(901);
+      var noise = prerollNoise(901, grid.cols);
+      var dots = [];
+      for (var c = 0; c < grid.cols; c++) {
+        var t = c / (grid.cols - 1);
+        var h = Math.floor(
+          2 + Math.max(0,
+            (Math.sin(t * Math.PI) +
+             0.4 * Math.sin(t * Math.PI * 3 + 0.5) +
+             0.2 * Math.sin(t * Math.PI * 7 + 1.2)) / 1.6
+          ) * (0.75 * grid.rows) + 2 * rng()
+        );
+        fillColumn(dots, grid, c, h, noise);
+      }
+      return dots;
+    },
+
+    /**
+     * noise — fractal value-noise field, 3 octaves, thresholded into the
+     * 5-level intensity ladder. Produces organic cloud-like texture.
+     */
+    noise: function (grid) {
+      var dots = [];
+      var noise = prerollNoise(1001, grid.cols);
+      for (var r = 0; r < grid.rows; r++) {
+        for (var c = 0; c < grid.cols; c++) {
+          var n = fractalNoise(0.12 * c, 0.12 * r, 3);
+          var level = n > 0.65 ? 4 : n > 0.5 ? 3 : n > 0.35 ? 2 : n > 0.22 ? 1 : 0;
+          if (!level) continue;
+          dots.push(makeDot(c, r, level, 3 * noise[c] + (r / grid.rows) * 0.6, grid));
+        }
+      }
+      return dots;
+    },
+
+    /**
+     * radial — sunburst of spokes emanating from bottom-center. Creates a
+     * searchlight/fan effect.
+     */
+    radial: function (grid) {
+      var rng = lcgRng(701);
+      var dots = [];
+      var cx = (grid.cols - 1) / 2;
+      var cy = grid.rows + 5;
+      var step = (2 * Math.PI) / 24;
+      for (var r = 0; r < grid.rows; r++) {
+        for (var c = 0; c < grid.cols; c++) {
+          var dx = c - cx, dy = cy - r;
+          var ang = Math.atan2(dx, dy);
+          var dist = Math.sqrt(dx * dx + dy * dy);
+          var nearest = Math.round(ang / step) * step;
+          if (Math.abs(ang - nearest) > 0.06) continue;
+          var w = dist / Math.sqrt(cx * cx + cy * cy);
+          var level = w < 0.3 ? 4 : w < 0.5 ? 3 : w < 0.75 ? 2 : 1;
+          if (w > 0.6 && 0.3 > rng()) continue;
+          var delay = 0.6 * w + (ang / Math.PI + 1) * 0.5;
+          dots.push(makeDot(c, r, level, delay, grid));
+        }
+      }
+      return dots;
+    },
+
+    /**
+     * rings — concentric square rings from the grid center, every 3rd ring
+     * skipped so bands are visible. Delay grows with ring radius for an
+     * outward pulse sweep.
+     */
+    rings: function (grid) {
+      var dots = [];
+      var noise = prerollNoise(601, grid.cols);
+      var cx = (grid.cols - 1) / 2;
+      var cy = (grid.rows - 1) / 2;
+      var maxD = Math.max(cx, cy);
+      for (var r = 0; r < grid.rows; r++) {
+        for (var c = 0; c < grid.cols; c++) {
+          var d = Math.max(Math.abs(c - cx), Math.abs(r - cy));
+          if (Math.floor(d) % 3 === 1) continue; // gaps between rings
+          var n = d / maxD;
+          var level = n < 0.2 ? 4 : n < 0.4 ? 3 : n < 0.7 ? 2 : 1;
+          var delay = (d / maxD) * 3 * 0.8 + 0.3 * noise[c];
+          dots.push(makeDot(c, r, level, delay, grid));
+        }
+      }
+      return dots;
+    },
+
+    /**
+     * network — random "nodes" scattered on the grid, connected to 2 nearest
+     * neighbours via rectilinear edges (like a chip trace). Plus random sparks.
+     */
+    network: function (grid) {
+      var rng = lcgRng(1101);
+      var dots = [];
+      var noise = prerollNoise(1101, grid.cols);
+      var mask = [];
+      for (var r = 0; r < grid.rows; r++) {
+        mask[r] = [];
+        for (var c = 0; c < grid.cols; c++) mask[r][c] = 0;
+      }
+
+      // Scatter nodes (and their 4-neighbours).
+      var nodeCount = Math.round((18 * (grid.cols * grid.rows)) / 1440);
+      var nodes = [];
+      for (var n = 0; n < nodeCount; n++) {
+        var nc = 2 + Math.floor(rng() * (grid.cols - 4));
+        var nr = 2 + Math.floor(rng() * (grid.rows - 4));
+        var cross = [[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1]];
+        for (var k = 0; k < cross.length; k++) {
+          var rr = nr + cross[k][0];
+          var cc = nc + cross[k][1];
+          if (rr >= 0 && rr < grid.rows && cc >= 0 && cc < grid.cols) mask[rr][cc] = 4;
+        }
+        nodes.push({ c: nc, r: nr });
+      }
+
+      // Connect each node to its two nearest neighbours via L-shaped traces.
+      for (var i = 0; i < nodes.length; i++) {
+        var a = nodes[i];
+        var neighbours = nodes
+          .map(function (n2, j) { return { j: j, d: Math.abs(a.c - n2.c) + Math.abs(a.r - n2.r) }; })
+          .filter(function (x) { return x.j !== i; })
+          .sort(function (p, q) { return p.d - q.d; });
+        for (var m = 0; m < Math.min(2, neighbours.length); m++) {
+          var b = nodes[neighbours[m].j];
+          var midC = a.c + Math.round((b.c - a.c) * 0.5);
+          var cmin, cmax;
+          cmin = Math.min(a.c, midC); cmax = Math.max(a.c, midC);
+          for (var cx2 = cmin; cx2 <= cmax; cx2++) if (mask[a.r][cx2] === 0) mask[a.r][cx2] = 2;
+          cmin = Math.min(a.r, b.r); cmax = Math.max(a.r, b.r);
+          for (var ry = cmin; ry <= cmax; ry++) if (mask[ry][midC] === 0) mask[ry][midC] = 2;
+          cmin = Math.min(midC, b.c); cmax = Math.max(midC, b.c);
+          for (var cx3 = cmin; cx3 <= cmax; cx3++) if (mask[b.r][cx3] === 0) mask[b.r][cx3] = 2;
+        }
+      }
+
+      for (var r2 = 0; r2 < grid.rows; r2++) {
+        for (var c2 = 0; c2 < grid.cols; c2++) {
+          if (mask[r2][c2] !== 0) {
+            var delay = 3 * noise[c2] + 0.6 * ((grid.rows - 1 - r2) / grid.rows);
+            dots.push(makeDot(c2, r2, mask[r2][c2], delay, grid));
+          }
+        }
+      }
+
+      // Sparse random sparks in empty cells.
+      var sparks = Math.round((30 * (grid.cols * grid.rows)) / 1440);
+      for (var s = 0; s < sparks; s++) {
+        var sc = Math.floor(rng() * grid.cols);
+        var sr = Math.floor(rng() * grid.rows);
+        if (mask[sr][sc] === 0) dots.push(makeDot(sc, sr, 1, 3 * noise[sc] + 0.6 * rng(), grid));
+      }
+      return dots;
+    },
+
+    /** waveform-b — smoothed multi-frequency wave. */
+    'waveform-b': function (grid) {
+      var rng = lcgRng(902);
+      var noise = prerollNoise(902, grid.cols);
+      var heights = [];
+      for (var c = 0; c < grid.cols; c++) {
+        var t = c / (grid.cols - 1);
+        var v = Math.max(0,
+          0.7 * Math.sin(t * Math.PI) +
+          0.3 * Math.sin(23.7 * t + 1.3) +
+          0.15 * Math.sin(47.1 * t + 0.7) +
+          (rng() - 0.5) * 0.15);
+        heights[c] = Math.floor(2 + v * (0.85 * grid.rows));
+      }
+      // 1-2-1 smoothing kernel
+      for (var c2 = 1; c2 < grid.cols - 1; c2++) {
+        heights[c2] = Math.round((heights[c2 - 1] + 2 * heights[c2] + heights[c2 + 1]) / 4);
+      }
+      var dots = [];
+      for (var c3 = 0; c3 < grid.cols; c3++) fillColumn(dots, grid, c3, heights[c3], noise);
+      return dots;
+    },
+
+    /** waveform-d — saw-tooth-ramp audio. */
+    'waveform-d': function (grid) {
+      var rng = lcgRng(904);
+      var noise = prerollNoise(904, grid.cols);
+      var dots = [];
+      var segLen = grid.cols / 6;
+      for (var c = 0; c < grid.cols; c++) {
+        var h = Math.floor(
+          2 + ((c % segLen) / segLen) *
+            (0.6 * Math.sin((c / (grid.cols - 1)) * Math.PI) + 0.4) *
+            (0.8 * grid.rows) + 2 * rng()
+        );
+        fillColumn(dots, grid, c, h, noise);
+      }
+      return dots;
+    },
+
+    /** waveform-e — double gaussian spikes at 17% and 83%. */
+    'waveform-e': function (grid) {
+      var rng = lcgRng(905);
+      var noise = prerollNoise(905, grid.cols);
+      var dots = [];
+      for (var c = 0; c < grid.cols; c++) {
+        var t = c / (grid.cols - 1);
+        var env = Math.max(0,
+          Math.exp(-Math.pow(t - 0.17, 2) / 0.012) +
+          Math.exp(-Math.pow(t - 0.83, 2) / 0.012) +
+          0.15 * Math.sin(t * Math.PI));
+        var h = Math.floor(2 + env * (0.85 * grid.rows) + 2 * rng());
+        fillColumn(dots, grid, c, h, noise);
+      }
+      return dots;
+    },
+
+    /** waveform-g — a single bell curve centred on the grid. */
+    'waveform-g': function (grid) {
+      var rng = lcgRng(907);
+      var noise = prerollNoise(907, grid.cols);
+      var dots = [];
+      for (var c = 0; c < grid.cols; c++) {
+        var h = Math.floor(
+          2 + Math.exp(-Math.pow(c / (grid.cols - 1) - 0.5, 2) / 0.04) *
+            (0.9 * grid.rows) + 1.5 * rng()
+        );
+        fillColumn(dots, grid, c, h, noise);
+      }
+      return dots;
+    },
+
+    /** waveform-h — interference pattern: fast sine × slow envelope. */
+    'waveform-h': function (grid) {
+      var rng = lcgRng(908);
+      var noise = prerollNoise(908, grid.cols);
+      var dots = [];
+      for (var c = 0; c < grid.cols; c++) {
+        var t = c / (grid.cols - 1);
+        var h = Math.floor(
+          2 + Math.abs(Math.sin(t * Math.PI * 4)) * Math.sin(t * Math.PI) *
+            (0.8 * grid.rows) + 2 * rng()
+        );
+        fillColumn(dots, grid, c, h, noise);
+      }
+      return dots;
+    },
+
+    /** waveform-i — asymmetric double spikes with distance-based delay. */
+    'waveform-i': function (grid) {
+      var rng = lcgRng(909);
+      var dots = [];
+      for (var c = 0; c < grid.cols; c++) {
+        var t = c / (grid.cols - 1);
+        var env = Math.max(0,
+          gaussBump(t, 0.17, 0.045, 0.012) +
+          gaussBump(t, 0.83, 0.012, 0.045) +
+          0.15 * Math.sin(t * Math.PI));
+        var h = Math.floor(2 + env * (0.85 * grid.rows) + 2 * rng());
+        var delay = 1.8 * Math.min(Math.abs(t - 0.17), Math.abs(t - 0.83)) * 3;
+        for (var i = 0; i < Math.min(h, grid.rows); i++) {
+          var invR = grid.rows - 1 - i;
+          var hh = i / Math.max(h, 1);
+          var level = hh < 0.15 ? 4 : hh < 0.4 ? 3 : hh < 0.7 ? 2 : 1;
+          dots.push(makeDot(c, invR, level, delay + (i / Math.max(h, 1)) * 0.4, grid));
+        }
+      }
+      return dots;
+    },
+
+    /** numeral-1..4 — 5×9 pixel-font digits, each pixel expanded to a 3×2 block. */
+    'numeral-1': function (grid) { return numeralGlyph(grid, NUMERAL_GLYPHS[1], 1001); },
+    'numeral-2': function (grid) { return numeralGlyph(grid, NUMERAL_GLYPHS[2], 1002); },
+    'numeral-3': function (grid) { return numeralGlyph(grid, NUMERAL_GLYPHS[3], 1003); },
+    'numeral-4': function (grid) { return numeralGlyph(grid, NUMERAL_GLYPHS[4], 1004); },
+
+    /**
+     * text — rasterises an arbitrary string into a dot grid. Reads `data-text`
+     * (or `opts.text`). Uses `data-font-family` / `data-font-weight` for the
+     * rasterisation font. Wait-for-fonts before calling this variant.
+     */
+    text: function (grid, inst) {
+      var str = (inst && inst.text) || 'HELLO';
+      var fontFamily = (inst && inst.fontFamily) || '"VT323", ui-monospace, monospace';
+      var fontWeight = (inst && inst.fontWeight) || '700';
+
+      // Rasterise text to an offscreen canvas sized to the grid aspect.
+      // Use 10× grid dims as the sample resolution so each cell samples ~1 pixel.
+      var sampleW = grid.cols * 10;
+      var sampleH = grid.rows * 10;
+      var off = document.createElement('canvas');
+      off.width  = sampleW;
+      off.height = sampleH;
+      var octx = off.getContext('2d');
+      // Fit text to ~96% of the sample width.
+      var testSize = 200;
+      octx.font = fontWeight + ' ' + testSize + 'px ' + fontFamily;
+      var textW = octx.measureText(str).width || 1;
+      var fitSize = Math.floor((sampleW * 0.96 / textW) * testSize);
+      // Clamp vertical too — don't exceed ~90% of sample height.
+      fitSize = Math.min(fitSize, Math.floor(sampleH * 0.9));
+      octx.font = fontWeight + ' ' + fitSize + 'px ' + fontFamily;
+      octx.fillStyle = '#fff';
+      octx.textAlign    = 'center';
+      octx.textBaseline = 'middle';
+      octx.fillText(str, sampleW / 2, sampleH / 2);
+      var data = octx.getImageData(0, 0, sampleW, sampleH).data;
+
+      var noise = prerollNoise(1337, grid.cols);
+      var dots = [];
+      for (var r = 0; r < grid.rows; r++) {
+        for (var c = 0; c < grid.cols; c++) {
+          // Sample the center of each cell.
+          var sx = Math.floor(c * 10 + 5);
+          var sy = Math.floor(r * 10 + 5);
+          var alpha = data[(sy * sampleW + sx) * 4 + 3];
+          if (alpha <= 128) continue;
+          // Vary level slightly based on alpha + noise for organic feel.
+          var base = alpha > 220 ? 4 : alpha > 180 ? 3 : alpha > 140 ? 2 : 1;
+          var delay = 3 * noise[c] + (r / grid.rows) * 0.6;
+          dots.push(makeDot(c, r, base, delay, grid));
+        }
+      }
+      return dots;
+    }
+  };
+
+  /** 5×9 pixel-font bitmaps for digits 1-4 (copied from buildanything's renderer). */
+  var NUMERAL_GLYPHS = {
+    1: ['..X..', '.XX..', '..X..', '..X..', '..X..', '..X..', '..X..', '..X..', '.XXX.'],
+    2: ['.XXX.', 'X...X', '....X', '...X.', '..X..', '.X...', 'X....', 'X...X', '.XXX.'],
+    3: ['.XXX.', 'X...X', '....X', '....X', '.XXX.', '....X', '....X', 'X...X', '.XXX.'],
+    4: ['...X.', '..XX.', '.X.X.', 'X..X.', 'XXXXX', '...X.', '...X.', '...X.', '...X.']
+  };
+
+  /** Tile a 5×9 glyph as a 3×2 pixel-block expansion centred in the grid. */
+  function numeralGlyph(grid, glyph, seed) {
+    var rng = lcgRng(seed);
+    var dots = [];
+    // Glyph footprint: 5 cols × 9 rows expanded to 15 × 18 cells.
+    var startCol = Math.floor((grid.cols - 15) / 2);
+    var startRow = Math.floor((grid.rows - 18) / 2);
+    var centerC = startCol + 7.5;
+    var centerR = startRow + 9;
+    var diag = Math.sqrt(7.5 * 7.5 + 9 * 9);
+    for (var gy = 0; gy < 9; gy++) {
+      for (var gx = 0; gx < 5; gx++) {
+        if (glyph[gy][gx] !== 'X') continue;
+        for (var by = 0; by < 2; by++) {
+          for (var bx = 0; bx < 3; bx++) {
+            var col = startCol + 3 * gx + bx;
+            var row = startRow + 2 * gy + by;
+            if (col < 0 || col >= grid.cols || row < 0 || row >= grid.rows) continue;
+            var lvl = 2;
+            var p = rng();
+            if (p < 0.3) lvl = Math.min(4, lvl + 1);
+            else if (p > 0.7) lvl = Math.max(1, lvl - 1);
+            var dx = col - centerC, dy = row - centerR;
+            var delay = (Math.sqrt(dx * dx + dy * dy) / diag) * 5.4 + 0.8 * rng();
+            var dot = makeDot(col, row, lvl, delay, grid);
+            dot.lift = 2;
+            dots.push(dot);
+          }
+        }
+      }
+    }
+    return dots;
+  }
+
+  /** Fill a single column from the bottom up to `h` rows, used by waveform variants. */
+  function fillColumn(dots, grid, col, h, noise) {
+    var cap = Math.min(h, grid.rows);
+    for (var i = 0; i < cap; i++) {
+      var invR = grid.rows - 1 - i;
+      var hh = i / Math.max(h, 1);
+      var level = hh < 0.15 ? 4 : hh < 0.4 ? 3 : hh < 0.7 ? 2 : 1;
+      var delay = 3 * noise[col] + (i / Math.max(h, 1)) * 0.6;
+      dots.push(makeDot(col, invR, level, delay, grid));
+    }
+  }
+
+  /** 3-octave fractal value noise on a 2D domain. */
+  function fractalNoise(x, y, octaves) {
+    var total = 0, amp = 1, freq = 1, norm = 0;
+    for (var i = 0; i < octaves; i++) {
+      total += valueNoise(x * freq, y * freq, 42 + 100 * i) * amp;
+      norm += amp;
+      amp *= 0.5;
+      freq *= 2;
+    }
+    return total / norm;
+  }
+
+  /** Single-octave smoothed value noise. */
+  function valueNoise(x, y, seed) {
+    function hash(a, b) {
+      var o = (0x165667b1 * a + 0x27d4eb2f * b + 0x4bf19f61 * seed) | 0;
+      var l = (o ^ (o >> 13)) * 0x4bf19f61;
+      return ((l ^ (l >> 16)) & 0x7fffffff) / 0x7fffffff;
+    }
+    var xi = Math.floor(x), yi = Math.floor(y);
+    var xf = x - xi, yf = y - yi;
+    var u = xf * xf * (3 - 2 * xf);
+    var v = yf * yf * (3 - 2 * yf);
+    var a = hash(xi, yi),     b = hash(xi + 1, yi);
+    var c = hash(xi, yi + 1), d = hash(xi + 1, yi + 1);
+    return (a + u * (b - a)) + v * ((c + u * (d - c)) - (a + u * (b - a)));
+  }
+
+  // ---- PatternInstance ------------------------------------------------------
+  function PatternInstance(el, opts) {
+    Instance.call(this, el, opts);
+    this.variant = attr(el, 'variant', opts, 'bricks');
+    this.gridName = attr(el, 'grid', opts, 'graphic');
+
+    // Explicit dims override preset.
+    var explicitCols = parseInt(attr(el, 'cols', opts, 0), 10);
+    var explicitRows = parseInt(attr(el, 'rows', opts, 0), 10);
+    var preset = patternGrids[this.gridName] || patternGrids.graphic;
+    this.grid = {
+      cols: explicitCols || preset.cols,
+      rows: explicitRows || preset.rows,
+      padX: preset.padX,
+      padY: preset.padY
+    };
+
+    this.cellScale = parseFloat(attr(el, 'cell-size', opts, 1));
+
+    // text-variant specific config
+    this.text = attr(el, 'text', opts, '');
+    this.fontFamily = attr(el, 'font-family', opts, '"VT323", ui-monospace, monospace');
+    this.fontWeight = attr(el, 'font-weight', opts, '700');
+
+    this.reducedMotion = false;
+    this._startTime = 0;
+    this._setup();
+  }
+  PatternInstance.prototype = Object.create(Instance.prototype);
+  PatternInstance.prototype.constructor = PatternInstance;
+
+  PatternInstance.prototype._setup = function () {
+    var self = this;
+    this._createCanvas();
+    this._watchResize();
+    this._generateDots();
+    this.resize();
+
+    // Respect prefers-reduced-motion.
+    var mql = window.matchMedia('(prefers-reduced-motion: reduce)');
+    this.reducedMotion = mql.matches;
+    mql.addEventListener('change', function (e) {
+      self.reducedMotion = e.matches;
+      self._drawFrame(performance.now());
+    });
+
+    // Pause render loop when offscreen.
+    observeVisibility(this.el, function (visible) {
+      self.inView = visible;
+      if (visible) self._startLoop();
+    });
+  };
+
+  PatternInstance.prototype._generateDots = function () {
+    var fn = patternVariants[this.variant];
+    this.dots = fn ? fn(this.grid, this) : [];
+  };
+
+  PatternInstance.prototype._startLoop = function () {
+    if (this.paused || this.reducedMotion) {
+      this._drawFrame(performance.now());
+      return;
+    }
+    var self = this;
+    function loop(t) {
+      if (self.destroyed) return;
+      if (!self.inView || self.paused) return;
+      self._drawFrame(t);
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+  };
+
+  PatternInstance.prototype._drawFrame = function (tMs) {
+    var ctx = this.ctx;
+    if (!ctx) return;
+    var dpr = this.dpr;
+    var w   = this.canvas.width / dpr;
+    var h   = this.canvas.height / dpr;
+    ctx.clearRect(0, 0, w, h);
+
+    // Fit the grid into the canvas, scaled uniformly.
+    var gridW = this.grid.cols * 10 + this.grid.padX * 2;
+    var gridH = this.grid.rows * 10 + this.grid.padY * 2;
+    var scale = Math.min(w / gridW, h / gridH);
+    var offsetX = (w - gridW * scale) / 2;
+    var offsetY = (h - gridH * scale) / 2;
+    var dotR = 4 * scale;
+    var tSec = (tMs - this._startTime) / 1000;
+
+    ctx.fillStyle = this.activeColor;
+    for (var i = 0; i < this.dots.length; i++) {
+      var d = this.dots[i];
+      var o = this.reducedMotion ? d.opacity : pulseOpacity(d, tSec);
+      if (o < 0.01) continue;
+      var lift = this.reducedMotion ? 0 : pulseLift(d, tSec) * scale;
+      ctx.globalAlpha = o;
+      drawDot(ctx, offsetX + d.x * scale, offsetY + (d.y) * scale - lift, dotR * this.cellScale, this.dotShape);
+    }
+    ctx.globalAlpha = 1;
+  };
+
+  PatternInstance.prototype.resize = function () {
+    var rect = this.el.getBoundingClientRect();
+    this._sizeCanvas(rect.width || 200, rect.height || 120);
+    this._startTime = performance.now();
+    this._drawFrame(this._startTime);
+  };
+
+  PatternInstance.prototype.play = function () {
+    Instance.prototype.play.call(this);
+    this._startLoop();
+  };
+
+  // ---------------------------------------------------------------------------
   // Factory
   // ---------------------------------------------------------------------------
 
@@ -986,6 +1681,9 @@
         break;
       case 'headline':
         inst = new HeadlineInstance(el, opts);
+        break;
+      case 'pattern':
+        inst = new PatternInstance(el, opts);
         break;
       case 'cycle':
       default:
@@ -1039,15 +1737,30 @@
     },
 
     /** All active instances. */
-    instances: instances
+    instances: instances,
+
+    /**
+     * Algorithmic pattern mode — plug in custom variants, reach the grid presets.
+     *
+     *   DotMatrix.patterns.register("myShape", function (grid) { return [...dots] });
+     *   DotMatrix.patterns.grids.graphic.cols  // 48
+     */
+    patterns: {
+      variants: patternVariants,
+      grids:    patternGrids,
+      /** Register a new variant function. Returns DotMatrix for chaining. */
+      register: function (name, fn) { patternVariants[name] = fn; return DotMatrix; }
+    }
   };
 
-  // Auto-init on DOMContentLoaded
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function () { DotMatrix.init(); });
-  } else {
-    // DOM already loaded — defer slightly to let fonts load
-    DotMatrix.init();
+  // Auto-init on DOMContentLoaded (browser only — SSR-safe guard)
+  if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function () { DotMatrix.init(); });
+    } else {
+      // DOM already loaded — defer slightly to let fonts load
+      DotMatrix.init();
+    }
   }
 
   return DotMatrix;
