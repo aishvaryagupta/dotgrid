@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dot Matrix Playground · Patterns</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=VT323&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="dot-matrix-text.css" />
+  <style>
+    :root {
+      --bg:            #0a0a0b;
+      --panel:         #111113;
+      --panel-hover:   #161618;
+      --panel-active:  #1a1a1c;
+      --border:        rgba(255,255,255,0.06);
+      --border-strong: rgba(255,255,255,0.12);
+      --text:          #ececee;
+      --text-muted:    #8b8b8e;
+      --text-dim:      #56565a;
+      --accent:        #ff5d22;
+      --accent-soft:   rgba(255,93,34,0.12);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      font-family: "Inter", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+    }
+
+    /* ───── Top bar ───── */
+    .topbar {
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      background: rgba(10,10,11,0.6);
+      backdrop-filter: blur(12px);
+    }
+    .logo {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+    .logo span { color: var(--accent); }
+    .topbar nav { display: flex; gap: 20px; }
+    .topbar a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 13px;
+      transition: color 150ms;
+    }
+    .topbar a:hover { color: var(--text); }
+    .topbar a.active { color: var(--text); }
+
+    /* ───── Preview ───── */
+    .preview {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      padding: 40px;
+      background: var(--bg);
+      transition: background 150ms;
+    }
+    .preview.bg-light  { background: #f6f6f6; }
+    .preview.bg-black  { background: #000; }
+    .preview.bg-purple { background: #1a0e33; }
+
+    .preview-canvas {
+      position: relative;
+      width: 100%;
+      max-width: 1200px;
+      aspect-ratio: 16 / 9;
+      border: 1px dashed var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .preview.bg-light  .preview-canvas { border-color: rgba(0,0,0,0.08); }
+
+    .preview-canvas > [data-dot-matrix] {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .badge-wrapper {
+      width: 280px;
+      height: 280px;
+      border-radius: 16px;
+      background: var(--panel);
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .preview.bg-light .badge-wrapper { background: #fff; border-color: rgba(0,0,0,0.08); }
+
+    .badge-wrapper > [data-dot-matrix] { width: 100%; height: 100%; display: block; }
+
+    /* ───── Toolbar ───── */
+    .toolbar {
+      border-top: 1px solid var(--border);
+      background: var(--panel);
+      padding: 16px 20px;
+      display: flex;
+      gap: 24px;
+      align-items: center;
+      flex-wrap: wrap;
+      overflow-x: auto;
+    }
+
+    .group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 120px;
+    }
+    .group--wide { min-width: 180px; }
+    .group--flex1 { flex: 1; min-width: 200px; }
+
+    .label {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-dim);
+    }
+
+    .pills {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+    .pill {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11px;
+      font-weight: 500;
+      padding: 6px 10px;
+      border-radius: 6px;
+      background: var(--panel-hover);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: all 120ms ease;
+      white-space: nowrap;
+    }
+    .pill:hover { background: var(--panel-active); color: var(--text); }
+    .pill.active {
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    select, input[type="text"], input[type="color"] {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 6px;
+      background: var(--panel-hover);
+      color: var(--text);
+      border: 1px solid var(--border);
+      outline: none;
+      transition: border-color 120ms;
+      width: 100%;
+    }
+    select:focus, input:focus { border-color: var(--accent); }
+    input[type="color"] { padding: 2px; height: 32px; cursor: pointer; }
+
+    /* ───── Snippet ───── */
+    .snippet {
+      position: fixed;
+      bottom: 100px;
+      right: 20px;
+      max-width: 420px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-all;
+      display: none;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+    .snippet.show { display: block; }
+    .snippet b { color: var(--accent); font-weight: 500; }
+
+    .copy-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 10px;
+      padding: 3px 8px;
+      background: transparent;
+      color: var(--text-dim);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .copy-btn:hover { color: var(--text); border-color: var(--border-strong); }
+    .copy-btn.copied { color: var(--accent); border-color: var(--accent); }
+
+    /* Hide the text input group unless the text variant is active */
+    .group-text { display: none; }
+    .group-text.show { display: flex; }
+
+    .mode-toggle {
+      display: inline-flex;
+      background: var(--panel-hover);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 2px;
+      gap: 2px;
+    }
+    .mode-toggle button {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11px;
+      padding: 5px 10px;
+      background: transparent;
+      color: var(--text-muted);
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .mode-toggle button.active {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .readout {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 10px;
+      color: var(--text-dim);
+      padding: 8px 12px;
+      background: var(--panel-hover);
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+    .readout b { color: var(--text); font-weight: 500; }
+  </style>
+</head>
+<body>
+
+  <!-- ───── Top bar ───── -->
+  <div class="topbar">
+    <div class="logo">dot<span>/</span>grid · <span style="color:var(--text-muted);font-weight:400">patterns</span></div>
+    <nav>
+      <a href="/index.html">Home</a>
+      <a href="/playground">Text playground</a>
+      <a href="/playground2" class="active">Patterns</a>
+      <a href="https://github.com/" target="_blank">GitHub</a>
+    </nav>
+  </div>
+
+  <!-- ───── Preview ───── -->
+  <div class="preview" id="preview">
+    <div class="preview-canvas" id="canvas-host">
+      <div id="slot" data-dot-matrix="pattern" data-variant="bricks" data-grid="background"></div>
+    </div>
+  </div>
+
+  <!-- ───── Toolbar ───── -->
+  <div class="toolbar">
+    <div class="group group--flex1">
+      <span class="label">Variant</span>
+      <div class="pills" id="variant-pills"></div>
+    </div>
+
+    <div class="group">
+      <span class="label">Grid preset</span>
+      <select id="grid-select">
+        <option value="graphic">graphic (48×30)</option>
+        <option value="background" selected>background (128×60)</option>
+        <option value="badge">badge (19×19)</option>
+        <option value="card">card (35×19)</option>
+      </select>
+    </div>
+
+    <div class="group">
+      <span class="label">Dot shape</span>
+      <select id="shape-select">
+        <option>circle</option>
+        <option>square</option>
+        <option>diamond</option>
+        <option>triangle</option>
+        <option>star</option>
+        <option>cross</option>
+      </select>
+    </div>
+
+    <div class="group">
+      <span class="label">Color</span>
+      <input type="color" id="color-input" value="#ff5d22" />
+    </div>
+
+    <div class="group">
+      <span class="label">Background</span>
+      <div class="mode-toggle" id="bg-toggle">
+        <button data-bg="" class="active">dark</button>
+        <button data-bg="bg-light">light</button>
+        <button data-bg="bg-black">black</button>
+        <button data-bg="bg-purple">purple</button>
+      </div>
+    </div>
+
+    <div class="group group-text" id="text-group">
+      <span class="label">Text</span>
+      <input type="text" id="text-input" value="BuildAnything" placeholder="Enter text" />
+    </div>
+
+    <div class="group group-text" id="font-group">
+      <span class="label">Font family</span>
+      <select id="font-select">
+        <option value='"VT323", ui-monospace, monospace'>VT323 (pixel)</option>
+        <option value='"JetBrains Mono", ui-monospace, monospace'>JetBrains Mono</option>
+        <option value='"Space Grotesk", sans-serif'>Space Grotesk</option>
+        <option value='"Inter", sans-serif'>Inter</option>
+      </select>
+    </div>
+
+    <div class="group">
+      <span class="label">Layout</span>
+      <div class="mode-toggle" id="layout-toggle">
+        <button data-layout="canvas" class="active">canvas</button>
+        <button data-layout="badge">badge</button>
+      </div>
+    </div>
+
+    <div class="group" style="align-items:flex-end">
+      <span class="label">&nbsp;</span>
+      <div class="readout" id="readout">— dots</div>
+    </div>
+  </div>
+
+  <!-- ───── Snippet ───── -->
+  <div class="snippet" id="snippet">
+    <button class="copy-btn" id="copy-btn">copy</button>
+    <span id="snippet-body"></span>
+  </div>
+
+  <!-- ───── Library ───── -->
+  <script src="dot-matrix-text.js"></script>
+  <script>
+    var VARIANTS = [
+      'bricks', 'ripple', 'rings', 'radial', 'rain', 'noise', 'network',
+      'waveform-a', 'waveform-b', 'waveform-d', 'waveform-e',
+      'waveform-g', 'waveform-h', 'waveform-i',
+      'numeral-1', 'numeral-2', 'numeral-3', 'numeral-4',
+      'text'
+    ];
+
+    var state = {
+      variant: 'bricks',
+      grid:    'background',
+      shape:   'circle',
+      color:   '#ff5d22',
+      bg:      '',
+      text:    'BuildAnything',
+      font:    '"VT323", ui-monospace, monospace',
+      layout:  'canvas'
+    };
+
+    // ── build variant pills ─────────────────────────────────────────────
+    var pillsEl = document.getElementById('variant-pills');
+    VARIANTS.forEach(function (v) {
+      var btn = document.createElement('button');
+      btn.className = 'pill' + (v === state.variant ? ' active' : '');
+      btn.textContent = v;
+      btn.dataset.variant = v;
+      btn.addEventListener('click', function () { setVariant(v); });
+      pillsEl.appendChild(btn);
+    });
+
+    var gridSelect   = document.getElementById('grid-select');
+    var shapeSelect  = document.getElementById('shape-select');
+    var colorInput   = document.getElementById('color-input');
+    var textInput    = document.getElementById('text-input');
+    var fontSelect   = document.getElementById('font-select');
+    var bgToggle     = document.getElementById('bg-toggle');
+    var layoutToggle = document.getElementById('layout-toggle');
+    var readout      = document.getElementById('readout');
+    var preview      = document.getElementById('preview');
+    var snippet      = document.getElementById('snippet');
+    var snippetBody  = document.getElementById('snippet-body');
+    var copyBtn      = document.getElementById('copy-btn');
+    var canvasHost   = document.getElementById('canvas-host');
+
+    gridSelect.addEventListener('change',  function () { state.grid  = gridSelect.value;  rebuild(); });
+    shapeSelect.addEventListener('change', function () { state.shape = shapeSelect.value; rebuild(); });
+    colorInput.addEventListener('input',   function () { state.color = colorInput.value; rebuild(); });
+    textInput.addEventListener('input',    function () { state.text  = textInput.value;  rebuild(); });
+    fontSelect.addEventListener('change',  function () { state.font  = fontSelect.value; rebuild(); });
+
+    bgToggle.addEventListener('click', function (e) {
+      var btn = e.target.closest('button'); if (!btn) return;
+      [...bgToggle.children].forEach(function (b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      state.bg = btn.dataset.bg;
+      preview.className = 'preview ' + state.bg;
+    });
+
+    layoutToggle.addEventListener('click', function (e) {
+      var btn = e.target.closest('button'); if (!btn) return;
+      [...layoutToggle.children].forEach(function (b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      state.layout = btn.dataset.layout;
+      rebuildContainer();
+      rebuild();
+    });
+
+    copyBtn.addEventListener('click', function () {
+      navigator.clipboard.writeText(snippetBody.textContent);
+      copyBtn.textContent = 'copied';
+      copyBtn.classList.add('copied');
+      setTimeout(function () {
+        copyBtn.textContent = 'copy';
+        copyBtn.classList.remove('copied');
+      }, 1500);
+    });
+
+    function setVariant(v) {
+      state.variant = v;
+      document.querySelectorAll('.pill').forEach(function (p) { p.classList.toggle('active', p.dataset.variant === v); });
+      // Show / hide text + font inputs
+      var showText = v === 'text';
+      document.getElementById('text-group').classList.toggle('show', showText);
+      document.getElementById('font-group').classList.toggle('show', showText);
+      rebuild();
+    }
+
+    function rebuildContainer() {
+      canvasHost.className = state.layout === 'badge' ? 'badge-wrapper' : 'preview-canvas';
+    }
+
+    var currentInstance = null;
+
+    function rebuild() {
+      if (currentInstance) { currentInstance.destroy(); currentInstance = null; }
+      canvasHost.innerHTML = '';
+      var slot = document.createElement('div');
+      slot.setAttribute('data-dot-matrix', 'pattern');
+      slot.setAttribute('data-variant', state.variant);
+      slot.setAttribute('data-grid', state.grid);
+      slot.setAttribute('data-dot-shape', state.shape);
+      slot.setAttribute('data-active-color', state.color);
+      if (state.variant === 'text') {
+        slot.setAttribute('data-text', state.text);
+        slot.setAttribute('data-font-family', state.font);
+      }
+      canvasHost.appendChild(slot);
+
+      // Wait for fonts to ensure text variant rasters correctly.
+      var proceed = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
+      proceed.then(function () {
+        currentInstance = window.DotMatrix.create(slot);
+        readout.innerHTML = '<b>' + (currentInstance.dots || []).length + '</b> dots · ' +
+                            state.grid + ' (' + (window.DotMatrix.patterns.grids[state.grid].cols) + '×' +
+                            (window.DotMatrix.patterns.grids[state.grid].rows) + ')';
+        updateSnippet();
+      });
+    }
+
+    function updateSnippet() {
+      var attrs = [
+        'data-dot-matrix="pattern"',
+        'data-variant="' + state.variant + '"',
+        'data-grid="' + state.grid + '"'
+      ];
+      if (state.shape !== 'circle') attrs.push('data-dot-shape="' + state.shape + '"');
+      if (state.color !== '#ff5d22') attrs.push('data-active-color="' + state.color + '"');
+      if (state.variant === 'text') {
+        attrs.push('data-text="' + state.text + '"');
+        attrs.push('data-font-family=\'' + state.font + '\'');
+      }
+      snippetBody.textContent = '<div\n  ' + attrs.join('\n  ') + '>\n</div>';
+      snippet.classList.add('show');
+    }
+
+    // First render
+    rebuildContainer();
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(rebuild);
+    } else {
+      rebuild();
+    }
+  </script>
+</body>
+</html>
